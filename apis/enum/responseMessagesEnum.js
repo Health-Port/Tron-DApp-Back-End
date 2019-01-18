@@ -3,6 +3,8 @@ var ResponseMessagesEnum = {
     ALREADY_VERIFIED: "Account already verified.",
     ACCESS_DENIED: "Access denied. No token provided.",
     ACCOUNT_IS_VERIFIED: "Your account is verified successfully.",
+    ACCOUNT_IS_NOT_ACTIVE: "Receiver account is not an active account.",
+    ACCOUNT_IS_NOT_VERIFIED: "There is some issue in account verification, please try again.",
     AMOUNT_IS_NOT_INTEGER: "Only whole numbers are allowed.",
     BALANCE_IS_ZERO: "You have zero balance.",
     BANDWIDTH_IS_LOW: 'You currently have low bandwidth on TRON Network. Please wait for a few minutes and try again.',

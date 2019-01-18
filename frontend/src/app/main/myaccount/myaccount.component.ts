@@ -110,7 +110,7 @@ export class MyaccountComponent implements OnInit {
         'received':true,
         'new account':true,
         'loyalty bonus':true,
-        'referral reward':true,
+        'referal reward':true,
         'create allergy list':true,
         'create medication list':true,
         'create procedure history':true,
@@ -217,11 +217,9 @@ export class MyaccountComponent implements OnInit {
                     setTimeout(() => {
                         let plel = this.eRef.nativeElement.querySelector('.percent-label');
                         plel.textContent = this.percentFormat(plel, res.data['balance']);
-                        
-                        let lbl = this.eRef.nativeElement.querySelectorAll('text[ng-reflect-count-prefix]');
-                        this.addTspan(lbl[0]);
-                        this.addTspan(lbl[1]);
-                    }, 1000);
+                        let lbl = this.eRef.nativeElement.querySelectorAll('text[ngx-charts-count-up]');
+                        this.addTspan(lbl);
+                    }, 1200);
                 }
                 else {
                     this.gSpin = false;
@@ -256,18 +254,23 @@ export class MyaccountComponent implements OnInit {
             });
 
     }
-    addTspan(e) {
-        let x = e.getAttribute("x");
-        let y = e.getAttribute("y");
-        y = Math.ceil(y) + 20;
-        let dy = e.getAttribute("dy");
-        var para = document.createElementNS("http://www.w3.org/2000/svg","tspan");
-        var t = document.createTextNode("Bandwidth: "+this.totalBandwidth);
-        para.appendChild(t);
-        para.setAttribute("x", x);
-        para.setAttribute("y", y);
-        para.setAttribute("dy", dy);
-        e.appendChild(para);
+    addTspan(array) {
+        array.forEach(e => {
+            if(e.textContent.indexOf("Current") != -1) {
+                let x = e.getAttribute("x");
+                let y = e.getAttribute("y");
+                y = Math.ceil(y) + 20;
+                let dy = e.getAttribute("dy");
+                var para = document.createElementNS("http://www.w3.org/2000/svg","tspan");
+                var t = document.createTextNode("Bandwidth: "+this.totalBandwidth);
+                para.appendChild(t);
+                para.setAttribute("x", x);
+                para.setAttribute("y", y);
+                para.setAttribute("dy", dy);
+                e.appendChild(para);
+            }
+        });
+        
     }
     percentFormat(val, tokens) {
         let percent = val.textContent.toString().replace('%', '');

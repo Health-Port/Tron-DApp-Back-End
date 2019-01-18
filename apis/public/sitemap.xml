@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+<url>
+  <loc>https://healthport.io/</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/home</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/login</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/home/about</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/home/contact</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/signup</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/forgot-password</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/myaccount</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/allergy</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/medicationlist</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/procedure-history</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/legalnotices</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/legalnotices/privacy_policy</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/legalnotices/terms_service</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+<url>
+  <loc>https://healthport.io/legalnotices/terms_use</loc>
+  <lastmod>2019-01-04T11:00:41+00:00</lastmod>
+</url>
+</urlset>

@@ -6,53 +6,63 @@
     <div id="in-sendComponent" fxLayout="column" fxLayoutAlign="center center">
         <div class="contents" fxLayout="column" fxLayout.gt-md="row">
             <div class="send-left" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                <form [formGroup]="form">
-                    <div class="left-contents" fxLayout="column" fxLayoutAlign="center left">
-                        <div fxLayout="column" fxLayout.gt-md="row">
-                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                                <h1>Send EHR</h1>
+                <mat-dialog-content>
+                    <form [formGroup]="form">
+                        <div class="left-contents" fxLayout="column" fxLayoutAlign="center left">
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <h1>Send EHR</h1>
+                                </div>
                             </div>
-                        </div>
-                        <div fxLayout="column" fxLayout.gt-md="row">
-                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                                <input class="abtxt" type="text" placeholder="Receiver's Address" formControlName="address" [ngClass]="{ 'is-invalid': submitted && f.address.errors }"/>
-                                <div *ngIf="submitted && f.address.errors" class="invalid-feedback">
-                                    <div *ngIf="f.address.errors.required">Required</div>
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div [style.display]="displayCamDiv?'block':'none'" class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <zxing-scanner #scanner start="true" [device]="currentDevice" (scanSuccess)="handleQrCodeResult($event)"></zxing-scanner>
+                                </div>
+                            </div>
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div class="content-items pos-rel" [style.zIndex]="99" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <input class="abtxt icon-field" type="text" placeholder="Receiver's Address" formControlName="address" [ngClass]="{ 'is-invalid': submitted && f.address.errors }"/>
+                                    <div *ngIf="submitted && f.address.errors" class="invalid-feedback">
+                                        <div *ngIf="f.address.errors.required">Required</div>
+                                    </div>
+                                    <span class="icon-item" [style.zIndex]="100">
+                                        <mat-icon  (click)="onClickScanner()" matTooltip="{{displayCamDiv?'Close':'Open'}} QR Code Scanner" class="trigger">photo_camera</mat-icon>
+                                    </span>
+                                </div>
+                            </div>
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <input class="abtxt" type="number" pattern="^[0-9]*$" min="0" placeholder="Amount" formControlName="amount" [ngClass]="{ 'is-invalid': submitted && f.amount.errors }"/>
+                                    <div *ngIf="submitted && f.amount.errors" class="invalid-feedback">
+                                        <div *ngIf="f.amount.errors.required">Required</div>
+                                        <div *ngIf="f.amount.errors.min || f.amount.errors.pattern">Only whole numbers are allowed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <input class="abtxt" type="text" pattern="^(?=.{2,300}$).*" placeholder="Note" formControlName="note" [ngClass]="{ 'is-invalid': submitted && f.note.errors }"/>
+                                    <div *ngIf="submitted && f.note.errors" class="invalid-feedback">
+                                        <div *ngIf="f.note.errors.required">Required</div>
+                                        <div *ngIf="f.note.errors.pattern">Text from 2-300 characters length are allowed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <p *ngIf="isSuccess">Your transaction has been submitted to the blockchain. Please wait a few minutes for your transaction to be confirmed and your account to be debited. You may review
+                                        this transaction’s status by <a class="green" href="{{transaction_url}}" target="_blank">CLICKING HERE!</a>.</p>
+                                </div>
+                            </div>
+                            <div fxLayout="column" fxLayout.gt-md="row">
+                                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                    <a mat-raised-button *ngIf="!loader" class="btn-mcolor-green width-full" (click)="send()">Send</a>
+                                    <a mat-raised-button *ngIf="loader" class="btn-mcolor-green width-full"><mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner></a>
                                 </div>
                             </div>
                         </div>
-                        <div fxLayout="column" fxLayout.gt-md="row">
-                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                                <input class="abtxt" type="number" pattern="^[0-9]*$" min="0" placeholder="Amount" formControlName="amount" [ngClass]="{ 'is-invalid': submitted && f.amount.errors }"/>
-                                <div *ngIf="submitted && f.amount.errors" class="invalid-feedback">
-                                    <div *ngIf="f.amount.errors.required">Required</div>
-                                    <div *ngIf="f.amount.errors.min || f.amount.errors.pattern">Only whole numbers are allowed</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div fxLayout="column" fxLayout.gt-md="row">
-                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                                <input class="abtxt" type="text" pattern="^(?=.{2,300}$).*" placeholder="Note" formControlName="note" [ngClass]="{ 'is-invalid': submitted && f.note.errors }"/>
-                                <div *ngIf="submitted && f.note.errors" class="invalid-feedback">
-                                    <div *ngIf="f.note.errors.required">Required</div>
-                                    <div *ngIf="f.note.errors.pattern">Text from 2-300 characters length are allowed</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div fxLayout="column" fxLayout.gt-md="row">
-                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                                <p *ngIf="isSuccess">Your transaction has been submitted to the blockchain. Please wait a few minutes for your transaction to be confirmed and your account to be debited. You may review
-                                    this transaction’s status by <a class="green" href="{{transaction_url}}" target="_blank">CLICKING HERE!</a>.</p>
-                            </div>
-                        </div>
-                        <div fxLayout="column" fxLayout.gt-md="row">
-                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                                <a mat-raised-button *ngIf="!loader" class="btn-mcolor-green width-full" (click)="send()">Send</a>
-                                <a mat-raised-button *ngIf="loader" class="btn-mcolor-green width-full"><mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner></a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </mat-dialog-content>
             </div>
         </div>
     </div>

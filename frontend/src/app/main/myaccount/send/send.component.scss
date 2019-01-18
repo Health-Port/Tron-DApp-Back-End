@@ -29,13 +29,17 @@
         color: #000;
         background: #fff;
         border: 1px solid #00010126;
-        font-size: 23px;
+        font-size: 20px;
         border-radius: 5px;
         height: 50px;
         padding: 10px;
         margin-right: 10px;
         margin-bottom: 10px;
         width: 100%;
+    }
+    #in-sendComponent .left-contents .abtxt.icon-field{
+        padding-right: 50px;
+        text-overflow: ellipsis;
     }
     #in-sendComponent .left-contents .abtxt::placeholder {
         color: #1c3458;
@@ -69,5 +73,31 @@
     }
     mat-spinner {
         margin:0 auto;
+    }
+    .icon-item {
+        position: absolute;
+        top: 0;
+        height: 50px;
+        right: 10px;
+        cursor: pointer;
+        padding:12px 5px 0px 10px;
+        border-left: 1px solid #00010126;
+    }
+    span .trigger {
+        color: #00010157;
+    }
+    .pos-rel {
+        position: relative;
+    }
+    @media (max-width: 550px){
+        #in-sendComponent .left-contents h1 {
+            font-size: 23px;
+        }
+        #in-sendComponent .left-contents .abtxt {
+            font-size: 18px;
+        }
+        #in-sendComponent .left-contents .abtxt {
+            font-size: 10px;
+        }
     }
 }

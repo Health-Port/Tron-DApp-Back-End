@@ -35,6 +35,10 @@ async function sendToken(req, res) {
         let bandwidth = await tronUtils.getBandwidth(utils.decrypt(from));
         if (bandwidth < 275) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW);
 
+        //Checking weather receiver account is active or not.
+        let bandwidthTo = await tronUtils.getBandwidth(to);
+        if(bandwidthTo == 0) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCOUNT_IS_NOT_ACTIVE)
+        
         //Sending token
         try {
             trxId = await tronUtils.sendTRC10Token(to, amount, privateKey);
@@ -257,7 +261,6 @@ async function getReferralsByUser(req, res) {
 async function getEnv(req, res) {
 
     //let transection = await tronUtils.createSmartContract();
-
     return response.sendResponse(res, resCode.SUCCESS, transection);
 }
 

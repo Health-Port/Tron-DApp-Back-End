@@ -51,7 +51,7 @@ async function sendTRC10Token(to, amount, privateKey) {
         let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
         let transaction = await tronWeb.trx.sendToken(to, amount, process.env.TRON_TOKEN_ID);
         return transaction.transaction.txID;
-
+        
     } catch (error) {
         console.log(error);
         throw error;

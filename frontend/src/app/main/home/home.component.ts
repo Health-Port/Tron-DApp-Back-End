@@ -95,7 +95,7 @@ export class HomeComponent {
         el.scrollIntoView();
     }
     moveToWhitepaper() {
-        window.open("https://github.com/Health-Port/White-Paper", "_self")
+        window.open("https://medium.com/@healthport/health-port-white-paper-3cf16da99034", "_self")
     }
     get f() { return this.contactForm.controls; }
 

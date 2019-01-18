@@ -6,33 +6,35 @@
     <div id="in-sendComponent" fxLayout="column" fxLayoutAlign="center center">
         <div class="contents" fxLayout="column" fxLayout.gt-md="row">
             <div class="send-left" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                <div class="left-contents" fxLayout="column" fxLayoutAlign="center center">
-                    <div fxLayout="column" fxLayout.gt-md="row">
-                        <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                            <h1>Deposit EHR into your Health Port Account</h1>
+                <mat-dialog-content>
+                    <div class="left-contents" fxLayout="column" fxLayoutAlign="center center">
+                        <div fxLayout="column" fxLayout.gt-md="row">
+                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                <h1>Deposit EHR into your Health Port Account</h1>
+                            </div>
+                        </div>
+                        <div fxLayout="column" fxLayout.gt-md="row">
+                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                <img src={{wallet_qr}} width="200" height="200" alt="">
+                            </div>
+                        </div>
+                        <div class="stretch" fxLayout="column" fxLayout.gt-md="row">
+                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                            <input class="abtxt" type="text" disabled="disabled" value="{{wallet_address}}"/>
+                            </div>
+                        </div>
+                        <div fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                            <p style="margin: 0 auto;">View your account on <a href="{{tronscan_url}}" target="_blank">tronscan.org</a></p>
+                            </div>
+                        </div>
+                        <div class="stretch" fxLayout="column" fxLayout.gt-md="row">
+                            <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                                <a mat-raised-button class="btn-mcolor-green width-full" (click)="copy()">Copy Address</a>
+                            </div>
                         </div>
                     </div>
-                    <div fxLayout="column" fxLayout.gt-md="row">
-                        <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                            <img src={{wallet_qr}} width="200" height="200" alt="">
-                        </div>
-                    </div>
-                    <div class="stretch" fxLayout="column" fxLayout.gt-md="row">
-                        <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                        <input class="abtxt" type="text" disabled="disabled" value="{{wallet_address}}"/>
-                        </div>
-                    </div>
-                    <div fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
-                        <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                        <p style="margin: 0 auto;">View your account on <a href="{{tronscan_url}}" target="_blank">tronscan.org</a></p>
-                        </div>
-                    </div>
-                    <div class="stretch" fxLayout="column" fxLayout.gt-md="row">
-                        <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                            <a mat-raised-button class="btn-mcolor-green width-full" (click)="copy()">Copy Address</a>
-                        </div>
-                    </div>
-                </div>
+                </mat-dialog-content>
             </div>
         </div>
     </div>

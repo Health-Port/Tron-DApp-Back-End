@@ -27,7 +27,7 @@ export const navigation: FuseNavigation[] = [
         title: 'WHITEPAPER',
         type: 'item',
         icon: 'whitepaper',
-        url: 'https://github.com/Health-Port/White-Paper',
+        url: 'https://medium.com/@healthport/health-port-white-paper-3cf16da99034',
         externalUrl: true,
         openInNewTab: true
     },

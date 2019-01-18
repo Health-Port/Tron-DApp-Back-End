@@ -120,7 +120,7 @@ async function signIn(req, res) {
         let email = req.body.email;
         let password = req.body.password;
         let captcha_key = req.body.captchaKey;
-        let err, user, token;
+        let err, user, token, passCode;
 
         //Validating captcha only when environment is not dev
         if (process.env.NODE_ENV != 'dev') {
@@ -145,14 +145,24 @@ async function signIn(req, res) {
                 }
             }));
         if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
-        if (!user.email_confirmed) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.EMAIL_CONFIRMATION_REQUIRED);
+        if (!user.email_confirmed) {
+            [err, passCode] = await utils.to(db.models.pass_codes.findOne(
+                {
+                    where: { user_id: user.id, type: 'signup' },
+                    order: [['createdAt', 'DESC']]
+                }));
+
+            [err, token] = await utils.to(tokenGenerator.createToken({ email: user.email, user_id: user.id, pass_code: passCode.pass_code }));
+
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.EMAIL_CONFIRMATION_REQUIRED, null, token);
+        }
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken({ email: user.email, user_id: user.id }));
 
         //Decrypting password
         [err, passwordCheck] = await utils.to(bcrypt.compare(password, user.password));
         if (!passwordCheck) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
-
-        //Jwt token generating
-        [err, token] = await utils.to(tokenGenerator.createToken({ email: user.email, user_id: user.id }));
 
         //Returing successful response with data
         let data = {
@@ -347,7 +357,14 @@ async function verifyEmail(req, res) {
                     [err, refData] = await utils.to(db.models.users.findOne({ where: { referal_coupon: user.refer_by_coupon } }));
                     [err, rewardObj] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: rewardEnum.REFERRALREWARD } }));
                     amount = parseFloat(rewardObj.reward_amount);
-                    refRewardTrxId = await tronUtils.sendTRC10Token(utils.decrypt(refData.tron_wallet_public_key), amount, process.env.MAIN_ACCOUNT_PRIVATE_KEY);
+                    [err, refRewardTrxId] = await utils.to(tronUtils.sendTRC10Token(utils.decrypt(refData.tron_wallet_public_key), amount, process.env.MAIN_ACCOUNT_PRIVATE_KEY));
+                    if (err) {
+                        return response.sendResponse(
+                            res,
+                            resCode.BAD_REQUEST,
+                            resMessage.ACCOUNT_IS_NOT_VERIFIED
+                        );
+                    }
 
                     //Saving transection history into db
                     if (refRewardTrxId)
@@ -360,13 +377,24 @@ async function verifyEmail(req, res) {
                 //Singup
                 // [err, usersCountResult] = await utils.to(db.models.transections.findAndCountAll({ where: { type: rewardEnum.SIGNUPREWARD } }));
                 [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({ where: { reward_type: rewardEnum.SIGNUPREWARD } }));
-
+                if (err) {
+                    return response.sendResponse(
+                        res,
+                        resCode.BAD_REQUEST,
+                        resMessage.ACCOUNT_IS_NOT_VERIFIED
+                    );
+                }
                 if (rewardsObj && rewardsObj.length > 0) {
                     amount = parseFloat(rewardsObj[0].reward_amount);
-                    signupRewardTrxId = await tronUtils.sendTRC10Token(utils.decrypt(user.tron_wallet_public_key), amount, process.env.MAIN_ACCOUNT_PRIVATE_KEY);
+                    [err, signupRewardTrxId] = await utils.to(tronUtils.sendTRC10Token(utils.decrypt(user.tron_wallet_public_key), amount, process.env.MAIN_ACCOUNT_PRIVATE_KEY));
+                    if (err) {
+                        return response.sendResponse(
+                            res,
+                            resCode.BAD_REQUEST,
+                            resMessage.ACCOUNT_IS_NOT_VERIFIED
+                        );
+                    }
                 }
-
-
 
                 //Saving transection history into db
                 if (signupRewardTrxId) {

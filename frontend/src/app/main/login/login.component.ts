@@ -130,6 +130,14 @@ export class LoginComponent implements OnInit {
       }, error => {
         this.loader = false;
         this.snackBar.open(error.error.message);
+        if(error.error.message.includes('Please verify your account to continue further.'))
+        {
+          localStorage.setItem('verificationToken', JSON.stringify(error.error.token));
+          localStorage.setItem('verificationEmail', JSON.stringify(this.userModel.email));
+          setTimeout(() => {
+            this.router.navigate(['/verification']);
+          }, 1500);
+        }
         grecaptcha.reset();
       });
   }

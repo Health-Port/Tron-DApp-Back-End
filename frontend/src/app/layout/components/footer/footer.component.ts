@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from './../../../../environments/environment.prod';
 
 @Component({
     selector   : 'footer',
@@ -8,13 +9,14 @@ import { Component, OnInit } from '@angular/core';
 export class FooterComponent
 {
 	currentYear: number;
-
-	
+	fileUrlBase:string;
     /**
      * Constructor
      */
     constructor()
     {
+        console.log(environment.serviceUrl);
+        this.fileUrlBase = environment.serviceUrl;
     }
 
     ngOnInit() {

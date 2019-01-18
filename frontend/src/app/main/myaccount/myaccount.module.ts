@@ -16,6 +16,7 @@ import { UserService } from '../../service/user.service';
 import { MyaccountComponent } from './myaccount.component';
 import { ReceiveComponent } from './receive/receive.component';
 import { DetailsComponent } from './details/details.component';
+import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { MatButtonModule, MatIconModule, MatCheckboxModule,MatTooltipModule, MatGridListModule, MatDialogModule, MatProgressSpinnerModule } from '@angular/material';
 
 const routes = [
@@ -38,7 +39,8 @@ const routes = [
 
         ReactiveFormsModule,
         CommonModule,
-
+        // gets the scanner ready!
+        ZXingScannerModule,
         MatButtonModule,
         MatIconModule,
         MatCheckboxModule,
