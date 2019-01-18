@@ -17,21 +17,21 @@ router.post('/verifyEmail', authorize.authenticateToken, userController.verifyEm
 router.post('/resendLinkEmail', authorize.authenticateToken, userController.resendLinkEmail);
 router.post('/contactUs', userController.contactUs);
 
-router.post('/sendToken', tokenController.sendToken);
+router.post('/sendToken', authorize.authenticateToken, tokenController.sendToken);
 router.post('/getBalance', authorize.authenticateToken, tokenController.getBalance);
 router.post('/getTransectionsByAddress', authorize.authenticateToken, tokenController.getTransectionsByAddress);
 router.post('/getFormSubmissionDates', authorize.authenticateToken, tokenController.getFormSubmissionDates);
 router.post('/getReferralsByUser', authorize.authenticateToken, tokenController.getReferralsByUser);
 
 
-router.post('/saveAllergyListByUser', allergyController.saveAllergyListByUser);
+router.post('/saveAllergyListByUser', authorize.authenticateToken, allergyController.saveAllergyListByUser);
 router.post('/getAllergyListByUser', authorize.authenticateToken, allergyController.getAllergyListByUser);
 
 router.post('/saveMedicationByUser', authorize.authenticateToken, medicationController.saveMedicationByUser);
 router.post('/getMedicationListByUser', authorize.authenticateToken, medicationController.getMedicationListByUser);
 
 router.post('/saveProcedureByUser', authorize.authenticateToken, procedureController.saveProcedureByUser);
-router.post('/getProcedureListByUser', procedureController.getProcedureListByUser);
+router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser);
 
 /*
     Get Routes
