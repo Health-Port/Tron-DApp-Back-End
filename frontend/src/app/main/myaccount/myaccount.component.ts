@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, QueryList, Inject } from '@angular/core';
+import { Component, OnInit,AfterViewChecked, ElementRef, ViewChild, QueryList, Inject } from '@angular/core';
 import * as jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Router } from '@angular/router';
@@ -13,15 +13,14 @@ import { WalletService } from '../../service/wallet.service';
 import { DocumentService } from '../../service/document.service';
 import { SendComponent } from './send/send.component';
 import { Meta, Title } from '@angular/platform-browser';
-import { MatSnackBar, MatDialog, MatTooltip, MatDialogConfig, MatSpinner } from "@angular/material";
+import { MatSnackBar, MatDialog,  MatPaginator,MatCheckbox , MatTableDataSource , MatTooltip, MatDialogConfig, MatSpinner } from "@angular/material";
 import { ReceiveComponent } from './receive/receive.component';
 import { DetailsComponent } from './details/details.component';
+import { ShareComponent } from './share/share.component';
 import { FuseCopierService } from '@fuse/services/copier.service';
 import { FuseNavigationService } from '@fuse/components/navigation/navigation.service';
 import { FuseTranslationLoaderService } from '@fuse/services/translation-loader.service';
-import adBlocker from 'just-detect-adblock'
-
-
+import adBlocker from 'just-detect-adblock';
 
 @Component({
     selector: 'myaccount',
@@ -29,7 +28,7 @@ import adBlocker from 'just-detect-adblock'
     styleUrls: ['./myaccount.component.scss']
 })
 
-export class MyaccountComponent implements OnInit {
+export class MyaccountComponent implements OnInit, AfterViewChecked{
 
     //allergy spinner
     aSpin: boolean = false;
@@ -91,6 +90,7 @@ export class MyaccountComponent implements OnInit {
     email_share: string;
     //variable will be used to display UI components for specific users
     user_admin: boolean = false;
+    user_role : string;
     // chart colors for ngx charts
     gray_color: String;
     white_color: String;
@@ -115,6 +115,23 @@ export class MyaccountComponent implements OnInit {
         'create medication list':true,
         'create procedure history':true,
     }
+
+    patientName: string;
+    filterChk : Object = {
+        alCheck : false,
+        medCheck : false,
+        proCheck : false
+    }
+    @ViewChild(MatPaginator) paginator: MatPaginator;
+
+    p: number = 1;
+    searchText: string = "";
+    filterText: string = "";
+    SearchSpin: boolean = false;
+    searchBtnSpin: boolean = false;
+    totalRecordCount: number;
+    providerSharedData: any;
+    backupProviderSharedData: any;
 	/**
      * Constructor
      *
@@ -153,7 +170,9 @@ export class MyaccountComponent implements OnInit {
         ], true);
 
         this.pdfImage.src = 'assets/sia/images/logos/splash-logo.png';
+
     }
+
 
     colorScheme = {
         domain: ['#00b0e0', '#A10A28', '#C7B42C', '#AAAAAA']
@@ -162,6 +181,8 @@ export class MyaccountComponent implements OnInit {
     view: any[] = [700, 400];
 
     ngOnInit() {
+        //setTimeout(() => this.providerSharedData.paginator = this.paginator);
+
         //setting variables for signin signout for larger and smaller screens
         this.globalService.state = this.globalService.state;
         if (window.innerWidth < 1025) {
@@ -182,6 +203,7 @@ export class MyaccountComponent implements OnInit {
         this.username = this.data['name'];
         this.user_id = this.data['user_id'];
         this.ntotal = this.data['total_tokens'];
+        this.user_role = this.data['role'];
 
         this.referal_coupon = this.data['referal_coupon'];
         this.wallet_address = this.data['wallet_address'];
@@ -252,8 +274,24 @@ export class MyaccountComponent implements OnInit {
             }, error => {
                 console.log(error.error.message);
             });
+    
+        if(this.user_role == "Provider") {
+            this.searchTable(1);
+            
+        } 
 
     }
+
+    ngAfterViewChecked(): void {
+        //change percentage of graph
+        /* if(this.single[0].hasOwnProperty('value') && this.single[0].value != undefined){
+            let plel = this.eRef.nativeElement.querySelector('.percent-label');
+            plel.textContent = this.percentFormat(plel, this.single[0].value);
+            let lbl = this.eRef.nativeElement.querySelectorAll('text[ngx-charts-count-up]');
+            this.addTspan(lbl);
+        } */
+    }
+
     addTspan(array) {
         array.forEach(e => {
             if(e.textContent.indexOf("Current") != -1) {
@@ -305,6 +343,13 @@ export class MyaccountComponent implements OnInit {
         this.dialog.open(DetailsComponent, {
             width: '600px',
             data: item
+        });
+    }
+
+    shareProviderDialog(type) {
+        this.dialog.open(ShareComponent, {
+            width: '600px',
+            data: type
         });
     }
 
@@ -366,6 +411,100 @@ export class MyaccountComponent implements OnInit {
             this.copyBtnTxt = 'CLICK TO COPY';
         }, 1000);
         return this.copyService.copyText(this.share_link);
+    }
+
+    searchTableQuery(pageNumber) {
+        this.searchBtnSpin = true;
+        this.searchTable(pageNumber);
+    }
+    
+    searchTable(page: number) {
+        let data = {
+            providerId: this.user_id,
+            token: this.appToken,
+            searchValue: this.searchText,
+            filter: this.filterText,
+            pageNo: page
+        }
+        this.SearchSpin = true;
+        this.documentService.getSharedDataForProvider(data)
+            .subscribe(res => {
+                if (res.code === 200) {
+                    this.p = page;
+                    this.totalRecordCount = res.data['count'];
+                    this.providerSharedData = res.data['rows'];
+                    
+                    this.providerSharedData.forEach((item, index) => {
+                        item['index_'+index] = false;
+                    });
+                    this.SearchSpin = false;
+                    this.searchBtnSpin = false;
+                }
+                else {
+                    console.log(res.message);
+                    this.SearchSpin = false;
+                    this.searchBtnSpin = false;
+                }
+            }, error => {
+                console.log(error.error.message);
+                this.SearchSpin = false;
+                this.searchBtnSpin = false;
+            });
+    }
+
+    checkBoxFilter(model){
+
+        let filterValueMap = {alCheck:"allergies",medCheck:"medications",proCheck:"procedures"}
+        for (let key in this.filterChk) {
+            if (key == model) {
+                this.filterChk[key] ? this.filterText = filterValueMap[key] : this.filterText = "";;
+            }
+            if(key != model) {
+                this.filterChk[key] = false;
+            }
+        }
+    }
+    
+    getPDFByProvider(type,id,name,i) {
+        this.providerSharedData[i]['index_'+i] = true;
+        this.docModel.userId = this.user_id;
+        this.docModel.token = this.appToken;
+        this.patientName = name;
+        
+        let functionMap = {
+            allergies: 'getAllergyList',
+            medications: 'getMedicationList',
+            procedures: 'getProcedureHistory'
+        }
+        this.documentService.getPDFByProvider(this.docModel,id,type)
+        .subscribe(res => {
+            if (res.code === 200) {
+                if (!res.data) {
+                    this.providerSharedData[i]['index_'+i] = false;
+                    this.snackBar.open('Record Not Found.');
+                }
+                else {
+                    this[functionMap[type]](res.data);
+                    this.providerSharedData[i]['index_'+i] = false;
+                    this.snackBar.open(res.message);
+                }
+            }
+            else {
+                this.providerSharedData[i]['index_'+i] = false;
+                this.snackBar.open(res.message);
+            }
+        }, error => {
+            this.providerSharedData[i]['index_'+i] = false;
+            this.snackBar.open(error.error.message);
+            if (error.error.code == 401) {
+                localStorage.clear();
+                setTimeout(() => {
+                    this.globalService.state = "SIGNUP";
+                    window.innerWidth < 1025?this.navigation[6].title = this.globalService.state:false;
+                    this.router.navigate(['/login']);
+                }, 1500);
+            }
+        });
     }
 
     downloadPDF(func, spin) {
@@ -447,8 +586,14 @@ export class MyaccountComponent implements OnInit {
                 columnWidth: 125
             }
         }
-        let name = this.capitalizeFirstLetter(this.username.toLowerCase()) + "'s Documented Allergy List";
-        this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        if(this.user_role == "Provider") {
+            let name = this.capitalizeFirstLetter(this.patientName.toLowerCase()) + "'s Documented Allergy List";
+            this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        }
+        else {
+            let name = this.capitalizeFirstLetter(this.username.toLowerCase()) + "'s Documented Allergy List";
+            this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        }
 
     }
 
@@ -483,8 +628,15 @@ export class MyaccountComponent implements OnInit {
                 columnWidth: 145
             }
         }
-        let name = this.capitalizeFirstLetter(this.username.toLowerCase()) + "'s Home Medication List";
-        this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+
+        if(this.user_role == "Provider") {
+            let name = this.capitalizeFirstLetter(this.patientName.toLowerCase()) + "'s Home Medication List";
+            this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        }
+        else {
+            let name = this.capitalizeFirstLetter(this.username.toLowerCase()) + "'s Home Medication List";
+            this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        }
 
     }
 
@@ -521,10 +673,16 @@ export class MyaccountComponent implements OnInit {
             }
         }
         //maximum 10 characters limit in name
-        let name = this.capitalizeFirstLetter(this.username.toLowerCase()) + "'s Documented Procedure History";
-
-        /* this.generatePDF(doc,rows,col,style,[52,495,65],name); */
-        this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        if(this.user_role == "Provider") {
+            let name = this.capitalizeFirstLetter(this.patientName.toLowerCase()) + "'s Documented Procedure History";
+            /* this.generatePDF(doc,rows,col,style,[52,495,65],name); */
+            this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        }
+        else {
+            let name = this.capitalizeFirstLetter(this.username.toLowerCase()) + "'s Documented Procedure History";
+            /* this.generatePDF(doc,rows,col,style,[52,495,65],name); */
+            this.generatePDF(doc, rows, col, style, this.calculateBoxDimensions(name), name);
+        }
 
     }
 
@@ -733,7 +891,7 @@ export class MyaccountComponent implements OnInit {
     capitalizeFirstLetter(str) {
         let string = str.substr(0, str.indexOf(' '));
         if (string == "") {
-            string = this.username;
+            this.user_role == 'Provider'? string = this.patientName : string = this.username;
         }
         string = string.slice(0, 9);
         return string.charAt(0).toUpperCase() + string.slice(1);

@@ -4,7 +4,7 @@ import { Platform } from '@angular/cdk/platform';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-
+import { Router, NavigationEnd } from '@angular/router';
 import { FuseConfigService } from '@fuse/services/config.service';
 import { FuseNavigationService } from '@fuse/components/navigation/navigation.service';
 import { FuseSidebarService } from '@fuse/components/sidebar/sidebar.service';
@@ -48,9 +48,17 @@ export class AppComponent implements OnInit, OnDestroy
         private _fuseSplashScreenService: FuseSplashScreenService,
         private _fuseTranslationLoaderService: FuseTranslationLoaderService,
         private _translateService: TranslateService,
-        private _platform: Platform
+        private _platform: Platform,
+        private router: Router
     )
     {
+        this.router.events.subscribe(event => {
+            if (event instanceof NavigationEnd) {
+              (<any>window).ga('set', 'page', event.urlAfterRedirects);
+              (<any>window).ga('send', 'pageview');
+            }
+          });
+
         // Get default navigation
         this.navigation = navigation;
 

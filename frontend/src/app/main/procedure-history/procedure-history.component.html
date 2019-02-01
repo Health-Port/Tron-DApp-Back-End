@@ -38,14 +38,14 @@
                 </div>
             </div>
         </form>
-        <div fxLayout="column" fxLayout.gt-md="row"  fxLayoutAlign="center center">
+        <div #target fxLayout="column" fxLayout.gt-md="row"  fxLayoutAlign="center center">
             <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
                 <button mat-raised-button [disabled]="noKnownProcedures" (click)="addMore()" class="btn-mcolor-green btn-addmore">ADD MORE</button>
             </div>
         </div>
         <div fxLayout="column" fxLayout.gt-md="row">
             <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                <mat-checkbox class="chk-know" [(ngModel)]="noKnownProcedures" (change)="clearFields()">NO KNOWN PROCEDURES</mat-checkbox>
+                <mat-checkbox class="chk-know" [(ngModel)]="noKnownProcedures" (change)="clearFields(target)">NO KNOWN PROCEDURES</mat-checkbox>
             </div>
         </div>
         <div fxLayout="column" fxLayout.gt-md="row"  fxLayoutAlign="center center">

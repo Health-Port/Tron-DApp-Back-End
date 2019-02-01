@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { locale as english } from './i18n/en';
 import { locale as turkish } from './i18n/tr';
 import { Document } from '../../model/document.model';
@@ -99,7 +99,7 @@ export class ProcedureHistoryComponent implements OnInit {
   }
 
   //clear and disable if noknown checkbox true
-  clearFields() {
+  clearFields(el) {
     if(this.noKnownProcedures) {
       this.clearFormArray(this.procedureData);
       this.procedureData.disable();
@@ -108,6 +108,7 @@ export class ProcedureHistoryComponent implements OnInit {
       this.procedureData.enable();
       this.InitializeForm();
     }
+    el.scrollIntoView();
   }
 
   //convert date to date object and then to local date

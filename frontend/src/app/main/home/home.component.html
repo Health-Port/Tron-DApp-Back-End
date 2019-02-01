@@ -12,7 +12,7 @@
                     <div>
                         <button (click)="scroll(target_health)" mat-raised-button class="btn-banner btn-gray">LEARN
                             MORE</button>
-                        <a href="https://medium.com/@healthport/health-port-white-paper-3cf16da99034" mat-raised-button class="btn-banner btn-trans">WHITE
+                        <a href="https://medium.com/@healthport/health-port-white-paper-3cf16da99034" target="_blank" mat-raised-button class="btn-banner btn-trans">WHITE
                             PAPER</a>
                     </div>
                 </div>
@@ -266,7 +266,7 @@
                 <div fxLayout="column" fxLayout.gt-md="row">
                     <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
                         <p>First Name</p>
-                        <input type="text" name="fname" pattern="^[a-zA-Z]{2,20}$" formControlName="fname" [ngClass]="{ 'is-invalid': submitted && f.fname.errors }" />
+                        <input type="text" name="fname" pattern="^[a-zA-Z ]{2,20}$" formControlName="fname" [ngClass]="{ 'is-invalid': submitted && f.fname.errors }" />
                         <div *ngIf="submitted && f.fname.errors" class="invalid-feedback">
                             <div *ngIf="f.fname.errors.required">Required</div>
                             <div *ngIf="f.fname.errors.pattern">Alphabets from 2-20 characters length are allowed</div>
@@ -274,7 +274,7 @@
                     </div>
                     <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
                         <p>Last Name</p>
-                        <input type="text" name="lname" pattern="^[a-zA-Z]{2,20}$" formControlName="lname" [ngClass]="{ 'is-invalid': submitted && f.lname.errors }" />
+                        <input type="text" name="lname" pattern="^[a-zA-Z ]{2,20}$" formControlName="lname" [ngClass]="{ 'is-invalid': submitted && f.lname.errors }" />
                         <div *ngIf="submitted && f.lname.errors" class="invalid-feedback">
                             <div *ngIf="f.lname.errors.required">Required</div>
                             <div *ngIf="f.lname.errors.pattern">Alphabets from 2-20 characters length are allowed</div>

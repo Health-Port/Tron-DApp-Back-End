@@ -1,0 +1,110 @@
+:host {
+
+    #in-sendComponent .contents{
+        width: 100%;
+    }
+    #in-sendComponent .send-left{
+        max-width: 100% !important;
+    }
+
+    #in-sendComponent .left-contents{
+        width: 100%;
+        padding: 0px;
+        border: 1px solid #e4e4e4;
+        border-radius: 5px 0px 0px 5px;
+        background: #fff;
+        margin: 0px;
+        height: 100%;
+    }
+
+    #in-sendComponent .left-contents h1 {
+        color: #000;
+        font-size: 35px;
+        margin: 10px 0px 10px 0px;
+    }
+    #in-sendComponent .left-contents .content-items{
+        margin: 0 20px;
+    }
+    #in-sendComponent .left-contents .abtxt {
+        color: #000;
+        background: #fff;
+        border: 1px solid #00010126;
+        font-size: 20px;
+        border-radius: 5px;
+        height: 50px;
+        padding: 10px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    #in-sendComponent .left-contents .abtxt.icon-field{
+        padding-right: 50px;
+        text-overflow: ellipsis;
+    }
+    #in-sendComponent .left-contents .abtxt::placeholder {
+        color: #1c3458;
+        opacity: 1;
+        font-size: 14px;
+    }
+
+    #in-sendComponent .btn-mcolor-green {
+        background: #8ac239;
+        color: #fff;
+        font-size: 16px;
+        padding: 5px 20px 5px 20px;
+        margin: 10px 0px 10px 10px;
+    }
+    #in-sendComponent .btn-mcolor-green.disableButton {
+        background: #7a7b7873;
+        cursor: not-allowed;
+    }
+    #in-sendComponent .width-full {
+        width: 100%;
+        margin: 20px 0px 20px 0px;
+    }
+    mat-icon {
+        cursor: pointer;
+     }
+    #in-sendComponent .left-contents .abtxt.is-invalid {
+        border-color: red;
+    }
+    #in-sendComponent .left-contents .invalid-feedback {
+        color: red;
+        padding-bottom: 10px;
+    }
+    #in-sendComponent .left-contents .green {
+        color: green;
+    }
+    mat-spinner {
+        margin:0 auto;
+    }
+    .icon-item {
+        position: absolute;
+        top: 0;
+        height: 50px;
+        right: 10px;
+        cursor: pointer;
+        padding:12px 5px 0px 10px;
+        border-left: 1px solid #00010126;
+    }
+    span .trigger {
+        color: #00010157;
+    }
+    .pos-rel {
+        position: relative;
+    }
+    @media (max-width: 550px){
+        #in-sendComponent .left-contents h1 {
+            font-size: 23px;
+        }
+        #in-sendComponent .left-contents .abtxt {
+            font-size: 18px;
+        }
+        #in-sendComponent .left-contents .abtxt {
+            font-size: 10px;
+        }
+    }
+    .mtop-30 {
+        margin-top: 120px;
+    }
+}

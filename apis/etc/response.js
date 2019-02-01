@@ -18,7 +18,7 @@ function errReturned(res, err) {
         .status(statusCode.BAD_REQUEST)
         .json({
             code: statusCode.BAD_REQUEST,
-            message: err.message
+            message: err.message ? err.message : err
         });
 }
 module.exports = {

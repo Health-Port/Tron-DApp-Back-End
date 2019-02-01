@@ -16,9 +16,13 @@ function decrypt(data) {
     var cipher = crypto.createDecipher('aes-256-ecb', process.env.SECRET);
     return cipher.update(data, 'hex', 'utf8') + cipher.final('utf8');
 }
-
+function checkaddresses(to, from) {
+    if (to == from) return true;
+    return false;
+}
 module.exports = {
     to,
     encrypt,
-    decrypt
+    decrypt, 
+    checkaddresses
 };

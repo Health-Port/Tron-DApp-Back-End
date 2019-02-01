@@ -9,6 +9,7 @@ export const environment = {
     //Development Server
     /* serviceUrl: 'http://35.183.152.54:4200/api/' */
     /* serviceUrl: 'http://api.staging.healthport.io/' */
+    /* serviceUrl: 'http://192.168.100.34:4200/' */
 
     //Live Server
     /* serviceUrl: 'https://healthport.io/api/' */

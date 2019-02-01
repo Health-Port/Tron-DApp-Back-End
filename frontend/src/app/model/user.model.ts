@@ -3,6 +3,7 @@ export class User {
     email: any;
     password: any;
     isAgree: boolean;
+    role: string;
     referby: any;
     via: string;
 }

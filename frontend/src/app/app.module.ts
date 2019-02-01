@@ -25,6 +25,7 @@ import { SignupModule } from 'app/main/signup/signup.module';
 import { LoginModule } from 'app/main/login/login.module';
 import { MyaccountModule } from 'app/main/myaccount/myaccount.module';
 import { MedicationlistModule } from 'app/main/medicationlist/medicationlist.module';
+import { UpdateAccountModule } from 'app/main/update-account/update-account.module';
 import { ProcedureHistoryModule } from 'app/main/procedure-history/procedure-history.module';
 import { ForgotPasswordModule } from 'app/main/forgot-password/forgot-password.module';
 import { ResetPasswordModule } from 'app/main/reset-password/reset-password.module';
@@ -92,6 +93,7 @@ const appRoutes: Routes = [
         LoginModule,
         MyaccountModule,
         MedicationlistModule,
+        UpdateAccountModule,
         ProcedureHistoryModule,
         ForgotPasswordModule,
         ResetPasswordModule,

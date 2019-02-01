@@ -1,3 +1,4 @@
+var RoleEnum = require('./../enum/roleEnum');
 module.exports = (sequelize, Sequelize) => {
     const users = sequelize.define('users', {
         id: {
@@ -20,6 +21,14 @@ module.exports = (sequelize, Sequelize) => {
         },
         password: {
             type: Sequelize.STRING,
+            allowNull: false
+        },
+        role: {
+            type: Sequelize.ENUM,
+            values: [
+                RoleEnum.PROVIDER, 
+                RoleEnum.PATIENT
+            ],
             allowNull: false
         },
         tron_wallet_public_key: {

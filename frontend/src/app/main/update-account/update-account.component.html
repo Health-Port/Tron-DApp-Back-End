@@ -1,0 +1,55 @@
+<div class="page-layout simple">
+
+  <div id="in-title" fxLayout="column" fxLayoutAlign="center center">
+      <div class="big-title" fxLayout="column" fxLayout.gt-md="row">
+          <div fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+              <h1>Update Account Email</h1>
+          </div>
+      </div>
+  </div>
+  <div id="in-updateaccount" fxLayout="column" fxLayoutAlign="center center">
+      <div class="contents" fxLayout="column" fxLayoutAlign="center left">
+            <form [formGroup]="updateEmailForm">
+              <div fxLayout="column" fxLayout.gt-md="row">
+                  <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                     <p>Current Email : &nbsp;&nbsp;&nbsp;{{currentEmail}}</p>
+                  </div>
+              </div>
+              <div fxLayout="column" fxLayout.gt-md="row">
+                  <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                    <span class="f-span">New Email : </span>  
+                    <input class="abtxt" type="text" name="email" formControlName="newEmail"
+                          [ngClass]="{ 'is-invalid': submitted && f.newEmail.errors }" />
+                      <div *ngIf="submitted && f.newEmail.errors" class="invalid-feedback">
+                          <div *ngIf="f.newEmail.errors.required">Email is required</div>
+                          <div *ngIf="f.newEmail.errors.email">Email must be a valid email address</div>
+                      </div>
+                  </div>
+              </div>
+              <div fxLayout="column" fxLayout.gt-md="row">
+                  <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                    <span class="f-span">Password : &nbsp;</span>   
+                    <input class="abtxt" type="password" name="password"
+                          formControlName="currentPassword" [ngClass]="{ 'is-invalid': submitted && f.currentPassword.errors }" />
+                      <div *ngIf="submitted && f.currentPassword.errors" class="invalid-feedback">
+                          <div *ngIf="f.currentPassword.errors.required">Password is required</div>
+                      </div>
+                  </div>
+              </div>
+              <div fxLayout="column" fxLayout.gt-md="row" style="margin-top:30px">
+                  <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                    <span class="f-span warn">Disclaimer &nbsp;&#9888;&nbsp;:&nbsp; Your email will be updated after you verify the new email address. In the meantime you can access your account using your old email address!</span>  
+                  </div>
+              </div>
+            </form>
+            <div fxLayout="column" fxLayout.gt-md="row"  fxLayoutAlign="center center" style="margin-top:15px;">
+                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
+                    <button mat-raised-button *ngIf="!loader" (click)="changeEmail()" class="btn-mcolor-green btn-addmore">SUBMIT</button>
+                    <button mat-raised-button *ngIf="loader" (click)="changeEmail()" class="btn-mcolor-green btn-addmore">
+                        <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
+                    </button>
+                  </div>
+            </div>
+        </div>
+    </div>
+</div>

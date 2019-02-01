@@ -12,9 +12,10 @@
                 <div fxLayout="column" fxLayout.gt-md="row">
                     <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
                         <p>NAME</p>
-                        <input class="abtxt" type="text"  name="name" formControlName="name" [ngClass]="{ 'is-invalid': submitted && f.name.errors }"/>
+                        <input class="abtxt" type="text" pattern="^[a-zA-Z ]{2,20}$" name="name" formControlName="name" [ngClass]="{ 'is-invalid': submitted && f.name.errors }"/>
                         <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
                             <div *ngIf="f.name.errors.required">Name is required</div>
+                            <div *ngIf="f.name.errors.pattern">Alphabets from 2-20 characters length are allowed</div>
                         </div>
                     </div>
                     <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
@@ -26,7 +27,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="pdwinput-div" fxLayout="column" fxLayout.gt-md="row">
+                <div fxLayout="column" fxLayout.gt-md="row">
                     <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
                         <p>PASSWORD</p>
                         <input class="abtxt" type="password"  name="password" formControlName="password" [ngClass]="{ 'is-invalid': submitted && f.password.errors }"/>
@@ -42,6 +43,19 @@
                             <div *ngIf="f.confirmpassword.errors.required">Password is required</div>
                             <div *ngIf="f.confirmpassword.errors.pattern">8 to 30 characters must contains a-z,A-Z,1-9 and special character</div>
                             <div *ngIf="f.confirmpassword.errors['compare']">Password and confirmation password don't match</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pdwinput-div" fxLayout="column" fxLayout.gt-md="row">
+                    <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                        <p>SIGNUP AS</p>
+                        <select required class="abtxt role" name="one" formControlName="role" [ngClass]="{ 'is-invalid': submitted && f.role.errors }">
+                            <option value="" selected="selected">Select Role</option>
+                            <option value="Patient" selected="selected">Patient</option>
+                            <option value="Provider">Provider</option>
+                        </select>
+                        <div *ngIf="submitted && f.role.errors" class="invalid-feedback">
+                            <div *ngIf="f.role.errors.required">Please specify your role</div>
                         </div>
                     </div>
                 </div>

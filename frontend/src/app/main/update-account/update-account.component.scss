@@ -1,0 +1,204 @@
+:host {
+
+    #in-title {
+        background: url("../../../assets/sia/images/banners/banner_bg.jpg");
+        background-repeat: no-repeat;
+        background-size: 100% auto;
+
+        width: 100%;
+        background-color: transparent;
+        position: relative;
+        display: table;
+    }
+    #in-title .big-title{
+        margin: 55px;
+    }
+    #in-title .big-title h1{
+        font-size: 70px;
+        margin:0px;
+        padding:0px;
+        color: #fff;
+        font-family: "ProximaNovaSoft-Regular";
+    }
+    #in-updateaccount{
+        background: #f4f5f7;
+        padding: 60px 0px 80px 0px;
+    }
+
+    #in-updateaccount .contents{
+        width: 68%;
+        padding: 40px;
+        border: 1px solid #e4e4e4;
+        border-radius: 5px;
+        background: #fff;
+    }
+    #in-updateaccount .contents p {
+        color: #1c3458;
+        font-size: 18px;
+        font-family: "ProximaNovaSoft-Bold";
+    }
+    #in-updateaccount .contents .content-items .f-span {
+        color: #1c3458;
+        font-size: 18px;
+        font-family: "ProximaNovaSoft-Bold";
+        margin-right: 30px;
+    }
+    #in-updateaccount .contents .content-items .f-span.warn{
+        color: orange;
+        font-size: 15px;
+        font-family: "ProximaNovaSoft-Regular";
+        margin-right: 30px;
+    }
+    #in-updateaccount .contents .content-items{
+        margin-left: 20px;
+    }
+    #in-updateaccount .btn-addmore {
+        width: 30%;
+        margin: 30px;
+        font-family: "ProximaNovaSoft-Bold";
+    }
+    @media (min-width: 1280px) {
+        #in-updateaccount .contents .large-1280{
+            display: flex !important;
+        }
+        #in-updateaccount .contents .content-items .abtxt {
+            width: 40%;
+        }
+    }
+    @media (min-width: 768px) and (max-width: 1279px){
+        #in-updateaccount .contents .large-1280{
+            display: none !important;
+        }
+        #in-updateaccount .contents .content-items{
+            width: 90%;
+        }
+        #in-updateaccount .btn-addmore {
+            width: 100%;
+            margin: 30px 0px;
+        }
+        mat-icon.clear-row {
+            display: none;
+        }
+    }
+    @media (max-width: 768px){
+        #in-updateaccount .contents .large-1280{
+            display: none !important;
+        }
+        #in-updateaccount .contents .content-items{
+            width: 90%;
+        }
+        #in-updateaccount .btn-addmore {
+            width: 100%;
+            margin: 25px 0px !important;
+        }
+        #in-updateaccount .contents{
+            width: 90%;
+            padding: 10px;
+        }
+        #in-title .big-title h1{
+            font-size: 52px;
+        }
+        #in-title .big-title{
+            margin: 20px;
+        }
+        mat-icon.clear-row {
+            display: none;
+        }
+    }
+    @media (max-width: 550px) {
+        #in-title .big-title h1{
+            font-size: 32px;
+        }
+    }
+    #in-updateaccount .contents .abtxt {
+        color: #000;
+        background: #fff;
+        border: 1px solid #00010126;
+        font-size: 23px;
+        border-radius: 5px;
+        height: 50px;
+        padding: 10px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    #in-updateaccount .contents .abtxt:disabled {
+        background: #e8e8e8;
+        border: 1px solid #a5a5a526;
+        cursor: not-allowed;
+    }
+    #in-updateaccount .contents textarea{
+        color: #000;
+        background: #f7f7f7;
+        border: 2px solid #d7d7d7;
+        font-size: 23px;
+        border-radius: 5px;
+        height: 50px;
+        padding: 10px;
+        margin-right: 10px;
+        width: 100%;
+        height: 200px;
+        resize: none;
+    }
+
+    #in-updateaccount .btn-mcolor-green {
+        background: #8ac239;
+        color: #fff;
+        font-size: 16px;
+        padding: 5px 20px 5px 20px;
+        margin: 10px 0px 10px 10px;
+        font-family: "ProximaNovaSoft-Bold";
+    }
+    #in-updateaccount .btn-mcolor-green:disabled {
+        background: #7a7b7873;
+        cursor: not-allowed;
+    }
+    #in-updateaccount .width-full {
+        width: 100%;
+        margin: 20px 0px 20px 0px;
+    }
+
+    #in-updateaccount .chk-know{
+        font-size: 13px;
+        color: #1c3458;
+        font-family: "ProximaNovaSoft-Bold";
+    }
+    
+    #in-updateaccount .contents .abtxt.is-invalid {
+        border-color: red;
+    }
+    #in-updateaccount .contents .invalid-feedback {
+        color: red;
+        padding-bottom: 10px;
+    }
+    mat-spinner {
+        margin:0 auto;
+    }
+    mat-icon.clear-row {
+        font-size: 15px;
+        cursor: pointer;
+        color: darkgray;
+        margin-bottom: 10px;
+        transition: color 1s, font-size 0.1s ease;
+    }
+    mat-icon.clear-row:hover{
+        font-size: 18px;
+        color: red;
+    }
+    mat-icon.clear-row.none {
+        display: none;
+    }
+    #in-updateaccount .contents .customFieldset {
+        border: 1px solid #c7c7c7;
+        padding-bottom: 30px;
+        margin-bottom: 10px;
+    }
+    #in-updateaccount .contents .customFieldset .clear_align {
+        align-self: flex-end;
+        position: relative;
+        font-size: 18px;
+        cursor: pointer;
+        color: rgb(253, 182, 182);
+        left: 6px;
+    }
+}

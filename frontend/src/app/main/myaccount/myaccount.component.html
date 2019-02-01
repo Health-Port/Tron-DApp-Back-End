@@ -59,8 +59,8 @@
                 </div>
             </div>
             <div class="wallet-less-1280 less-user-wallet" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
-                <div class="" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
-                    <h1>{{username | uppercase}}'S WALLET</h1>
+                <div fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
+                    <h1 class="txt-center">{{username | uppercase}}'S WALLET</h1>
                 </div>
             </div>
             <div class="wallet-less-1280 less-user-chart" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
@@ -81,23 +81,140 @@
                     <div class="button-item"><button mat-raised-button class="btn-mcolor-cray" (click)="openReceiveDialog()">RECEIVE</button></div>
                 </div>
             </div>
-            <div class="table-title" fxLayout.gt-md="row">
+            <!-- user is provider -->
+            <div *ngIf="user_role == 'Provider'" class="table-title" fxLayout.gt-md="row">
+                <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                    <h1>PATIENT HEALTH RECORD</h1>
+                    <a class="account-link" routerLink="/update-account"><u>UPDATE ACCOUNT</u></a>
+                </div>
+                <div class="content-items right" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                    <a routerLink="/update-account"><u>UPDATE ACCOUNT</u></a>
+                </div>
+            </div>
+            <div *ngIf="user_role == 'Provider'" class="table-title block-sm" fxLayout.gt-md="row">
+                
+                <input class="abtxt" type="text" [(ngModel)]="searchText" [attr.disabled]="disabled ? '' : null" placeholder="Search by patient name,email"/>
+                
+                <div fxLayout.gt-sm="column">
+                    <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                        <mat-checkbox class="chk-know"  name="allergies" [(ngModel)]="filterChk.alCheck" (ngModelChange)="checkBoxFilter('alCheck')"> Allergies </mat-checkbox>
+                    </div>
+                    <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                        <mat-checkbox class="chk-know"  name="medications" [(ngModel)]="filterChk.medCheck" (ngModelChange)="checkBoxFilter('medCheck')"> Medications </mat-checkbox> 
+                    </div>
+                    <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                        <mat-checkbox class="chk-know"  name="procedures" [(ngModel)]="filterChk.proCheck" (ngModelChange)="checkBoxFilter('proCheck')"> Procedures </mat-checkbox>
+                    </div>
+                </div>
+                <!-- [disabled]="!filterChk.alCheck && !filterChk.medCheck && !filterChk.proCheck && searchText==''" -->
+                <button mat-raised-button class="btn-mcolor-green search-btn" *ngIf="!searchBtnSpin" (click)="searchTableQuery(1)">SEARCH</button>
+                <button mat-raised-button class="btn-mcolor-green search-btn" *ngIf="searchBtnSpin">
+                    <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
+                </button>
+                
+            </div>
+            <div *ngIf="user_role == 'Provider'" class="table-body table1-large-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+                <div class="content-items flex-pos" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
+                    <table class="table-type1 table-pro"  width="100%">
+                        <thead>
+                            <tr>
+                                <th class="left" width="25%">RECORD TYPE</th>
+                                <th class="left" width="25%">PATIENT</th>
+                                <th class="center" width="25%">PATIENT EMAIL</th>
+                                <th class="center" width="25%">DOWNLOAD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngIf="totalRecordCount === 0">
+                                <td class="no-record-text" colspan="4">No Existing Record Found</td>  
+                            </tr>
+                            <tr>
+                                <td *ngIf="SearchSpin" colspan="4">
+                                    <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
+                                </td>
+                            </tr>
+                            <tr [ngClass]="{'hide':SearchSpin}" *ngFor="let row of providerSharedData | paginate: { id: 'server', itemsPerPage: 5, currentPage: p, totalItems: totalRecordCount };let i=index;">
+                                 <td class="description left">{{row.type | titlecase }}</td>
+                                <td class="data-source left">{{row.name | titlecase }}</td>
+                                <td class="description center"><a href="mailto:{{row.email}}">{{row.email}}</a></td>
+                                <td class="download center">
+                                    <button mat-raised-button class="btn-mcolor-cray" *ngIf="!providerSharedData[i]['index_'+i]" (click)="getPDFByProvider(row.type,row.user_id,row.name,i)">OPEN</button>
+                                    <button mat-raised-button class="btn-mcolor-cray"  *ngIf="providerSharedData[i]['index_'+i]">
+                                        <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td *ngIf="totalRecordCount > 0" colspan="4">
+                                        <span class="no-record"> {{ (p - 1) * 5 + 1 }} - {{  totalRecordCount < p * 5 ? totalRecordCount : p * 5 }} of {{ totalRecordCount }} </span>
+                                        <pagination-controls style="float:right" (pageChange)="searchTable($event)" id="server"></pagination-controls>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div *ngIf="user_role == 'Provider'" class="table-body table1-less-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+                    <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
+                        <table class="table-type1" width="100%">
+                            <thead>
+                                <tr>
+                                    <th class="left" width="100%">PATIENT RECORDS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="totalRecordCount === 0">
+                                    <td>
+                                        <p class="date">No Record Found</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td *ngIf="SearchSpin" colspan="4">
+                                        <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
+                                    </td>
+                                </tr>
+                                <tr [ngClass]="{'hide':SearchSpin}" *ngFor="let row of providerSharedData  | paginate: { id: 'server', itemsPerPage: 5, currentPage: p, totalItems: totalRecordCount };let i=index;">
+                                    <td>
+                                        <p class="description">{{row.type | titlecase }}</p>
+                                        <p class="description black-text">{{row.name | titlecase }}</p>
+                                        <p class="date">
+                                            <a href="mailto:{{row.email}}" class="download-href" style="margin-left: 0px;">{{row.email}}</a>
+                                        </p>
+                                        <p class="date">
+                                            <a href="javascript:void(0)" class="download-href" *ngIf="!providerSharedData[i]['index_'+i]" (click)="getPDFByProvider(row.type,row.user_id,row.name,i)">OPEN</a>
+                                            <a href="javascript:void(0)" class="download-href" *ngIf="providerSharedData[i]['index_'+i]" ><mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner></a>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td *ngIf="totalRecordCount > 0">
+                                        <pagination-controls style="float:right" (pageChange)="searchTable($event)" id="server"></pagination-controls>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <!-- user is provider. -->
+            <div *ngIf="user_role == 'Patient'" class="table-title" fxLayout.gt-md="row">
                 <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
                     <h1>MY HEALTH RECORD</h1>
+                    <a class="account-link" routerLink="/update-account"><u>UPDATE ACCOUNT</u></a>
                 </div>
-                <!-- <div class="content-items right" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
-                    <a href=""><u>UPDATE ACCOUNT</u></a>
-                </div> -->
+                <div class="content-items right" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100">
+                    <a routerLink="/update-account"><u>UPDATE ACCOUNT</u></a>
+                </div>
             </div>
-            <div class="table-body table1-large-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+            <div *ngIf="user_role == 'Patient'" class="table-body table1-large-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
                 <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
                     <table class="table-type1" width="100%">
                         <thead>
                             <tr>
-                                <th class="left" width="31%">EXISTING RECORDS</th>
-                                <th class="left" width="24%">DATA SOURCE</th>
-                                <th class="center" width="20%">LAST UPDATED</th>
-                                <th class="center" width="25%">DOWNLOAD</th>
+                                <th class="left" width="30%">EXISTING RECORDS</th>
+                                <th class="left" width="15%">DATA SOURCE</th>
+                                <th class="center" width="15%">LAST UPDATED</th>
+                                <th class="center" width="20%">DOWNLOAD</th>
+                                <th class="center" width="20%">SHARE</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -114,6 +231,9 @@
                                         <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
                                     </button>
                                 </td>
+                                <td class="download center">
+                                    <button mat-raised-button class="btn-mcolor-green" (click)="shareProviderDialog('allergies')">SHARE</button>
+                                </td>
                             </tr>
                             <tr *ngIf="mfLSDate !=='01/01/1970'">
                                 <td class="description left">MEDICATION LIST</td>
@@ -125,6 +245,9 @@
                                         <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
                                     </button>
                                 </td>
+                                <td class="download center">
+                                    <button mat-raised-button class="btn-mcolor-green" (click)="shareProviderDialog('medications')">SHARE</button>
+                                </td>
                             </tr>
                             <tr *ngIf="pfLSDate !=='01/01/1970'">
                                 <td class="description left">PROCEDURE HISTORY</td>
@@ -135,6 +258,9 @@
                                     <button mat-raised-button class="btn-mcolor-cray" *ngIf="pSpin">
                                         <mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner>
                                     </button>
+                                </td>
+                                <td class="download center">
+                                    <button mat-raised-button class="btn-mcolor-green" (click)="shareProviderDialog('procedures')">SHARE</button>
                                 </td>
                             </tr>
                             <div *ngIf="user_admin">
@@ -161,7 +287,7 @@
                     </table>
                 </div>
             </div>
-            <div class="table-body table1-less-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+            <div *ngIf="user_role == 'Patient'" class="table-body table1-less-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
                 <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
                     <table class="table-type1" width="100%">
                         <thead>
@@ -181,6 +307,7 @@
                                     <p class="date">{{afLSDate}}
                                         <a href="javascript:void(0)" class="download-href" *ngIf="!aSpin" (click)="downloadPDF('getAllergyList','aSpin')">OPEN</a>
                                         <a href="javascript:void(0)" class="download-href" *ngIf="aSpin" ><mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner></a>
+                                        <a href="javascript:void(0)" class="share-provider-href" (click)="shareProviderDialog('allergies')">SHARE</a>
                                     </p>
                                 </td>
                             </tr>
@@ -190,6 +317,7 @@
                                     <p class="date">{{mfLSDate}}
                                         <a href="javascript:void(0)" class="download-href" *ngIf="!mSpin" (click)="downloadPDF('getMedicationList','mSpin')">OPEN</a>
                                         <a href="javascript:void(0)" class="download-href" *ngIf="mSpin" ><mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner></a>
+                                        <a href="javascript:void(0)" class="share-provider-href" (click)="shareProviderDialog('medications')">SHARE</a>
                                     </p>
                                 </td>
                             </tr>
@@ -199,6 +327,7 @@
                                     <p class="date">{{pfLSDate}}
                                         <a href="javascript:void(0)" class="download-href" *ngIf="!pSpin" (click)="downloadPDF('getProcedureHistory','pSpin')">OPEN</a>
                                         <a href="javascript:void(0)" class="download-href" *ngIf="pSpin" ><mat-spinner strokeWidth="3" [diameter]="36"></mat-spinner></a>
+                                        <a href="javascript:void(0)" class="share-provider-href" (click)="shareProviderDialog('procedures')">SHARE</a>
                                     </p>
                                 </td>
                             </tr>
@@ -227,7 +356,7 @@
                 </div>
             </div>
 
-            <div class="table-body  table1-large-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+            <div *ngIf="user_role == 'Patient'" class="table-body  table1-large-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
                 <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
                     <table class="table-type1" width="100%">
                         <thead>
@@ -270,7 +399,7 @@
                     </table>
                 </div>
             </div>
-            <div class="table-body table1-less-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
+            <div *ngIf="user_role == 'Patient'" class="table-body table1-less-820" fxLayout="column" fxLayout.gt-md="row" fxLayoutAlign="center center">
                 <div class="content-items" fxFlex="100" fxFlex.gt-xs="100" fxFlex.gt-sm="100" fxLayoutAlign="center center">
                     <table class="table-type1" width="100%">
                         <thead>

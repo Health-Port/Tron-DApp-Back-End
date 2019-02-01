@@ -31,6 +31,9 @@
         border-radius: 5px;
         background: #fff;
     }
+    #in-myaccount .contents .hide{
+       display: none;
+    }
      #in-myaccount .contents .mat-grid{
         width: 100%;
         border: 1px solid #e4e4e4;
@@ -71,6 +74,10 @@
      #in-myaccount .btn-mcolor-green {
         background: #8ac239;
         color: #fff;
+    }
+    #in-myaccount .btn-mcolor-green:disabled {
+        background: #7a7b7873;
+        cursor: not-allowed;
     }
      #in-myaccount .btn-mcolor-cray {
         background: #00b0e0;
@@ -160,9 +167,18 @@
         font-weight: 500;
         color: #07bde5;
     }
+    #in-myaccount .contents .table-type1 .description.black-text{
+        color: #424e5b;
+    }
      #in-myaccount .contents .table-type1 .download-href{
         font-size: 18px;
         color: #1cb0e3;
+        font-family: "ProximaNovaSoft-Regular";
+        margin: 0px 10px;
+    }
+    #in-myaccount .contents .table-type1 .share-provider-href{
+        font-size: 18px;
+        color: #8ac239;
         font-family: "ProximaNovaSoft-Regular";
         margin: 0px 10px;
     }
@@ -189,7 +205,10 @@
      #in-myaccount .contents .table-type1 .odd{
         background: #fff;
     }
-    
+    #in-myaccount .contents .table-type1 .no-record {
+        position: absolute;
+        margin-top: 15px;
+    }
      #in-myaccount .col-footer-left {
         border: 1px solid #e4e4e4;
         border-radius: 5px;
@@ -253,6 +272,27 @@
      #in-myaccount .contents .table-body .content-items {
         width: 100%;
     }
+    #in-myaccount .contents .table-title .abtxt {
+        color: #000;
+        background: #fff;
+        border: 1px solid #00010126;
+        font-size: 18px;
+        border-radius: 5px;
+        height: 50px;
+        padding: 10px;
+        margin-right: 50px;
+        margin-bottom: 10px;
+        width: 30%;
+    }
+    #in-myaccount .contents .table-title .search-btn {
+        height: 48px;
+        margin-left: 50px;
+        width: 20%;
+    }
+    #in-myaccount .contents .table-body .content-items.flex-pos {
+        flex-direction: column !important;
+        align-items: flex-end !important;
+    }
      #in-myaccount .contents .bandwidth-label{
         position: absolute;
         margin-top: 155px;
@@ -309,6 +349,9 @@
     }
      #in-myaccount .last-less-1280 .right-panel-right{
         max-width: 25%;
+    }
+    #in-myaccount .contents .table-title .account-link{
+        display: none ;
     }
     @media (min-width: 768px){
          #in-myaccount .last-less-1280 .right-panel-left{
@@ -412,6 +455,9 @@
             margin: 20px auto;
             width: 90%;
         }
+        #in-myaccount .wallet-less-1280 .txt-center{
+            text-align: center;
+        }
          #in-myaccount .contents .table-title .right{
             display: none !important;
         }
@@ -496,6 +542,12 @@
         }
         #in-myaccount .contents .bandwidth-label{
             margin-top: 155px;
+        }
+        #in-myaccount .table-title .content-items .chk-know{
+            font-size: 12px;
+        }
+        #in-myaccount .contents .table-type1 .no-record {
+            margin-top: 18px;
         }
     }
      #in-myaccount .wallet-large-1280{
@@ -606,6 +658,9 @@
          #in-myaccount .contents .table-title .right{
             display: none !important;
         }
+        #in-myaccount .contents .table-title .account-link{
+            display: flex;
+        }
          #in-myaccount .table1-large-820{
             display: none !important;
         }
@@ -614,6 +669,27 @@
         }
         #in-myaccount .contents .bandwidth-label{
             margin-top: 133px;
+        }
+    }
+    @media (max-width: 959px) {
+        #in-myaccount .contents .table-title .abtxt {
+            width: 100%;
+        }
+        #in-myaccount .contents .table-title .search-btn {
+            margin-left: 0px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        #in-myaccount .contents .table-title.block-sm {
+            display: block !important;
+        }
+    }
+    @media (min-width: 821px) and (max-width: 1150px){
+        #in-myaccount .contents .table-type1.table-pro {
+            table-layout: fixed;
+        }
+        #in-myaccount .contents .table-type1 .description.center {
+            word-wrap: break-word;
         }
     }
     mat-spinner {

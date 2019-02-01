@@ -86,7 +86,6 @@ export class AboutComponent implements OnInit {
 
         this.InitializeForm();
     }
-
     //Track small screen, to display label above each input at small screen
     isVisible(index) {
         if (index < 1 && !this.isSmallScreen) {
@@ -131,7 +130,7 @@ export class AboutComponent implements OnInit {
     }
 
     //clear and disable if noknown checkbox true
-    clearFields() {
+    clearFields(el) {
         if(this.noKnownAllergies) {
         this.clearFormArray(this.allergyData);
         this.allergyData.disable();
@@ -140,6 +139,7 @@ export class AboutComponent implements OnInit {
         this.allergyData.enable();
         this.InitializeForm();
         }
+        el.scrollIntoView();
     }
 
     //Document Saving

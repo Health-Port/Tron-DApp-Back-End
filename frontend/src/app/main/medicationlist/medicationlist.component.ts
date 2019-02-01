@@ -116,7 +116,7 @@ export class MedicationlistComponent implements OnInit {
   }
 
   //clear and disable if noknown checkbox true
-  clearFields() {
+  clearFields(el) {
     if(this.noKnownMedications) {
       this.clearFormArray(this.medicationData);
       this.medicationData.disable();
@@ -125,6 +125,7 @@ export class MedicationlistComponent implements OnInit {
       this.medicationData.enable();
       this.InitializeForm();
     }
+    el.scrollIntoView();
   }
 
   //Document Saving

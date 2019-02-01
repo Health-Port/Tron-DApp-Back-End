@@ -81,10 +81,11 @@ export class SignupComponent implements OnInit {
 
       this.signupForm = this.fb.group({
         email: ['', [Validators.required,Validators.email]],
-        name: ['', [Validators.required]],
+        name: ['', [Validators.required, Validators.pattern('^[a-zA-Z ]{2,20}$')]],
         password: ['', [Validators.required, Validators.pattern('((?=.*\\d)(?=.*[A-Z])(?=.*\\W).{8,30})')]],
         confirmpassword: ['',[Validators.required, Validators.pattern('((?=.*\\d)(?=.*[A-Z])(?=.*\\W).{8,30})'), compareValidator('password')]],
-        isAgree: [false,[Validators.requiredTrue]]
+        isAgree: [false,[Validators.requiredTrue]],
+        role:['',Validators.required]
       });
     }
 
@@ -101,7 +102,6 @@ export class SignupComponent implements OnInit {
     }
 
     signUpValidation() {
-        
         this.loader = true;
         this.submitted = true;
         
@@ -119,12 +119,13 @@ export class SignupComponent implements OnInit {
       signUp() {
 
         this.userModel.via = this.via;
-        this.userModel.isAgree = this.f.isAgree.value;
         this.userModel.referby = this.referby;
+        this.userModel.role = this.f.role.value;
         this.userModel.name = this.f.name.value;
         this.userModel.email = this.f.email.value;
+        this.userModel.isAgree = this.f.isAgree.value;
         this.userModel.password = this.f.password.value;
-    
+
         this.userService.signUp(this.userModel, this.captchaKey)
           .subscribe(res => {
             if (res.code === 200) {

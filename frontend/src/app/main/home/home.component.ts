@@ -71,8 +71,8 @@ export class HomeComponent {
         this.ncount = 0;
 
         this.contactForm = this.fb.group({
-            fname: ['', [Validators.required, Validators.pattern('^[a-zA-Z]{2,20}$')]],
-            lname: ['', [Validators.required, Validators.pattern('^[a-zA-Z]{2,20}$')]],
+            fname: ['', [Validators.required, Validators.pattern('^[a-zA-Z ]{2,20}$')]],
+            lname: ['', [Validators.required, Validators.pattern('^[a-zA-Z ]{2,20}$')]],
             email: ['', [Validators.required, Validators.email]],
             phone: ['', Validators.pattern('^[0-9 ()+-]+$')],
             message: ['', Validators.required]
@@ -95,7 +95,7 @@ export class HomeComponent {
         el.scrollIntoView();
     }
     moveToWhitepaper() {
-        window.open("https://medium.com/@healthport/health-port-white-paper-3cf16da99034", "_self")
+        window.open("https://medium.com/@healthport/health-port-white-paper-3cf16da99034", "_blank")
     }
     get f() { return this.contactForm.controls; }
 

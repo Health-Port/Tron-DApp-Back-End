@@ -65,12 +65,43 @@ export class DocumentService {
     return this.httpClient.post<responseData>(environment.serviceUrl + "user/getProcedureListByUser", data, { headers: headers });
   }
 
+  getPDFByProvider(docModel : Document, id, type) {
+    let headers = new HttpHeaders().set('Content-Type', 'application/json; charset=UTF-8');
+    headers= headers.set('authorization', docModel.token);
+    let data = {providerId: docModel.userId, userId: id, type: type};
+
+    return this.httpClient.post<responseData>(environment.serviceUrl + "user/getProviderSharedDocument", data, { headers: headers });
+  }
   getFormSubmittedLatestDates(userId , token) {
     let headers = new HttpHeaders().set('Content-Type', 'application/json; charset=UTF-8');
     headers= headers.set('authorization', token);
     let data = {userId: userId};
 
     return this.httpClient.post<responseData>(environment.serviceUrl + "user/getFormSubmissionDates", data, { headers: headers });
+  }
+
+  getProvidersList(userId,token, type) {
+    let headers = new HttpHeaders().set('Content-Type', 'application/json; charset=UTF-8');
+    headers= headers.set('authorization', token);
+    let data = {userId: userId, type: type};
+
+    return this.httpClient.post<responseData>(environment.serviceUrl + "user/getAllProviders", data, { headers: headers });
+  }
+
+  saveSharedProviderList(userId, token, list, type) {
+    let headers = new HttpHeaders().set('Content-Type', 'application/json; charset=UTF-8');
+    headers= headers.set('authorization', token);
+    let data = {userId: userId, shareWith: list, type: type};
+
+    return this.httpClient.post<responseData>(environment.serviceUrl + "user/shareListWithProviders", data, { headers: headers });
+  }
+
+  getSharedDataForProvider(d) {
+    let headers = new HttpHeaders().set('Content-Type', 'application/json; charset=UTF-8');
+    headers= headers.set('authorization', d.token);
+    let data = { providerId: d.providerId, filter: d.filter, searchValue: d.searchValue, pageNumber: d.pageNo};
+
+    return this.httpClient.post<responseData>(environment.serviceUrl + "user/getProviderSharedData", data, { headers: headers });
   }
 
 }

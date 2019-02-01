@@ -68,7 +68,7 @@ export class LoginComponent implements OnInit {
 
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.pattern('((?=.*\\d)(?=.*[A-Z])(?=.*\\W).{8,30})')]]
+      password: ['', Validators.required]
     });
 
   }
@@ -76,16 +76,7 @@ export class LoginComponent implements OnInit {
   get f() { return this.loginForm.controls; }
 
   login() {
-
-    this.submitted = true;
-    this.loader = true;
-
-    if (this.loginForm.invalid) {
-      this.loader = false;
-      return;
-    } else {
       this.reCaptcha.execute();
-    }
   }
   //login with enter key press
   loginWithEnter(event) {
@@ -101,7 +92,15 @@ export class LoginComponent implements OnInit {
       this.loader = false;
       this.snackBar.open('Captcha undefined or null');
     } else {
-      this.signIn();
+      this.submitted = true;
+      this.loader = true;
+
+      if (this.loginForm.invalid) {
+        this.loader = false;
+        return;
+      } else {
+        this.signIn();
+      }
     }
 
   }

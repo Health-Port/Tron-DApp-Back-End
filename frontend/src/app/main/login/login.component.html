@@ -25,8 +25,6 @@
                                     formControlName="password" (keydown)="loginWithEnter($event)" [ngClass]="{ 'is-invalid': submitted && f.password.errors }" />
                                 <div *ngIf="submitted && f.password.errors" class="invalid-feedback">
                                     <div *ngIf="f.password.errors.required">Password is required</div>
-                                    <div *ngIf="f.password.errors.pattern">8 to 30 characters must contains a-z,A-Z,1-9
-                                        and special character</div>
                                 </div>
                             </div>
                         </div>

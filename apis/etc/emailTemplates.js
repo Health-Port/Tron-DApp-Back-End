@@ -22,10 +22,10 @@ async function forgetPasswordTemplate(token, email, url) {
 
 async function signUpTemplate(token, email, url, name) {
     let urlLink = url;
-    let subject = `Welcome to ${process.env.PROJECT_NAME} - New Account Verification`;
+    let subject = `Welcome to ${process.env.PROJECT_NAME} - Email Verification`;
     let body = `
     Dear ${name},<br/><br/>
-                            Thank you for registering for Health Port. Please click the link below to confirm your registration:<br/>
+                            Please click the link below to confirm your email:<br/>
                             <a href="${urlLink}" target="_blank">Verify Account Now</a><br/><br/>
                             Sincerely,<br/>
                             ${process.env.PROJECT_NAME}

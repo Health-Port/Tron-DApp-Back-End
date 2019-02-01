@@ -17,7 +17,11 @@ import { MyaccountComponent } from './myaccount.component';
 import { ReceiveComponent } from './receive/receive.component';
 import { DetailsComponent } from './details/details.component';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
-import { MatButtonModule, MatIconModule, MatCheckboxModule,MatTooltipModule, MatGridListModule, MatDialogModule, MatProgressSpinnerModule } from '@angular/material';
+import { ShareComponent } from './share/share.component';
+import { NgxDatatableModule } from '@swimlane/ngx-datatable';
+import { NgxPaginationModule } from 'ngx-pagination';
+import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
+import { MatButtonModule, MatIconModule, MatCheckboxModule, MatRadioModule, MatTooltipModule, MatGridListModule, MatDialogModule, MatTableModule, MatPaginatorModule, MatSortModule, MatProgressSpinnerModule } from '@angular/material';
 
 const routes = [
     {
@@ -32,10 +36,12 @@ const routes = [
         MyaccountComponent,
         SendComponent,
         ReceiveComponent,
-        DetailsComponent
+        DetailsComponent,
+        ShareComponent
     ],
     imports: [
         RouterModule.forChild(routes),
+        NgMultiSelectDropDownModule.forRoot(),
 
         ReactiveFormsModule,
         CommonModule,
@@ -44,17 +50,24 @@ const routes = [
         MatButtonModule,
         MatIconModule,
         MatCheckboxModule,
+        MatRadioModule,
         MatGridListModule,
         MatTooltipModule,
         NgxChartsModule,
         MatDialogModule,
+        MatTableModule,
         MatProgressSpinnerModule,
+        MatPaginatorModule, 
+        MatSortModule,
 
         TranslateModule,
 
         FuseSharedModule,
 
-        ShareModule
+        ShareModule,
+
+        NgxDatatableModule,
+        NgxPaginationModule
     ],
     exports: [
         MyaccountComponent
@@ -70,7 +83,8 @@ const routes = [
     entryComponents: [
         SendComponent,
         ReceiveComponent,
-        DetailsComponent
+        DetailsComponent,
+        ShareComponent
     ]
 })
 
