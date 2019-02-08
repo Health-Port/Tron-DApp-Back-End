@@ -5,7 +5,7 @@ const tokenController = require('../controllers/token/tokenController');
 const allergyController = require('../controllers/allergy/allergyController');
 const procedureController = require('../controllers/procedure/procedureController');
 const medicationController = require('../controllers/medication/medicationController');
-const providerController = require('../controllers/provider/providerController')
+const providerController = require('../controllers/provider/providerController');
 
 
 router.post('/signUp', userController.signUp);

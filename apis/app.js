@@ -18,6 +18,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 */
 
 var userRoute = require('./http/routes/userRoutes');
+var adminRoute = require('./http/routes/adminRoutes');
 
 var airDrop = require('./cron/airdrop');
 // airDrop.startTask();
@@ -26,6 +27,7 @@ var voterReward = require('./cron/voterReward');
 voterReward.startTask();
 
 app.use('/user', userRoute);
+app.use('/admin', adminRoute);
 
 global.healthportDb.authenticate()
   .then(() => console.log("Db Connected"))
