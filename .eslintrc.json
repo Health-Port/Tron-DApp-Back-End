@@ -1,0 +1,34 @@
+{
+    "env": {
+        "node": true,
+        "commonjs": true,
+        "es6": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": 2018
+    },
+    "rules": {
+        "indent": ["error", "tab"],
+        "linebreak-style": ["error", "unix"],
+        "quotes": ["error", "single"],
+        "semi": ["error", "never"],
+        "no-const-assign": ["error"],
+        "no-var": ["error"],
+        "object-shorthand": ["error"],
+        "prefer-arrow-callback": ["error"],
+        "prefer-const": ["error"],
+        "prefer-destructuring": [
+            "error",
+            {
+                "array": true,
+                "object": true
+            }
+        ],
+        "prefer-spread": ["error"],
+        "prefer-template": ["error"],
+        "no-lonely-if": ["error"],
+		"no-continue": ["error"],
+		"no-console": ["error", { "allow": ["warn", "error","log"] }]
+    }
+}
