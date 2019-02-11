@@ -1,4 +1,3 @@
-
 module.exports = (sequelize, Sequelize) => {
     const voters_users = sequelize.define('voters_users', {
         id: {
