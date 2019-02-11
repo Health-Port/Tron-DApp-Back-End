@@ -1,4 +1,3 @@
-
 module.exports = (sequelize, Sequelize) => {
     const voter_rewards = sequelize.define('voter_rewards', {
         id: {
