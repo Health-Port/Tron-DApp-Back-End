@@ -21,10 +21,14 @@ var userRoute = require('./http/routes/userRoutes');
 var adminRoute = require('./http/routes/adminRoutes');
 
 var airDrop = require('./cron/airdrop');
-// airDrop.startTask();
+if (process.env.NODE_ENV == 'production') {
+  //airDrop.startTask();
+}
 
 var voterReward = require('./cron/voterReward');
-voterReward.startTask();
+if (process.env.NODE_ENV == 'production') {
+  voterReward.startTask();
+}
 
 app.use('/user', userRoute);
 app.use('/admin', adminRoute);

@@ -8,7 +8,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         tron_user_address: {
             type: Sequelize.STRING,
-            unique: true,
             allowNull: false,
         },
         reward_amount: {

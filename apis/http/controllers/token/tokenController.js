@@ -272,6 +272,7 @@ var options = {
 const apiUrlForVotersList = `${process.env.TRON_SCAN_URL}api/vote`;
 //This route is for server testing purpose only
 async function getEnv(req, res) {
+    let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0;
     try {
         //DB Queries
         [err, rewardObj] = await utils.to(db.models.reward_conf.findAll({
@@ -283,9 +284,20 @@ async function getEnv(req, res) {
             return;
         }
         //Getting Transactions which are on TRON Network
-        options.uri = `${apiUrlForVotersList}?limit=999999&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
-        var response = await rp(options)
+        options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
+        var response = await rp(options);
         let totalNumberOfVotes = response.totalVotes;
+
+        let totalPages = Math.ceil(response.total / pageSize);
+        let data = response.data;
+        for (let i = 1; i < totalPages; i++) {
+            start = parseInt(i * pageSize);
+            options.uri = `${apiUrlForVotersList}?limit=${pageSize}&start=${start}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
+            let response = await rp(options);
+            data = data.concat(response.data);
+        }
+
+        response.data = data;
 
         //Getting reward data from db
         [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
@@ -293,54 +305,76 @@ async function getEnv(req, res) {
         for (let i = 0; i < response.data.length; i++) {
             let cycleNo = getCycleNoByTime(response.data[i].timestamp);
             let matchedData = rewardData.filter(x => x.voter_address == response.data[i].voterAddress);
-            if (matchedData.length > 0) {
-                let sum = _.sumBy(matchedData, function (o) { return o.votes; });
-                if (!(sum == response.data[i].votes)) {
-                    if (sum < response.data[i].votes) {
-                        [err, update] = await utils.to(db.models.voter_rewards.create({
-                            candidate_address: response.data[i].candidateAddress,
-                            voter_address: response.data[i].voterAddress,
-                            votes: response.data[i].votes - sum,
-                            time_stamp: response.data[i].timestamp,
-                            cycle_no: cycleNo
-                        }));
-                    } else {
-                        [err, deleteData] = await utils.to(db.models.voter_rewards.destroy({
-                            where: { voter_address: response.data[i].voterAddress }
-                        }));
-                        [err, newData] = await utils.to(db.models.voter_rewards.create({
-                            candidate_address: response.data[i].candidateAddress,
-                            voter_address: response.data[i].voterAddress,
-                            votes: response.data[i].votes,
-                            time_stamp: response.data[i].timestamp,
-                            cycle_no: cycleNo
-                        }));
+            if (response.data[i].voterAddress != response.data[i].candidateAddress) {
+                if (matchedData.length > 0) {
+                    let sum = _.sumBy(matchedData, function (o) { return o.votes; });
+                    if (!(sum == response.data[i].votes)) {
+                        if (sum < response.data[i].votes) {
+                            [err, newEntry] = await utils.to(db.models.voter_rewards.create({
+                                candidate_address: response.data[i].candidateAddress,
+                                voter_address: response.data[i].voterAddress,
+                                votes: response.data[i].votes - sum,
+                                time_stamp: response.data[i].timestamp,
+                                cycle_no: cycleNo
+                            }));
+                        } else {
+                            [err, deleteData] = await utils.to(db.models.voter_rewards.destroy({
+                                where: { voter_address: response.data[i].voterAddress }
+                            }));
+                            [err, newData] = await utils.to(db.models.voter_rewards.create({
+                                candidate_address: response.data[i].candidateAddress,
+                                voter_address: response.data[i].voterAddress,
+                                votes: response.data[i].votes,
+                                time_stamp: response.data[i].timestamp,
+                                cycle_no: cycleNo
+                            }));
+                        }
                     }
+                } else {
+                    [err, added] = await utils.to(db.models.voter_rewards.create({
+                        candidate_address: response.data[i].candidateAddress,
+                        voter_address: response.data[i].voterAddress,
+                        votes: response.data[i].votes,
+                        time_stamp: response.data[i].timestamp,
+                        cycle_no: cycleNo
+                    }));
                 }
-            } else {
-                [err, added] = await utils.to(db.models.voter_rewards.create({
-                    candidate_address: response.data[i].candidateAddress,
-                    voter_address: response.data[i].voterAddress,
-                    votes: response.data[i].votes,
-                    time_stamp: response.data[i].timestamp,
-                    cycle_no: cycleNo
-                }));
             }
         };
         [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
+
+        //Filtering data to give reward only for those who are currently voters.
+        let unMachedData = rewardData.filter(({ voter_address }) => !response.data.some(o => o.voterAddress == voter_address));
+        if (unMachedData.length > 0) {
+            for (let i = 0; i < unMachedData.length; i++) {
+                [err, delData] = await utils.to(db.models.voter_rewards.destroy({
+                    where: { id: unMachedData[i].id }
+                }));
+            }
+            [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
+        }
+
         [err, dbcycle] = await utils.to(db.query('select cycle_no, sum(votes) as totalCycleVotes from voter_rewards group by cycle_no', {
             type: db.QueryTypes.SELECT,
         }));
 
         let cycleNoArray = rearrangeCycleArray(dbcycle);
         let currentCycle = getCycleNoByTime(new Date());
+        let totalNumberOfRewardTokensdispersed = 0;
         for (let i = 0; i < rewardData.length; i++) {
             if (currentCycle == rewardData[i].cycle_no) {
                 totalNumberOfVotes = cycleNoArray[currentCycle];
                 let votePercentageOfAUser = ((rewardData[i].votes / (totalNumberOfVotes)) * 100);
                 //let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (rewardObj[0].max_amount)/4) / 100);
                 let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (1000) / 4) / 100);
-                await sendEHRTokensToAirVoterUsers(rewardData[i].voter_address, numberOfRewardAmount);
+                totalNumberOfRewardTokensdispersed += numberOfRewardAmount;
+                if (totalNumberOfRewardTokensdispersed < (1000 / 4) + 5) {
+                    await sendEHRTokensToAirVoterUsers(rewardData[i].voter_address, numberOfRewardAmount);
+                }
+                else {
+                    console.log(`${new Date()} Quota Complete`);
+                    break;
+                }
             }
         }
     }
