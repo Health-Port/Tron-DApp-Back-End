@@ -1,40 +1,40 @@
-var path = require('path');
-var logger = require('morgan');
-var express = require('express');
-var cors = require('cors');
-var cookieParser = require('cookie-parser');
+let path = require('path')
+let logger = require('morgan')
+let express = require('express')
+let cors = require('cors')
+let cookieParser = require('cookie-parser')
 
-var app = express();
+let app = express()
 
-app.use(cors());
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors())
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(cookieParser())
+app.use(express.static(path.join(__dirname, 'public')))
 
 /*
     Routes
 */
 
-var userRoute = require('./http/routes/userRoutes');
-var adminRoute = require('./http/routes/adminRoutes');
+let userRoute = require('./http/routes/userRoutes')
+let adminRoute = require('./http/routes/adminRoutes')
 
-var airDrop = require('./cron/airdrop');
+let airDrop = require('./cron/airdrop')
 if (process.env.NODE_ENV == 'production') {
-  //airDrop.startTask();
+  //airDrop.startTask()
 }
 
-var voterReward = require('./cron/voterReward');
+let voterReward = require('./cron/voterReward')
 if (process.env.NODE_ENV == 'production') {
-  voterReward.startTask();
+  voterReward.startTask()
 }
 
-app.use('/user', userRoute);
-app.use('/admin', adminRoute);
+app.use('/user', userRoute)
+app.use('/admin', adminRoute)
 
 global.healthportDb.authenticate()
   .then(() => console.log("Db Connected"))
-  .catch(err => console.log(err));
+  .catch(err => console.log(err))
 
-module.exports = app;
+module.exports = app

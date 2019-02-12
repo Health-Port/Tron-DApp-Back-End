@@ -112,10 +112,9 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
             if (currentCycle == rewardData[i].cycle_no) {
                 totalNumberOfVotes = cycleNoArray[currentCycle];
                 let votePercentageOfAUser = ((rewardData[i].votes / (totalNumberOfVotes)) * 100);
-                //let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (rewardObj[0].max_amount)/4) / 100);
-                let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (1000) / 4) / 100);
+                let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (rewardObj[0].max_amount / 4)) / 100);
                 totalNumberOfRewardTokensdispersed += numberOfRewardAmount;
-                if (totalNumberOfRewardTokensdispersed < (1000 / 4) + 10) {
+                if (totalNumberOfRewardTokensdispersed < (rewardObj[0].max_amount / 4) + 250) {
                     await sendEHRTokensToAirVoterUsers(rewardData[i].voter_address, numberOfRewardAmount);
                 }
                 else {

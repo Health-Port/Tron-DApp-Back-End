@@ -1,4 +1,3 @@
-
 module.exports = (sequelize, Sequelize) => {
     const air_drop_users = sequelize.define('air_drop_users', {
         id: {
@@ -19,6 +18,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false,
         }
-    });
-    return air_drop_users;
+    })
+    return air_drop_users
 }

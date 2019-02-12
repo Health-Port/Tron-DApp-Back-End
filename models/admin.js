@@ -22,8 +22,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.BOOLEAN,
             defaultValue: false
         }
-    });
-
-    return admins;
-
+    })
+    return admins
 }

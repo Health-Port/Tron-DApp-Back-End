@@ -48,7 +48,8 @@ async function signIn(req, res) {
             id: admin.id,
             name: admin.name,
             email: admin.email,
-            twofa_enable: admin.twofa_enable
+            twofa_enable: admin.twofa_enable,
+            //is_admin and istowfa verified.
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data));

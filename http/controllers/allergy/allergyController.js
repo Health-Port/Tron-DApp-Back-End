@@ -4,7 +4,7 @@ const resCode = require('../../../enum/responseCodesEnum');
 const resMessage = require('../../../enum/responseMessagesEnum');
 const rewardDisperser = require('../../../etc/rewardCheck');
 const rewardEnum = require('../../../enum/rewardEnum');
-var cutCommission = require('./../../../etc/commission');
+const cutCommission = require('./../../../etc/commission');
 
 const db = global.healthportDb;
 
