@@ -60,8 +60,26 @@ async function contactUsTemplate(message, email, name) {
     else return Promise.reject(error);
 }
 
+async function passwordSuccessfullyChanged(email) {
+    var subject = `${process.env.PROJECT_NAME} Password Reset Successfully`;
+    var body = `
+                            Dear User,<br/><br/>
+                            Your account password has been reset successfully.<br/>
+                            If you have not performed this action, please contact support.
+                            <br/><br/>
+                            Thanks,<br/>
+                            Team ${process.env.PROJECT_NAME}
+                            `;
+  
+    let error, result;
+    [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
+    if(result) return Promise.resolve(true);
+    else return Promise.reject(error);
+}
+
 module.exports = {
     forgetPasswordTemplate,
     signUpTemplate,
-    contactUsTemplate
+    contactUsTemplate,
+    passwordSuccessfullyChanged
 };

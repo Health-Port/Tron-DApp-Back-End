@@ -32,13 +32,7 @@ async function signIn(req, res) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
 
         //Finding record from db    
-        [err, admin] = await utils.to(db.models.admins.findOne(
-            {
-                where:
-                {
-                    email: email
-                }
-            }));
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: email } }));
         if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
         if (password != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
@@ -48,8 +42,9 @@ async function signIn(req, res) {
             id: admin.id,
             name: admin.name,
             email: admin.email,
+            is_admin: admin.is_admin,
             twofa_enable: admin.twofa_enable,
-            //is_admin and istowfa verified.
+            is_twofa_verified: admin.is_twofa_verified
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data));
@@ -110,12 +105,12 @@ async function forgetPassword(req, res) {
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: email } }));
         if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
-        let authentication = { pass_code: passcode, user_id: admin.id };
+        let authentication = { pass_code: passcode, user_id: admin.id, email: admin.email };
 
         //Checking passcode in db
         [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
             {
-                where: { user_id: admin.id, type: 'forget' },
+                where: { user_id: admin.id, type: 'admin forget' },
                 order: [['createdAt', 'DESC']]
             }));
         if (foundPasscode) {
@@ -134,13 +129,13 @@ async function forgetPassword(req, res) {
             {
                 user_id: admin.id,
                 pass_code: passcode,
-                type: 'forget'
+                type: 'admin forget'
             }));
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken(authentication));
 
-        let url = `${process.env.BASE_URL}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
+        let url = `${process.env.BASE_URL_ADMIN}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
 
         //Email sending
         [err, mailSent] = await utils.to(emailTemplates.forgetPasswordTemplate(token, email, url));
@@ -158,8 +153,122 @@ async function forgetPassword(req, res) {
     }
 }
 
+async function confirmForgotPassword(req, res) {
+    try {
+        const obj = {
+            'passcode': req.auth.pass_code,
+            'password': req.body.password,
+            'email': req.auth.email
+        }
+
+        let err, data = {}
+
+        //Checking empty email and password 
+        if (!obj.password)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+        //Reguler expression testing for password requirements
+        if (!regex.passRegex.test(obj.password))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY);
+
+        //Finding record from db
+        [err, data] = await utils.to(db.models.pass_codes.findOne(
+            {
+                where: { pass_code: obj.passcode, type: 'admin forget' },
+                order: [['createdAt', 'DESC']]
+            }))
+        if (data.is_used == true) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
+        if (data) {
+            const passcodeCreateTime = moment(data.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const now = moment().format('YYYY-MM-DD HH:mm:ss')
+            const timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
+
+            //Checking link expiry
+            if (timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_LINK_EXPIRY_TIME))
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_EXPIRED)
+        }
+
+        //Encrypting password
+        //const passwordHash = bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS));
+
+        //Updating password in db
+        [err, data] = await utils.to(db.models.admins.update(
+            { password: obj.password },
+            { where: { id: data.user_id } }
+        ));
+
+        //Updading passcode
+        [err, data] = await utils.to(db.models.pass_codes.update(
+            { is_used: true },
+            { where: { pass_code: obj.passcode, type: 'admin forget' } }
+        ));
+
+        //Email sending
+        [err, mailSent] = await utils.to(emailTemplates.passwordSuccessfullyChanged(obj.email));
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err);
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.PASSWORD_CHANGED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function changePassword(req, res) {
+    try {
+        const obj = {
+            'adminId': req.auth.id,
+            'oldPassword': req.body.oldPassword,
+            'newPassword': req.body.newPassword
+        }
+
+        let err, admin = {}
+
+        //Checking empty fields
+        if (!(obj.adminId && obj.oldPassword && obj.newPassword))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        if (obj.oldPassword == obj.newPassword)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_ARE_SAME);
+
+        //Finding record from db    
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: obj.adminId } }))
+        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+        if (obj.oldPassword != admin.password)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
+
+        //Updading passcode
+        [err, update] = await utils.to(db.models.admins.update(
+            { password: obj.newPassword },
+            { where: { id: obj.adminId } }
+        ));
+
+        //Email sending
+        [err, mailSent] = await utils.to(emailTemplates.passwordSuccessfullyChanged(admin.email));
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err);
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.PASSWORD_CHANGED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
-    forgetPassword
+    changePassword,
+    forgetPassword,
+    confirmForgotPassword
 }
