@@ -1,4 +1,4 @@
-var RewardEnum = require('./../enum/rewardEnum');
+const RewardEnum = require('./../enum/rewardEnum')
 module.exports = (sequelize, Sequelize) => {
     const reward_conf = sequelize.define('reward_conf', {
         id: {
@@ -37,8 +37,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
             allowNull: true
         }
-    });
-
-    return reward_conf;
-
+    })
+    return reward_conf
 }

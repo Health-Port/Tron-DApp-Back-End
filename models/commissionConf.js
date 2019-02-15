@@ -1,4 +1,3 @@
-
 module.exports = (sequelize, Sequelize) => {
     const commission_conf = sequelize.define('commission_conf', {
         id: {
@@ -10,7 +9,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
             default: 0
         }
-    });
-
-    return commission_conf;
+    })
+    return commission_conf
 }

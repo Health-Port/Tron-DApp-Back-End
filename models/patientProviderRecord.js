@@ -1,4 +1,3 @@
-
 module.exports = (sequelize, Sequelize) => {
     const patient_provider_records = sequelize.define('patient_provider_records', {
         id: {
@@ -20,6 +19,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false
         }
-    });
-    return patient_provider_records;
+    })
+    return patient_provider_records
 }

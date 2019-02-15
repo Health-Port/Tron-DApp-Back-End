@@ -1,4 +1,4 @@
-var RoleEnum = require('./../enum/roleEnum');
+const RoleEnum = require('./../enum/roleEnum')
 module.exports = (sequelize, Sequelize) => {
     const users = sequelize.define('users', {
         id: {
@@ -57,8 +57,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.BOOLEAN,
             allowNull: true
         }
-    });
-
-    return users;
-
+    })
+    return users
 }

@@ -18,12 +18,21 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false
         },
-        twofa_enable:{
+        is_admin:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: true
+        },
+        is_twofa_enable:{
             type: Sequelize.BOOLEAN,
             defaultValue: false
+        },
+        is_twofa_verified:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        },
+        twofa_formatted_key:{
+            type: Sequelize.STRING
         }
-    });
-
-    return admins;
-
+    })
+    return admins
 }

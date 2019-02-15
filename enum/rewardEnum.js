@@ -8,6 +8,6 @@ var RewardEnum = {
     COMMISSIONDOCUMENTSUBMISSION: "Health Port Network Fee",
     AIRDROPREWARD: "Airdrop",
     SUPERREPRESENTATIVEREWARD: "Super Representative Voting Reward"
-};
+}
 
-module.exports = RewardEnum;
+module.exports = RewardEnum

@@ -17,6 +17,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false,
         }
-    });
-    return voters_users;
+    })
+    return voters_users
 }

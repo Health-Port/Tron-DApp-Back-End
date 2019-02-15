@@ -25,6 +25,6 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.INTEGER,
             allowNull: false
         }
-    });
-    return voter_rewards;
+    })
+    return voter_rewards
 }

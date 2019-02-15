@@ -1,150 +1,96 @@
-const utils = require('../../../etc/utils');
-const response = require('../../../etc/response');
-const tronUtils = require('../../../etc/tronUtils');
-const resCode = require('../../../enum/responseCodesEnum');
-const resMessage = require('../../../enum/responseMessagesEnum');
-const rewardEnum = require('./../../../enum/rewardEnum');
+const utils = require('../../../etc/utils')
+const response = require('../../../etc/response')
+const tronUtils = require('../../../etc/tronUtils')
+const resCode = require('../../../enum/responseCodesEnum')
+const resMessage = require('../../../enum/responseMessagesEnum')
+const rewardEnum = require('./../../../enum/rewardEnum')
 
-const db = global.healthportDb;
+const db = global.healthportDb
 
 async function sendToken(req, res) {
     try {
-        let to = req.body.to;
-        let amount = parseFloat(req.body.amount);
-        let from = utils.encrypt(req.body.from);
-        let note = req.body.note;
-        let err, user, trxId, privateKey, obj;
+        const obj = {
+            'to': req.body.to,
+            'amount': parseFloat(req.body.amount),
+            'from': utils.encrypt(req.body.from),
+            'note': req.body.note,
+        }
+
+        let err, user = {}, trxId, data = {}
 
         //Check ammount is positive integer or not
-        if (!Number.isInteger(amount) || amount < 0)
+        if (!Number.isInteger(obj.amount) || obj.amount < 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.AMOUNT_IS_NOT_INTEGER);
 
         //Finding record from db    
-        [err, user] = await utils.to(db.models.users.findOne({ where: { tron_wallet_public_key: from } }));
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+        [err, user] = await utils.to(db.models.users.findOne({ where: { tron_wallet_public_key: obj.from } }))
+        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
-        let isValid = await tronUtils.isAddress(to);
-        if (!isValid) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.INVALID_TO_ADDRESS);
+        const isValid = await tronUtils.isAddress(obj.to)
+        if (!isValid) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.INVALID_TO_ADDRESS)
 
         //Getting token balance and checking bandwidth.
-        privateKey = utils.decrypt(user.tron_wallet_private_key);
-        let balance = await tronUtils.getTRC10TokenBalance(privateKey, utils.decrypt(from));
-        if (balance == 0) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BALANCE_IS_ZERO);
-        if (balance < amount) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+        const privateKey = utils.decrypt(user.tron_wallet_private_key)
+        const balance = await tronUtils.getTRC10TokenBalance(privateKey, utils.decrypt(obj.from))
+        if (balance == 0) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BALANCE_IS_ZERO)
+        if (balance < obj.amount) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE)
 
-        let bandwidth = await tronUtils.getBandwidth(utils.decrypt(from));
-        if (bandwidth < 275) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW);
+        const bandwidth = await tronUtils.getBandwidth(utils.decrypt(obj.from))
+        if (bandwidth < 275) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
 
         //Checking weather receiver account is active or not.
-        let bandwidthTo = await tronUtils.getBandwidth(to);
+        const bandwidthTo = await tronUtils.getBandwidth(obj.to)
         if (bandwidthTo == 0) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCOUNT_IS_NOT_ACTIVE)
 
         //Sending token
         try {
-            if (utils.checkaddresses(to, utils.decrypt(from)))
+            if (utils.checkaddresses(obj.to, utils.decrypt(obj.from)))
                 return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.TO_FROM_ADDRESS_ARE_SAME)
 
-            trxId = await tronUtils.sendTRC10Token(to, amount, privateKey);
+            trxId = await tronUtils.sendTRC10Token(obj.to, obj.amount, privateKey)
         } catch (error) {
-            console.log(error);
-            return response.errReturned(res, error);
+            console.log(error)
+            return response.errReturned(res, error)
         }
 
         //Saving transection history into db
-        [err, obj] = await utils.to(db.models.transections.bulkCreate([
-            { user_id: user.id, address: from, number_of_token: amount, trx_hash: trxId, type: 'Sent', note: note },
-            { user_id: user.id, address: utils.encrypt(to), number_of_token: amount, trx_hash: trxId, type: 'Received', note: note }
-        ]));
-        console.log(err);
+        [err, data] = await utils.to(db.models.transections.bulkCreate([
+            { user_id: user.id, address: obj.from, number_of_token: obj.amount, trx_hash: trxId, type: 'Sent', note: obj.note },
+            { user_id: user.id, address: utils.encrypt(obj.to), number_of_token: obj.amount, trx_hash: trxId, type: 'Received', note: obj.note }
+        ]))
+        if (!data) console.log(err)
+
         //Returing successful response with trxId
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, trxId);
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, trxId)
 
     } catch (error) {
-        console.log(error);
-        return response.errReturned(res, error);
+        console.log(error)
+        return response.errReturned(res, error)
     }
-    //#region  old code
-    //try {
-    //     let to = req.body.to;
-    //     let amount = req.body.amount;
-    //     let from = utils.encrypt(req.body.from);
-
-    //     let err, user, transection;
-    //     //Finding record from db    
-    //     [err, user] = await utils.to(db.models.users.findOne(
-    //         {
-    //             where:
-    //             {
-    //                 tron_wallet_public_key: from
-    //             }
-    //         }));
-    //     if (err) return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.ERROR_IN_FINDING_RECORD);
-    //     if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
-
-    //     //Initializing tronweb object and validating address.
-    //     let privateKey = utils.decrypt(user.tron_wallet_private_key);
-
-    //     let isValid = await tronUtils.isAddress(to);
-    //     if (!isValid) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.INVALID_TO_ADDRESS);
-
-    //     //Getting values from smart contract
-    //     let balance = await tronUtils.getBalanceToken(privateKey, utils.decrypt(from));
-    //     if (balance == 0) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BALANCE_IS_ZERO);
-    //     if (balance < amount) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
-
-    //     //Checking Tron Balance before making transection
-    //     let tronBalance = await tronUtils.getBalanceTrx(utils.decrypt(from))
-    //     if (tronBalance < parseFloat(process.env.MINIMUM_TRON_BALACE_REQUIRED))
-    //         return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.TRON_BALANCE_IS_ZERO)
-
-    //     //Sending token
-    //     try {
-    //         transection = await tronUtils.sendToken(to, amount, privateKey);
-    //     } catch (error) {
-    //         console.log(error);
-    //         return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, error);
-    //     }
-
-    //     //Saving transection history into db
-    //     [err, obj] = await utils.to(db.models.transections.create(
-    //         {
-    //             user_id: user.id,
-    //             from: from,
-    //             to: utils.encrypt(to),
-    //             number_of_token: amount,
-    //             trx_hash: transection
-    //         }));
-    //     if (err) return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.ERROR_IN_SAVING_TRANSECTION);
-
-    //     return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, transection);
-
-    // } catch (error) {
-    //     console.log(error);
-    //     return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
-    // }
-    //#endregion
 }
 
 async function getBalance(req, res) {
     try {
-        let address = utils.encrypt(req.body.address);
-        let err, user, balance, bandwidth;
+        const address = utils.encrypt(req.body.address)
+
+        let user, balance, bandwidth
 
         //Finding record from db    
-        [err, user] = await utils.to(db.models.users.findOne({ where: { tron_wallet_public_key: address } }));
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+        [err, user] = await utils.to(db.models.users.findOne({ where: { tron_wallet_public_key: address } }))
+        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         //Getting balance from blockchain
-        let privateKey = utils.decrypt(user.tron_wallet_private_key);
-        let publickKey = utils.decrypt(user.tron_wallet_public_key);
-        balance = await tronUtils.getTRC10TokenBalance(privateKey, publickKey);
-        bandwidth = await tronUtils.getBandwidth(utils.decrypt(user.tron_wallet_public_key));
+        let privateKey = utils.decrypt(user.tron_wallet_private_key)
+        let publickKey = utils.decrypt(user.tron_wallet_public_key)
+        balance = await tronUtils.getTRC10TokenBalance(privateKey, publickKey)
+        bandwidth = await tronUtils.getBandwidth(utils.decrypt(user.tron_wallet_public_key))
+
         //Returing successful response with balance
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { balance: balance, bandwidth: bandwidth });
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { balance: balance, bandwidth: bandwidth })
 
     } catch (error) {
-        console.log(error);
-        return response.errReturned(res, error);
+        console.log(error)
+        return response.errReturned(res, error)
     }
 }
 
