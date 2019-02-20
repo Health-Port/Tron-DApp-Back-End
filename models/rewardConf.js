@@ -36,6 +36,10 @@ module.exports = (sequelize, Sequelize) => {
         max_amount:{
             type: Sequelize.INTEGER,
             allowNull: true
+        },
+        reward_per_vote:{
+            type: Sequelize.INTEGER,
+            allowNull: true
         }
     })
     return reward_conf

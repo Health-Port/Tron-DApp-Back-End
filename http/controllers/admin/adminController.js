@@ -82,6 +82,7 @@ async function signUp(req, res) {
             }));
         if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST);
 
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ADDED_SUCCESSFULLY);
 
     } catch (error) {
         console.log(error);
@@ -163,8 +164,8 @@ async function confirmForgotPassword(req, res) {
 
         let err, data = {}
 
-        //Checking empty email and password 
-        if (!obj.password)
+        //Checking passcode email and password
+        if (!(obj.password && obj.passcode))
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
 
         //Reguler expression testing for password requirements
