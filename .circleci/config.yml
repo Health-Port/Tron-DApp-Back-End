@@ -28,9 +28,9 @@ jobs:
           name: SSH Deploy Master
           command: |
               ssh $SSH_USER@$SSH_HOST_LIVE bash -c '
-                cd /var/www/html/healthport
+                cd /home/ubuntu/healthport
                 sudo git fetch
-                sudo git checkout staging
+                sudo git checkout master
                 sudo git pull
                 sudo npm i
                 sudo pm2 restart health'
