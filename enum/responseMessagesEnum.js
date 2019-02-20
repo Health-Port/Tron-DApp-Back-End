@@ -34,7 +34,7 @@ var ResponseMessagesEnum = {
     PASSWORD_INCORRECT: "Incorrect password.",
     PASSWORD_COMPLEXITY: "Password must be between 8 to 30 characters with 1 uppercase letter, 1 special character and alphanumric characters.",
     PASSWORD_CHANGED: "Your Password updated successfully, please login to continue.",
-    REQUIRED_FIELDS_EMPTY: "Required fields cannot be empty.",
+    REQUIRED_FIELDS_EMPTY: "Required fields cannot be empty. Please provide",
     SUCCESSFULLY_LOGGEDIN: "User login successfully.",
     SUCCESS: "Success",
     TOKEN_ERROR: "Unable to generate token.",
