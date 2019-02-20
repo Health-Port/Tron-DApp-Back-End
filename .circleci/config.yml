@@ -17,12 +17,35 @@ jobs:
                 sudo git pull
                 sudo npm i
                 sudo pm2 restart health'
+  deploy_master:
+    machine:
+      enabled: true
+    steps:
+      - add_ssh_keys:
+            fingerprints:
+              - $SSH_HOST_FINGERPRINT_STAGING
+      - run:
+          name: SSH Deploy Master
+          command: |
+              ssh $SSH_USER@$SSH_HOST_LIVE bash -c '
+                cd /var/www/html/healthport
+                sudo git fetch
+                sudo git checkout staging
+                sudo git pull
+                sudo npm i
+                sudo pm2 restart health'
 workflows:
   version: 2
-  deploy:
+  deploy_staging:
      jobs:
       - deploy_staging:
           filters:
             branches:
               only:
                 - staging
+  deploy_master:
+     jobs:
+      - deploy_master:
+          filters:
+            only:
+              - master
