@@ -35,7 +35,7 @@ jobs:
                 sudo npm i
                 sudo pm2 restart health'
 
-                
+
 workflows:
   version: 2
   deploy:
@@ -45,10 +45,3 @@ workflows:
             branches:
               only:
                 - staging
-
-  deploy_master:
-    jobs:
-      - deploy_master:
-          filters:
-            only:
-              - master
