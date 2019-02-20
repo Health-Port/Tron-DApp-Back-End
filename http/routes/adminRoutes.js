@@ -12,6 +12,6 @@ router.post('/confirmForgotPassword', authorize.authenticateToken, adminControll
 
 router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication);
 router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication);
-router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication);
+router.post('/verifyTwoFactorAuthentication', twoFactorAuthenticationController.verifyTwoFactorAuthentication);
 
 module.exports = router
