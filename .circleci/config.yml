@@ -37,14 +37,14 @@ jobs:
 workflows:
   version: 2
   deploy_staging:
-     jobs:
+    jobs:
       - deploy_staging:
           filters:
             branches:
               only:
                 - staging
   deploy_master:
-     jobs:
+    jobs:
       - deploy_master:
           filters:
             only:
