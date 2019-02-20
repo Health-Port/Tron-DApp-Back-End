@@ -36,13 +36,14 @@ jobs:
                 sudo pm2 restart health'
 workflows:
   version: 2
-  deploy_staging:
+  deploy:
     jobs:
       - deploy_staging:
           filters:
             branches:
               only:
                 - staging
+                
   deploy_master:
     jobs:
       - deploy_master:
