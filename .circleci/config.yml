@@ -45,3 +45,10 @@ workflows:
             branches:
               only:
                 - staging
+  deploy_live:
+    jobs:
+     - deploy_master:
+          filters:
+            branches:
+              only:
+                - master
