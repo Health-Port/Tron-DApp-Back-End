@@ -1,0 +1,54 @@
+version: 2
+jobs: 
+  deploy_staging:
+    machine:
+      enabled: true
+    steps:
+      - add_ssh_keys:
+            fingerprints:
+              - $SSH_HOST_FINGERPRINT_STAGING
+      - run:
+          name: SSH Deploy Staging
+          command: |
+              ssh $SSH_USER@$SSH_HOST_STAGING bash -c '
+                cd /var/www/html/healthport
+                sudo git fetch
+                sudo git checkout staging
+                sudo git pull
+                sudo npm i
+                sudo pm2 restart health'
+  deploy_master:
+    machine:
+      enabled: true
+    steps:
+      - add_ssh_keys:
+            fingerprints:
+              - $SSH_HOST_FINGERPRINT_STAGING
+      - run:
+          name: SSH Deploy Master
+          command: |
+              ssh $SSH_USER@$SSH_HOST_LIVE bash -c '
+                cd /home/ubuntu/healthport
+                sudo git fetch
+                sudo git checkout master
+                sudo git pull
+                sudo npm i
+                sudo pm2 restart health'
+
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - deploy_staging:
+          filters:
+            branches:
+              only:
+                - staging
+  deploy_live:
+    jobs:
+     - deploy_master:
+          filters:
+            branches:
+              only:
+                - master
