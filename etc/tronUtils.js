@@ -49,6 +49,15 @@ async function getTRC10TokenBalance(privateKey, address) {
     }
 }
 
+async function getTrxBalance(privateKey, address) {
+    try {
+        let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
+        return await tronWeb.trx.getBalance(address);
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 async function sendTRC10Token(to, amount, privateKey) {
     try {
         let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
@@ -218,5 +227,6 @@ module.exports = {
     getBandwidth,
     createSmartContract,
     saveAllergyForm,
-    getAllergyForm
+    getAllergyForm,
+    getTrxBalance
 };
