@@ -19,6 +19,6 @@ router.post('/getUsers', authorize.authenticateToken, adminController.getUsers);
 router.post('/getUserById', authorize.authenticateToken, adminController.getUserById);
 router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId);
 router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId);
-router.post('/getReferrals', adminController.getReferrals);
+router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals);
 
 module.exports = router
