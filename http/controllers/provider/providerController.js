@@ -49,10 +49,6 @@ async function shareListWithProviders(req, res) {
 
         let err, providers;
 
-        // if (share_with)
-        //     share_with = JSON.parse(share_with);
-        //share_with = share_with.map((a) => { return a.id; }).join();
-
         //Deleting existing records
         [err, providers] = await utils.to(db.models.patient_provider_records.destroy(
             {
@@ -78,14 +74,12 @@ async function shareListWithProviders(req, res) {
         return response.errReturned(res, error);
     }
 }
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
+
 async function getProviderSharedData(req, res) {
     try {
         let provider_id = req.body.providerId;
         let searchValue = req.body.searchValue;
         let filter = req.body.filter;
-        //if (!filter) filter = ['allergies', 'medications', 'procedures'];
 
         let err, data, filterData;;
 
@@ -99,101 +93,7 @@ async function getProviderSharedData(req, res) {
         let end = parseInt(start + pageSize);
 
         //Getting provider data and total count
-        /*
-        if (searchValue && filter) {
-            [err, data] = await utils.to(db.models.patient_provider_records.findAndCountAll({
-                where: {
-                    [Op.and]: [{ share_with_id: provider_id }, { type: { [Op.in]: [filter] } }]
-                },
-                order: [['createdAt', 'DESC']],
-                limit: pageSize,
-                offset: start,
-                raw: true
-            }));
-            if (data) {
-                for (let i = 0; i < data.rows.length; i++) {
-                    [err, userData] = await utils.to(db.models.users.findOne({
-                        where: { id: data.rows[i].user_id }
-                    }));
-                    if (userData) {
-                        data.rows[i]['name'] = userData.name;
-                        data.rows[i]['email'] = userData.email;
-                    }
-                }
-            }
-
-            if (searchValue)
-                filterData = data.rows.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()));
-            data['count'] = filterData.length;
-            data.rows = filterData;
-
-        } else if (searchValue) {
-            [err, data] = await utils.to(db.models.patient_provider_records.findAndCountAll({
-                where: { share_with_id: provider_id.toString() },
-                order: [['createdAt', 'DESC']],
-                limit: pageSize,
-                offset: start,
-                raw: true
-            }));
-            if (data) {
-                for (let i = 0; i < data.rows.length; i++) {
-                    [err, userData] = await utils.to(db.models.users.findOne({
-                        where: { id: data.rows[i].user_id }
-                    }));
-                    if (userData) {
-                        data.rows[i]['name'] = userData.name;
-                        data.rows[i]['email'] = userData.email;
-                    }
-                }
-            }
-
-            if (searchValue)
-                filterData = data.rows.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()));
-            data['count'] = filterData.length;
-            data.rows = filterData;
-
-        } else if (filter) {
-            [err, data] = await utils.to(db.models.patient_provider_records.findAndCountAll({
-                where: {
-                    [Op.and]: [{ share_with_id: provider_id }, { type: { [Op.in]: [filter] } }]
-                },
-                order: [['createdAt', 'DESC']],
-                limit: pageSize,
-                offset: start,
-                raw: true
-            }));
-            if (data) {
-                for (let i = 0; i < data.rows.length; i++) {
-                    [err, userData] = await utils.to(db.models.users.findOne({
-                        where: { id: data.rows[i].user_id }
-                    }));
-                    if (userData) {
-                        data.rows[i]['name'] = userData.name;
-                        data.rows[i]['email'] = userData.email;
-                    }
-                }
-            }
-        } else {
-            [err, data] = await utils.to(db.models.patient_provider_records.findAndCountAll({
-                where: { share_with_id: provider_id.toString() },
-                order: [['createdAt', 'DESC']],
-                limit: pageSize,
-                offset: start,
-                raw: true
-            }));
-            if (data) {
-                for (let i = 0; i < data.rows.length; i++) {
-                    [err, userData] = await utils.to(db.models.users.findOne({
-                        where: { id: data.rows[i].user_id }
-                    }));
-                    if (userData) {
-                        data.rows[i]['name'] = userData.name;
-                        data.rows[i]['email'] = userData.email;
-                    }
-                }
-            }
-        }*/
-        //
+        
         let returnableData = {};
         [err, dbData] = await utils.to(db.query('select p.user_id, u.name, u.email, p.type from users u ' +
             'inner join patient_provider_records p on u.id = user_id where p.share_with_id = :share_with_id order by u.id desc',
@@ -219,22 +119,12 @@ async function getProviderSharedData(req, res) {
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData);
 
-        // [err, data] = await utils.to(db.query('select p.user_id, u.name, u.email, p.type from users u ' +
-        //     'inner join patient_provider_records p on u.id = user_id where p.share_with_id = :share_with_id order by u.id desc',
-        //     {
-        //         replacements: { share_with_id: provider_id.toString() },
-        //         type: db.QueryTypes.SELECT,
-        //     }));
-
     } catch (error) {
         console.log(error);
         return response.errReturned(res, error);
     }
 }
-function paginate(array, page_size, page_number) {
-    --page_number; // because pages logically start with 1, but technically with 0
-    return array.slice(page_number * page_size, (page_number + 1) * page_size);
-}
+
 async function getProviderSharedDocument(req, res) {
     try {
         let user_id = req.body.userId

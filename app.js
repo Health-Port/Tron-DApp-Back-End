@@ -1,10 +1,10 @@
-let path = require('path')
-let logger = require('morgan')
-let express = require('express')
-let cors = require('cors')
-let cookieParser = require('cookie-parser')
+const path = require('path')
+const logger = require('morgan')
+const express = require('express')
+const cors = require('cors')
+const cookieParser = require('cookie-parser')
 
-let app = express()
+const app = express()
 
 app.use(cors())
 app.use(logger('dev'))
@@ -17,15 +17,15 @@ app.use(express.static(path.join(__dirname, 'public')))
     Routes
 */
 
-let userRoute = require('./http/routes/userRoutes')
-let adminRoute = require('./http/routes/adminRoutes')
+const userRoute = require('./http/routes/userRoutes')
+const adminRoute = require('./http/routes/adminRoutes')
 
-let airDrop = require('./cron/airdrop')
-if (process.env.NODE_ENV == 'production') {
-  //airDrop.startTask()
-}
+// const airDrop = require('./cron/airdrop')
+// if (process.env.NODE_ENV == 'production') {
+//   airDrop.startTask()
+// }
 
-let voterReward = require('./cron/voterReward')
+const voterReward = require('./cron/voterReward')
 if (process.env.NODE_ENV == 'production') {
   voterReward.startTask()
 }
@@ -34,7 +34,7 @@ app.use('/user', userRoute)
 app.use('/admin', adminRoute)
 
 global.healthportDb.authenticate()
-  .then(() => console.log("Db Connected"))
+  .then(() => console.log('Db Connected'))
   .catch(err => console.log(err))
 
 module.exports = app
