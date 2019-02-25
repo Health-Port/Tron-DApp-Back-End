@@ -121,7 +121,7 @@ async function signIn(req, res) {
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
-            'ip_address': req.body.ipAddress,
+            'ip_address': request.connection.remoteAddress,
             'captcha_key': req.body.captchaKey,
         }
 
