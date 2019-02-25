@@ -121,10 +121,9 @@ async function signIn(req, res) {
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
+            'ip_address': request.connection.remoteAddress,
             'captcha_key': req.body.captchaKey,
         }
-
-        let err, user = {}, token = {}, passCode = {}, captcha = {}, passwordCheck = {}
 
         //Validating captcha only when environment is not dev
         if (process.env.NODE_ENV != 'dev') {
@@ -174,6 +173,16 @@ async function signIn(req, res) {
             total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
             user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key)),
         }
+
+        //Saving login history
+        let loginHistory = {}
+        loginHistory = { 
+            user_id: user.id, 
+            ip_address: obj.ip_address 
+        };
+        
+        [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
+
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
@@ -235,7 +244,7 @@ async function forgetPassword(req, res) {
                 pass_code: passcode,
                 type: 'forget'
             }))
-        if(err) console.log(objPasscode);
+        if (err) console.log(objPasscode);
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken(authentication))

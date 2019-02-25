@@ -10,8 +10,15 @@ router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.authenticateToken, adminController.changePassword)
 router.post('/confirmForgotPassword', authorize.authenticateToken, adminController.confirmForgotPassword)
 
-router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication);
-router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication);
-router.post('/verifyTwoFactorAuthentication', twoFactorAuthenticationController.verifyTwoFactorAuthentication);
+router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
+router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
+router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication)
+
+router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
+router.post('/getUsers', authorize.authenticateToken, adminController.getUsers)
+router.post('/getUserById', authorize.authenticateToken, adminController.getUserById)
+router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
+router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
+router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)
 
 module.exports = router
