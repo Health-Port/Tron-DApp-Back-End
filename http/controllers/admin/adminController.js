@@ -303,9 +303,13 @@ async function getLoginHistories(req, res) {
             //Returing successful response
             return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData);
         }
-        for (let i = 0; i < dbData.length; i++) {
-            dbData[i].createdAt = new Date(dbData[i].createdAt).getTime();
+        
+        if(dbData.length > 0){
+            for (let i = 0; i < dbData.length; i++) {
+                dbData[i].createdAt = new Date(dbData[i].createdAt).getTime();
+            }
         }
+        
         if (dbData) {
             if ((obj.from && obj.to) && obj.searchValue) {
                 dbData = dbData.filter(x => x.createdAt >= Date.parse(obj.from) && x.createdAt <= Date.parse(obj.to));
