@@ -303,11 +303,6 @@ async function getLoginHistories(req, res) {
             }))
         if (err) return response.errReturned(res, err)
 
-        if (obj.isCsvExport) {
-            //Returing successful response
-            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
-        }
-
         if (dbData) {
             if ((obj.from && obj.to) && obj.searchValue) {
                 dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
@@ -321,6 +316,17 @@ async function getLoginHistories(req, res) {
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
+        }
+
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].user_id
+                    delete dbData[i].id
+                }
+            }
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Returing successful response
@@ -359,10 +365,6 @@ async function getUsers(req, res) {
             }))
         if (err) return response.errReturned(res, err)
 
-        if (obj.isCsvExport) {
-            //Returing successful response
-            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
-        }
         if (dbData) {
             if (obj.role && obj.searchValue) {
                 dbData = dbData.filter(x => x.role == obj.role)
@@ -376,6 +378,16 @@ async function getUsers(req, res) {
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
+        }
+
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].id
+                }
+            }
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Decrypting public address
@@ -561,7 +573,7 @@ async function sendUserResetPasswordRequest(req, res) {
         const passcode = passcodeGenerator.generate({ length: 14, numbers: true });
 
         //Finding record from db
-        [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }));
+        [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
         if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         const authentication = { pass_code: passcode, user_id: user.id };
@@ -591,7 +603,7 @@ async function sendUserResetPasswordRequest(req, res) {
                 pass_code: passcode,
                 type: 'forget'
             }))
-        if(err) console.log(objPasscode);
+        if (err) console.log(objPasscode);
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken(authentication))
@@ -614,6 +626,67 @@ async function sendUserResetPasswordRequest(req, res) {
     }
 }
 
+async function resendLinkEmail(req, res) {
+    try {
+        const obj = {
+            'userId': req.body.userId,
+        }
+
+        let err = {}, data = {}, foundPasscode = {}, passCode = {}, token = {}, mailSent = {};
+
+        //Checking if user already exists
+        [err, data] = await utils.to(db.models.users.findOne({ where: { id: obj.userId } }))
+        if (data.email_confirmed == true)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
+
+        //Checking passcode in db
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
+            {
+                where: { user_id: obj.userId, type: 'signup' },
+                order: [['createdAt', 'DESC']]
+            }))
+        if (foundPasscode) {
+            const passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const now = moment().format('YYYY-MM-DD HH:mm:ss')
+            const timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
+
+            //re-attempt allowed after 10 mintues
+            if ((timeDifferInMin <= parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME))) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, `You Need to wait ${parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME) - timeDifferInMin} minutes to avail this service again.`)
+            }
+        }
+
+        //Saving passcode in db
+        [err, passCode] = await utils.to(db.models.pass_codes.create(
+            {
+                user_id: obj.userId,
+                pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
+                type: 'signup'
+            }));
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken({
+            email: data.email, user_id: obj.userId, pass_code: passCode.pass_code
+        }))
+
+        const url = `${process.env.BASE_URL}${process.env.VERIFICATION_ROUTE}?token=${token}`;
+
+        //Email sending
+        [err, mailSent] = await utils.to(emailTemplates.signUpTemplate(token, data.email, url, data.name))
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err)
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.LINK_RESENT, token)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -626,5 +699,6 @@ module.exports = {
     getTransactionsByUserId,
     getLoginHistoriesByUserId,
     getReferrals,
-    sendUserResetPasswordRequest
+    sendUserResetPasswordRequest,
+    resendLinkEmail
 }
