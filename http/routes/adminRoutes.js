@@ -20,5 +20,6 @@ router.post('/getUserById', authorize.authenticateToken, adminController.getUser
 router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
 router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
 router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)
+router.post('/sendUserResetPasswordRequest', authorize.authenticateToken, adminController.sendUserResetPasswordRequest)
 
 module.exports = router
