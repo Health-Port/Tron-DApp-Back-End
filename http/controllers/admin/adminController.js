@@ -31,7 +31,7 @@ async function signIn(req, res) {
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
         if (obj.password != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
@@ -106,7 +106,7 @@ async function forgetPassword(req, res) {
         //Finding record from db
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         const authentication = { pass_code: passcode, user_id: admin.id, email: admin.email };
 
@@ -240,7 +240,7 @@ async function changePassword(req, res) {
 
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: obj.adminId } }))
-        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         if (obj.oldPassword != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
@@ -412,7 +412,7 @@ async function getUserById(req, res) {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         const data = {
             id: user[0].id,
@@ -455,7 +455,7 @@ async function getTransactionsByUserId(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (transections == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (transections == null || transections.count == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, transections)
@@ -488,7 +488,7 @@ async function getLoginHistoriesByUserId(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (loginHistories == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (loginHistories == null || loginHistories.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, loginHistories)
@@ -515,7 +515,7 @@ async function getReferrals(req, res) {
 
         [err, user] = await utils.to(db.models.users.findOne({ where: { id: obj.userId } }))
         if (err) return response.errReturned(res, err)
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
         [err, referrals] = await utils.to(db.models.users.findAndCountAll(
             {
@@ -525,7 +525,7 @@ async function getReferrals(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (referrals == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+        if (referrals == null || referrals.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
         [err, rewardConfs] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: 'Referral Reward' } }))
         if (err) return response.errReturned(res, err)
@@ -562,7 +562,7 @@ async function sendUserResetPasswordRequest(req, res) {
 
         //Finding record from db
         [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         const authentication = { pass_code: passcode, user_id: user.id };
 
@@ -591,7 +591,7 @@ async function sendUserResetPasswordRequest(req, res) {
                 pass_code: passcode,
                 type: 'forget'
             }))
-        if(err) console.log(objPasscode);
+        if (err) console.log(objPasscode);
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken(authentication))
@@ -614,6 +614,56 @@ async function sendUserResetPasswordRequest(req, res) {
     }
 }
 
+async function listTransactions(req, res) {
+    try {
+        const obj = {
+            'searchValue': req.body.searchValue,
+            'pageNumber': req.body.pageNumber,
+            'pageSize': req.body.pageSize
+        }
+        let err = {}, dbData = {}
+        const returnableData = {}
+
+        //Paging
+        let pageSize = parseInt(obj.pageSize)
+        let pageNumber = parseInt(obj.pageNumber)
+        if (!pageNumber) pageNumber = 0
+        if (!pageSize) pageSize = 20
+        const start = parseInt(pageNumber * pageSize)
+        const end = parseInt(start + pageSize);
+
+        [err, dbData] = await utils.to(db.query(`
+            select user_id, address, type, note, number_of_token, trx_hash, createdAt 
+            from transections
+            where user_id > 0 
+            order by createdAt desc`,
+            {
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (dbData == null || dbData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+        if (dbData) {
+            if (obj.searchValue) {
+                dbData = dbData.filter(x => x.address.includes(obj.searchValue) || x.trx_hash.includes(obj.searchValue))
+            }
+
+            returnableData['count'] = dbData.length
+            const slicedData = dbData.slice(start, end)
+            returnableData['rows'] = slicedData
+        }
+        //Decrypting public address
+        for (let i = 0; i < returnableData.rows.length; i++) {
+            returnableData.rows[i].address = utils.decrypt(returnableData.rows[i].address)
+        }
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -626,5 +676,6 @@ module.exports = {
     getTransactionsByUserId,
     getLoginHistoriesByUserId,
     getReferrals,
-    sendUserResetPasswordRequest
+    sendUserResetPasswordRequest,
+    listTransactions,
 }
