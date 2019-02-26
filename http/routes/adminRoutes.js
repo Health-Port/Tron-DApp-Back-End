@@ -22,5 +22,6 @@ router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminCont
 router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)
 router.post('/sendUserResetPasswordRequest', authorize.authenticateToken, adminController.sendUserResetPasswordRequest)
 router.post('/listTransactions', adminController.listTransactions)
+router.post('/resendLinkEmail', adminController.resendLinkEmail)
 
 module.exports = router
