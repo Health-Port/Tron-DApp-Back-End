@@ -561,7 +561,7 @@ async function sendUserResetPasswordRequest(req, res) {
         const passcode = passcodeGenerator.generate({ length: 14, numbers: true });
 
         //Finding record from db
-        [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }));
+        [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
         if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
         const authentication = { pass_code: passcode, user_id: user.id };
