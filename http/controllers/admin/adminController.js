@@ -550,6 +550,70 @@ async function getReferrals(req, res) {
     }
 }
 
+async function sendUserResetPasswordRequest(req, res) {
+    try {
+        const obj = {
+            'email': req.body.email
+        }
+
+        let err, user = {}, token = {}, timeDifferInMin = {}, passcodeCreateTime = {}, foundPasscode = {}, mailSent = {}
+
+        const passcode = passcodeGenerator.generate({ length: 14, numbers: true });
+
+        //Finding record from db
+        [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }));
+        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+        const authentication = { pass_code: passcode, user_id: user.id };
+
+        //Checking passcode in db
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
+            {
+                where: { user_id: user.id, type: 'forget' },
+                order: [['createdAt', 'DESC']]
+            }))
+        if (foundPasscode) {
+            passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const now = moment().format('YYYY-MM-DD HH:mm:ss')
+            timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
+
+            //re-attempt allowed after 10 mintues
+            if (!(timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME))) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, `You Need to wait ${parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME) - timeDifferInMin} minutes to avail this service again.`)
+            }
+        }
+
+        //Saving passcode in db
+        let objPasscode = {};
+        [err, objPasscode] = await utils.to(db.models.pass_codes.create(
+            {
+                user_id: user.id,
+                pass_code: passcode,
+                type: 'forget'
+            }))
+        if(err) console.log(objPasscode);
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken(authentication))
+
+        const url = `${process.env.BASE_URL}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
+
+        //Email sending
+        [err, mailSent] = await utils.to(emailTemplates.forgetPasswordTemplate(token, obj.email, url))
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err)
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -561,5 +625,6 @@ module.exports = {
     getUserById,
     getTransactionsByUserId,
     getLoginHistoriesByUserId,
-    getReferrals
+    getReferrals,
+    sendUserResetPasswordRequest
 }
