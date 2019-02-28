@@ -23,5 +23,10 @@ router.post('/getReferrals', authorize.authenticateToken, adminController.getRef
 router.post('/sendUserResetPasswordRequest', authorize.authenticateToken, adminController.sendUserResetPasswordRequest)
 router.post('/listTransactions', authorize.authenticateToken, adminController.listTransactions)
 router.post('/resendLinkEmail', authorize.authenticateToken, adminController.resendLinkEmail)
+router.post('/updateSPRewardSettings', authorize.authenticateToken, adminController.updateSPRewardSettings)
+router.post('/updateAirdropSettings', authorize.authenticateToken, adminController.updateAirdropSettings)
+
+router.get('/listSPRewardSettings', authorize.authenticateToken, adminController.listSPRewardSettings)
+router.get('/listAirdropSettings', authorize.authenticateToken, adminController.listAirdropSettings)
 
 module.exports = router

@@ -1,6 +1,7 @@
 const moment = require('moment')
 const passcodeGenerator = require('generate-password')
 
+const rewardEnum = require('../../../enum/rewardEnum')
 const utils = require('../../../etc/utils')
 const regex = require('../../../etc/regex')
 const response = require('../../../etc/response')
@@ -106,7 +107,7 @@ async function forgetPassword(req, res) {
         //Finding record from db
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         const authentication = { pass_code: passcode, user_id: admin.id, email: admin.email };
 
@@ -240,7 +241,7 @@ async function changePassword(req, res) {
 
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: obj.adminId } }))
-        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         if (obj.oldPassword != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
@@ -404,16 +405,16 @@ async function getUserById(req, res) {
         [err, user] = await utils.to(db.query(`
                         select u.id, u.email, u.role, u.tron_wallet_public_key, u.tron_wallet_private_key, 
                         l.createdAt as last_login_date, u.createdAt as account_created_date from users u
-                        inner join login_histories l ON u.id = l.user_id 
+                        left join login_histories l ON u.id = l.user_id 
                         where u.id = :userId 
                         order by l.createdAt desc
                         limit 1`,
             {
-                replacements: { userId: obj.userId },
+                replacements: { userId: parseInt(obj.userId) },
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         const data = {
             id: user[0].id,
@@ -437,7 +438,7 @@ async function getUserById(req, res) {
 async function getTransactionsByUserId(req, res) {
     try {
         const obj = {
-            'userId': req.body.userId,
+            'userId': req.body.publicKey,
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
         }
@@ -450,13 +451,19 @@ async function getTransactionsByUserId(req, res) {
 
         [err, transections] = await utils.to(db.models.transections.findAndCountAll(
             {
-                where: [{ user_id: obj.userId }],
+                where: [{ address: utils.encrypt(obj.userId) }],
                 order: [['createdAt', 'DESC']],
                 limit: obj.pageSize,
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (transections == null || transections.count == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (transections == null || transections.count == 0 || transections == undefined)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        //Decrypting public address
+        for (let i = 0; i < transections.rows.length; i++) {
+            transections.rows[i].address = utils.decrypt(transections.rows[i].address)
+        }
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, transections)
@@ -533,6 +540,7 @@ async function getReferrals(req, res) {
 
         const data = []
         for (let i = 0; i < referrals.rows.length; i++) {
+
             data[i] = {
                 'id': referrals.rows[i].id,
                 'email': referrals.rows[i].email,
@@ -642,7 +650,7 @@ async function listTransactions(req, res) {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (dbData == null || dbData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (dbData == null || dbData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         if (dbData) {
             if (obj.searchValue) {
@@ -653,10 +661,12 @@ async function listTransactions(req, res) {
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
         }
+
         //Decrypting public address
         for (let i = 0; i < returnableData.rows.length; i++) {
             returnableData.rows[i].address = utils.decrypt(returnableData.rows[i].address)
         }
+
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
     } catch (error) {
@@ -727,6 +737,118 @@ async function resendLinkEmail(req, res) {
     }
 }
 
+async function listSPRewardSettings(req, res) {
+    try {
+
+        let err = {}, spData = {};
+        //Finding record from db    
+        [err, spData] = await utils.to(db.models.reward_conf.findOne(
+            {
+                attributes: ['id', 'reward_type', 'max_amount', 'reward_per_vote', 'cron_job_status'],
+                where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD }
+            }
+        ))
+        if (spData == null || spData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, spData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateSPRewardSettings(req, res) {
+    try {
+        const obj = {
+            'cronJobStatus': req.body.cronJobStatus,
+            'maxAmount': req.body.maxAmount,
+            'rewardPerVote': req.body.rewardPerVote
+        }
+        let err = {}, spSettings = {}
+
+        if (!(obj.maxAmount > 0) && !(obj.rewardPerVote > 0))
+            return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
+
+        //Updading passcode
+        [err, spSettings] = await utils.to(db.models.reward_conf.update(
+            {
+                cron_job_status: obj.cronJobStatus,
+                max_amount: obj.maxAmount,
+                reward_per_vote: obj.rewardPerVote
+            },
+            { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (spSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listAirdropSettings(req, res) {
+    try {
+
+        let err = {}, airdropData = {};
+        //Finding record from db    
+        [err, airdropData] = await utils.to(db.models.reward_conf.findOne(
+            {
+                attributes: ['id', 'reward_type', 'reward_amount', 'reward_end_date', 'max_users', 'cron_job_status'],
+                where: { reward_type: rewardEnum.AIRDROPREWARD }
+            }
+        ))
+        if (airdropData == null || airdropData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, airdropData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateAirdropSettings(req, res) {
+    try {
+        const obj = {
+            'cronJobStatus': req.body.cronJobStatus,
+            'rewardAmount': req.body.rewardAmount,
+            'maxUsers': req.body.maxUsers,
+        }
+        let err = {}, airdropSettings = {}
+
+        if (!(obj.rewardAmount > 0) && !(obj.maxUsers > 0))
+            return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
+
+        //Updading passcode
+        [err, airdropSettings] = await utils.to(db.models.reward_conf.update(
+            {
+                cron_job_status: obj.cronJobStatus,
+                reward_amount: obj.rewardAmount,
+                max_users: obj.maxUsers
+            },
+            { where: { reward_type: rewardEnum.AIRDROPREWARD } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (airdropSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -741,5 +863,10 @@ module.exports = {
     getReferrals,
     sendUserResetPasswordRequest,
     listTransactions,
-    resendLinkEmail
+    resendLinkEmail,
+    listSPRewardSettings,
+    updateSPRewardSettings,
+    listAirdropSettings,
+    updateAirdropSettings,
+
 }

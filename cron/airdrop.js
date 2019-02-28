@@ -19,7 +19,7 @@ let options = {
 
 let task = cron.schedule('*/15 * * * *', async () => {
     try {
-        let promisesArray = []
+        let promisesArray = [], err;
         //DB Queries
         [err, airDropUsersCount] = await utils.to(db.models.air_drop_users.count())
         if (err) {
@@ -38,8 +38,8 @@ let task = cron.schedule('*/15 * * * *', async () => {
         if (airDropUsersCount >= rewardObj[0].max_users) {
             return
         }
-        if (new Date(rewardObj[0].reward_end_date) < new Date()) {
-            return
+        if (!rewardObj[0].cron_job_status) {
+            return;
         }
         //Getting Transactions which are on TRON Network
         options.uri = apiUrlForTransfers

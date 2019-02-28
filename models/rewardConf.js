@@ -40,7 +40,12 @@ module.exports = (sequelize, Sequelize) => {
         reward_per_vote:{
             type: Sequelize.INTEGER,
             allowNull: true
-        }
+        },
+        cron_job_status: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false,
+            allowNull: true
+        },
     })
     return reward_conf
 }

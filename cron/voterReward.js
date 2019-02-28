@@ -16,10 +16,11 @@ var options = {
     },
     json: true // Automatically parses the JSON string in the response
 };
+
 //Cron Job Every 6 hours
 var task = cron.schedule('0 0,6,12,18 * * *', async () => {
-    let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0, combineReward;
     try {
+        let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0, combineReward;
         console.log('Cron job started for reward distribution');
         //DB Queries
         [err, rewardObj] = await utils.to(db.models.reward_conf.findAll({
@@ -27,9 +28,11 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
                 reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD
             }
         }));
-        if (!rewardObj || rewardObj.length == 0) {
+        //checking cron job status
+        if (!rewardObj || rewardObj.length == 0 || !rewardObj[0].cron_job_status) {
             return;
         }
+
         //Getting Transactions which are on TRON Network
         options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
         var response = await rp(options);
@@ -52,15 +55,15 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
         for (let i = 0; i < response.data.length; i++) {
             let cycleNo = getCycleNoByTime(response.data[i].timestamp);
             let matchedData = rewardData.filter(x => x.voter_address == response.data[i].voterAddress);
-            
+
             //To avoid self voting and getting reward
             if (response.data[i].voterAddress != response.data[i].candidateAddress) {
                 if (matchedData.length > 0) {
                     let sum = _.sumBy(matchedData, function (o) { return o.votes; });
-                    
+
                     //To check weather votes has been changed are same as privious
                     if (!(sum == response.data[i].votes)) {
-                        
+
                         //In case of vote increased
                         if (sum < response.data[i].votes) {
                             [err, newEntry] = await utils.to(db.models.voter_rewards.create({
