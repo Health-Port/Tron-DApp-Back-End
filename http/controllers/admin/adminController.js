@@ -344,8 +344,7 @@ async function getUsers(req, res) {
             'searchValue': req.body.searchValue,
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
-            'role': req.body.role,
-            'isCsvExport': req.body.isCsvExport
+            'role': req.body.role
         }
 
         let err = {}, dbData
@@ -367,10 +366,10 @@ async function getUsers(req, res) {
 
         if (dbData) {
             if (obj.role && obj.searchValue) {
-                dbData = dbData.filter(x => x.role == obj.role)
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
             } else if (obj.role) {
-                dbData = dbData.filter(x => x.role == obj.role)
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
             } else if (obj.searchValue) {
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
             }
@@ -378,16 +377,6 @@ async function getUsers(req, res) {
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
-        }
-
-        if (obj.isCsvExport) {
-            if (dbData.length > 0) {
-                for (let i = 0; i < dbData.length; i++) {
-                    delete dbData[i].id
-                }
-            }
-            //Returing successful response
-            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Decrypting public address
@@ -657,7 +646,7 @@ async function listTransactions(req, res) {
 
         if (dbData) {
             if (obj.searchValue) {
-                dbData = dbData.filter(x => x.address.includes(obj.searchValue) || x.trx_hash.includes(obj.searchValue))
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue)) || x.trx_hash.includes(obj.searchValue))
             }
 
             returnableData['count'] = dbData.length
@@ -676,6 +665,7 @@ async function listTransactions(req, res) {
     }
 
 }
+
 async function resendLinkEmail(req, res) {
     try {
         const obj = {

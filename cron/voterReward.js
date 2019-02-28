@@ -18,7 +18,7 @@ var options = {
 };
 //Cron Job Every 6 hours
 var task = cron.schedule('0 0,6,12,18 * * *', async () => {
-    let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0;
+    let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0, combineReward;
     try {
         console.log('Cron job started for reward distribution');
         //DB Queries
@@ -52,10 +52,16 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
         for (let i = 0; i < response.data.length; i++) {
             let cycleNo = getCycleNoByTime(response.data[i].timestamp);
             let matchedData = rewardData.filter(x => x.voter_address == response.data[i].voterAddress);
+            
+            //To avoid self voting and getting reward
             if (response.data[i].voterAddress != response.data[i].candidateAddress) {
                 if (matchedData.length > 0) {
                     let sum = _.sumBy(matchedData, function (o) { return o.votes; });
+                    
+                    //To check weather votes has been changed are same as privious
                     if (!(sum == response.data[i].votes)) {
+                        
+                        //In case of vote increased
                         if (sum < response.data[i].votes) {
                             [err, newEntry] = await utils.to(db.models.voter_rewards.create({
                                 candidate_address: response.data[i].candidateAddress,
@@ -64,7 +70,7 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
                                 time_stamp: response.data[i].timestamp,
                                 cycle_no: cycleNo
                             }));
-                        } else {
+                        } else { //In case vote was decreased
                             [err, deleteData] = await utils.to(db.models.voter_rewards.destroy({
                                 where: { voter_address: response.data[i].voterAddress }
                             }));
@@ -77,7 +83,7 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
                             }));
                         }
                     }
-                } else {
+                } else { //Total new voter case
                     [err, added] = await utils.to(db.models.voter_rewards.create({
                         candidate_address: response.data[i].candidateAddress,
                         voter_address: response.data[i].voterAddress,
@@ -88,41 +94,57 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
                 }
             }
         };
+        //Getting updated data from db
         [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
 
         //Filtering data to give reward only for those who are currently voters.
         let unMachedData = rewardData.filter(({ voter_address }) => !response.data.some(o => o.voterAddress == voter_address));
+        //To handle to case if voter is no loger a voter.
         if (unMachedData.length > 0) {
             for (let i = 0; i < unMachedData.length; i++) {
                 [err, delData] = await utils.to(db.models.voter_rewards.destroy({
                     where: { id: unMachedData[i].id }
                 }));
             }
+            //Getting updated data from db
             [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
         }
 
+        //Calculating cycle wise sum of each cycle.
         [err, dbcycle] = await utils.to(db.query('select cycle_no, sum(votes) as totalCycleVotes from voter_rewards group by cycle_no', {
             type: db.QueryTypes.SELECT,
         }));
 
         let cycleNoArray = rearrangeCycleArray(dbcycle);
         let currentCycle = getCycleNoByTime(new Date());
-        let totalNumberOfRewardTokensdispersed = 0;
+
         for (let i = 0; i < rewardData.length; i++) {
             if (currentCycle == rewardData[i].cycle_no) {
                 let votePercentageOfAUser = ((rewardData[i].votes / cycleNoArray[currentCycle]) * 100);
                 let ehrMaxCount = rewardObj[0].reward_per_vote > 0 ? totalNumberOfVotes * rewardObj[0].reward_per_vote : totalNumberOfVotes;
                 ehrMaxCount = ehrMaxCount < rewardObj[0].max_amount ? ehrMaxCount : rewardObj[0].max_amount;
                 let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (ehrMaxCount / 4)) / 100);
-                totalNumberOfRewardTokensdispersed += numberOfRewardAmount;
-                if (totalNumberOfRewardTokensdispersed < (ehrMaxCount / 4) + 250) {
-                    await sendEHRTokensToAirVoterUsers(rewardData[i].voter_address, numberOfRewardAmount);
-                }
-                else {
-                    console.log(`${new Date()} Quota Complete`);
-                    break;
+                if (rewardData[i].total_reward != numberOfRewardAmount) {
+                    [err, update] = await utils.to(db.models.voter_rewards.update(
+                        { total_reward: numberOfRewardAmount },
+                        { where: { id: rewardData[i].id } }
+                    ))
                 }
             }
+        }
+
+        //Distributing reward once a day
+        if (currentCycle == 1) {
+            [err, combineReward] = await utils.to(db.query('SELECT voter_address, sum(total_reward) as total_reward FROM voter_rewards group by voter_address order by total_reward desc',
+                {
+                    type: db.QueryTypes.SELECT,
+                }));
+            for (let i = 0; i < combineReward.length; i++) {
+                if (combineReward[i].total_reward > 0) {
+                    await sendEHRTokensToAirVoterUsers(combineReward[i].voter_address, combineReward[i].total_reward);
+                }
+            }
+
         }
     }
     catch (exp) {
