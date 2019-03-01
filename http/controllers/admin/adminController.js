@@ -615,7 +615,7 @@ async function sendUserResetPasswordRequest(req, res) {
         }
 
         //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
+        return response.sendResponse(res, resCode.SUCCESS, 'Reset Password Request Sent Successfully!')
 
     } catch (error) {
         console.log(error)
@@ -849,6 +849,161 @@ async function updateAirdropSettings(req, res) {
     }
 }
 
+async function updateSignupLimitPerDay(req, res) {
+    try {
+        const obj = {
+            'perDayLimit': req.body.perDayLimit
+        }
+        let err = {}, result = {}
+
+        if (!(obj.perDayLimit > 0 || obj.perDayLimit == null))
+            return response.sendResponse(res, resCode.NOT_FOUND, 'Values should be positive integers');
+
+        [err, result] = await utils.to(db.models.reward_conf.findOne(
+            {
+                where: { reward_type: rewardEnum.SIGNUPREWARD }
+            }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (!result || result == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR);
+
+        [err, result] = await utils.to(db.models.reward_conf.update(
+            { max_users: obj.perDayLimit },
+            { where: { reward_type: rewardEnum.SIGNUPREWARD } }
+        ))
+        if (!err && result.length > 0)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+        return response.errReturned(res, err)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listSignupLimitPerDay(req, res) {
+    try {
+
+        let err = {}, result = {};
+        //Finding record from db    
+        [err, result] = await utils.to(db.models.reward_conf.findOne(
+            {
+                where: { reward_type: rewardEnum.SIGNUPREWARD }
+            }
+        ))
+        if (result == null || result.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, result.max_users)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listCommissionSettings(req, res) {
+    try {
+
+        let err = {}, result = {};
+        //Finding record from db    
+        [err, result] = await utils.to(db.models.commission_conf.findAll())
+        if (result == null || result.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, result)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateCommissionSettings(req, res) {
+    try {
+        const obj = {
+            'commissionAmount': req.body.commissionAmount,
+            'commissionType': req.body.commissionType,
+        }
+        let err = {}, commissionSettings = {}
+
+        if (!(obj.commissionAmount > 0))
+            return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
+
+        //Updading
+        [err, commissionSettings] = await utils.to(db.models.commission_conf.update(
+            {
+                commission_amount: obj.commissionAmount,
+            },
+            { where: { commission_type: obj.commissionType } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (commissionSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listRewardSettings(req, res) {
+    try {
+
+        let err = {}, result = {};
+
+        //Finding record from db    
+        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7)',
+            {
+                type: db.QueryTypes.SELECT,
+            }))
+        if (result == null || result.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, result)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateRewardSettings(req, res) {
+    try {
+        const obj = {
+            'rewardData': req.body.rewardData,
+        }
+
+        let err = {}, resutl = {}
+        
+        for (let i = 0; i < obj.rewardData.length; i++) {
+            //Updading
+            [err, resutl] = await utils.to(db.models.reward_conf.update(
+                {
+                    reward_amount: obj.rewardData[i].value,
+                },
+                { where: { id: obj.rewardData[i].id } }
+            ))
+        }
+
+        if (err) return response.errReturned(res, err)
+        if (resutl.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -868,5 +1023,10 @@ module.exports = {
     updateSPRewardSettings,
     listAirdropSettings,
     updateAirdropSettings,
-
+    updateSignupLimitPerDay,
+    listSignupLimitPerDay,
+    listCommissionSettings,
+    updateCommissionSettings,
+    listRewardSettings,
+    updateRewardSettings
 }

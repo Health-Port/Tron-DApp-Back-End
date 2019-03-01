@@ -27,7 +27,8 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             } else {
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -55,7 +56,8 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             } else {
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -83,7 +85,8 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             } else {
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -136,7 +139,8 @@ async function sendDocumentReward(
                 ]));
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {

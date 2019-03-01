@@ -141,7 +141,7 @@ async function getProviderSharedDocument(req, res) {
         //Getting provider's data from db
         [err, providerData] = await utils.to(db.models.users.findOne({ where: { id: provider_id } }));
         [err, result] = await utils.to(
-            cutCommission(providerData.tron_wallet_public_key, 'Health Port Network Fee')
+            cutCommission(providerData.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         )
         if (err) {
             if (err == 'Bandwidth is low') {

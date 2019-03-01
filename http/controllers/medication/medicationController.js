@@ -86,7 +86,7 @@ async function getMedicationListByUser(req, res) {
             }
         }));
         [err, result] = await utils.to(
-            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee')
+            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         );
         if (err) {
             if(err == 'Bandwidth is low'){
