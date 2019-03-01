@@ -1,6 +1,7 @@
 const moment = require('moment')
 const passcodeGenerator = require('generate-password')
 
+const rewardEnum = require('../../../enum/rewardEnum')
 const utils = require('../../../etc/utils')
 const regex = require('../../../etc/regex')
 const response = require('../../../etc/response')
@@ -31,7 +32,7 @@ async function signIn(req, res) {
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
         if (obj.password != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
@@ -106,7 +107,7 @@ async function forgetPassword(req, res) {
         //Finding record from db
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         const authentication = { pass_code: passcode, user_id: admin.id, email: admin.email };
 
@@ -240,7 +241,7 @@ async function changePassword(req, res) {
 
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: obj.adminId } }))
-        if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         if (obj.oldPassword != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
@@ -303,11 +304,6 @@ async function getLoginHistories(req, res) {
             }))
         if (err) return response.errReturned(res, err)
 
-        if (obj.isCsvExport) {
-            //Returing successful response
-            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
-        }
-
         if (dbData) {
             if ((obj.from && obj.to) && obj.searchValue) {
                 dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
@@ -321,6 +317,17 @@ async function getLoginHistories(req, res) {
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
+        }
+
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].user_id
+                    delete dbData[i].id
+                }
+            }
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Returing successful response
@@ -338,8 +345,7 @@ async function getUsers(req, res) {
             'searchValue': req.body.searchValue,
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
-            'role': req.body.role,
-            'isCsvExport': req.body.isCsvExport
+            'role': req.body.role
         }
 
         let err = {}, dbData
@@ -359,16 +365,12 @@ async function getUsers(req, res) {
             }))
         if (err) return response.errReturned(res, err)
 
-        if (obj.isCsvExport) {
-            //Returing successful response
-            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
-        }
         if (dbData) {
             if (obj.role && obj.searchValue) {
-                dbData = dbData.filter(x => x.role == obj.role)
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
             } else if (obj.role) {
-                dbData = dbData.filter(x => x.role == obj.role)
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
             } else if (obj.searchValue) {
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
             }
@@ -403,16 +405,16 @@ async function getUserById(req, res) {
         [err, user] = await utils.to(db.query(`
                         select u.id, u.email, u.role, u.tron_wallet_public_key, u.tron_wallet_private_key, 
                         l.createdAt as last_login_date, u.createdAt as account_created_date from users u
-                        inner join login_histories l ON u.id = l.user_id 
+                        left join login_histories l ON u.id = l.user_id 
                         where u.id = :userId 
                         order by l.createdAt desc
                         limit 1`,
             {
-                replacements: { userId: obj.userId },
+                replacements: { userId: parseInt(obj.userId) },
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         const data = {
             id: user[0].id,
@@ -436,7 +438,7 @@ async function getUserById(req, res) {
 async function getTransactionsByUserId(req, res) {
     try {
         const obj = {
-            'userId': req.body.userId,
+            'userId': req.body.publicKey,
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
         }
@@ -449,13 +451,19 @@ async function getTransactionsByUserId(req, res) {
 
         [err, transections] = await utils.to(db.models.transections.findAndCountAll(
             {
-                where: [{ user_id: obj.userId }],
+                where: [{ address: utils.encrypt(obj.userId) }],
                 order: [['createdAt', 'DESC']],
                 limit: obj.pageSize,
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (transections == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (transections == null || transections.count == 0 || transections == undefined)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        //Decrypting public address
+        for (let i = 0; i < transections.rows.length; i++) {
+            transections.rows[i].address = utils.decrypt(transections.rows[i].address)
+        }
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, transections)
@@ -488,7 +496,7 @@ async function getLoginHistoriesByUserId(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (loginHistories == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (loginHistories == null || loginHistories.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, loginHistories)
@@ -515,7 +523,7 @@ async function getReferrals(req, res) {
 
         [err, user] = await utils.to(db.models.users.findOne({ where: { id: obj.userId } }))
         if (err) return response.errReturned(res, err)
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
         [err, referrals] = await utils.to(db.models.users.findAndCountAll(
             {
@@ -525,13 +533,14 @@ async function getReferrals(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (referrals == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+        if (referrals == null || referrals.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
         [err, rewardConfs] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: 'Referral Reward' } }))
         if (err) return response.errReturned(res, err)
 
         const data = []
         for (let i = 0; i < referrals.rows.length; i++) {
+
             data[i] = {
                 'id': referrals.rows[i].id,
                 'email': referrals.rows[i].email,
@@ -550,6 +559,296 @@ async function getReferrals(req, res) {
     }
 }
 
+async function sendUserResetPasswordRequest(req, res) {
+    try {
+        const obj = {
+            'email': req.body.email
+        }
+
+        let err, user = {}, token = {}, timeDifferInMin = {}, passcodeCreateTime = {}, foundPasscode = {}, mailSent = {}
+
+        const passcode = passcodeGenerator.generate({ length: 14, numbers: true });
+
+        //Finding record from db
+        [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
+        if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+        const authentication = { pass_code: passcode, user_id: user.id };
+
+        //Checking passcode in db
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
+            {
+                where: { user_id: user.id, type: 'forget' },
+                order: [['createdAt', 'DESC']]
+            }))
+        if (foundPasscode) {
+            passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const now = moment().format('YYYY-MM-DD HH:mm:ss')
+            timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
+
+            //re-attempt allowed after 10 mintues
+            if (!(timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME))) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, `You Need to wait ${parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME) - timeDifferInMin} minutes to avail this service again.`)
+            }
+        }
+
+        //Saving passcode in db
+        let objPasscode = {};
+        [err, objPasscode] = await utils.to(db.models.pass_codes.create(
+            {
+                user_id: user.id,
+                pass_code: passcode,
+                type: 'forget'
+            }))
+        if (err) console.log(objPasscode);
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken(authentication))
+
+        const url = `${process.env.BASE_URL}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
+
+        //Email sending
+        [err, mailSent] = await utils.to(emailTemplates.forgetPasswordTemplate(token, obj.email, url))
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err)
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listTransactions(req, res) {
+    try {
+        const obj = {
+            'searchValue': req.body.searchValue,
+            'pageNumber': req.body.pageNumber,
+            'pageSize': req.body.pageSize
+        }
+        let err = {}, dbData = {}
+        const returnableData = {}
+
+        //Paging
+        let pageSize = parseInt(obj.pageSize)
+        let pageNumber = parseInt(obj.pageNumber)
+        if (!pageNumber) pageNumber = 0
+        if (!pageSize) pageSize = 20
+        const start = parseInt(pageNumber * pageSize)
+        const end = parseInt(start + pageSize);
+
+        [err, dbData] = await utils.to(db.query(`
+            select user_id, address, type, note, number_of_token, trx_hash, createdAt 
+            from transections
+            where user_id > 0 
+            order by createdAt desc`,
+            {
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (dbData == null || dbData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        if (dbData) {
+            if (obj.searchValue) {
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue)) || x.trx_hash.includes(obj.searchValue))
+            }
+
+            returnableData['count'] = dbData.length
+            const slicedData = dbData.slice(start, end)
+            returnableData['rows'] = slicedData
+        }
+
+        //Decrypting public address
+        for (let i = 0; i < returnableData.rows.length; i++) {
+            returnableData.rows[i].address = utils.decrypt(returnableData.rows[i].address)
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+
+}
+
+async function resendLinkEmail(req, res) {
+    try {
+        const obj = {
+            'userId': req.body.userId,
+        }
+
+        let err = {}, data = {}, foundPasscode = {}, passCode = {}, token = {}, mailSent = {};
+
+        //Checking if user already exists
+        [err, data] = await utils.to(db.models.users.findOne({ where: { id: obj.userId } }))
+        if (data.email_confirmed == true)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
+
+        //Checking passcode in db
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
+            {
+                where: { user_id: obj.userId, type: 'signup' },
+                order: [['createdAt', 'DESC']]
+            }))
+        if (foundPasscode) {
+            const passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const now = moment().format('YYYY-MM-DD HH:mm:ss')
+            const timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
+
+            //re-attempt allowed after 10 mintues
+            if ((timeDifferInMin <= parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME))) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, `You Need to wait ${parseInt(process.env.FORGETPASSWORD_RE_ATTEMPT_TIME) - timeDifferInMin} minutes to avail this service again.`)
+            }
+        }
+
+        //Saving passcode in db
+        [err, passCode] = await utils.to(db.models.pass_codes.create(
+            {
+                user_id: obj.userId,
+                pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
+                type: 'signup'
+            }));
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken({
+            email: data.email, user_id: obj.userId, pass_code: passCode.pass_code
+        }))
+
+        const url = `${process.env.BASE_URL}${process.env.VERIFICATION_ROUTE}?token=${token}`;
+
+        //Email sending
+        [err, mailSent] = await utils.to(emailTemplates.signUpTemplate(token, data.email, url, data.name))
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err)
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.LINK_RESENT, token)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listSPRewardSettings(req, res) {
+    try {
+
+        let err = {}, spData = {};
+        //Finding record from db    
+        [err, spData] = await utils.to(db.models.reward_conf.findOne(
+            {
+                attributes: ['id', 'reward_type', 'max_amount', 'reward_per_vote', 'cron_job_status'],
+                where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD }
+            }
+        ))
+        if (spData == null || spData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, spData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateSPRewardSettings(req, res) {
+    try {
+        const obj = {
+            'cronJobStatus': req.body.cronJobStatus,
+            'maxAmount': req.body.maxAmount,
+            'rewardPerVote': req.body.rewardPerVote
+        }
+        let err = {}, spSettings = {}
+
+        if (!(obj.maxAmount > 0) && !(obj.rewardPerVote > 0))
+            return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
+
+        //Updading passcode
+        [err, spSettings] = await utils.to(db.models.reward_conf.update(
+            {
+                cron_job_status: obj.cronJobStatus,
+                max_amount: obj.maxAmount,
+                reward_per_vote: obj.rewardPerVote
+            },
+            { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (spSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function listAirdropSettings(req, res) {
+    try {
+
+        let err = {}, airdropData = {};
+        //Finding record from db    
+        [err, airdropData] = await utils.to(db.models.reward_conf.findOne(
+            {
+                attributes: ['id', 'reward_type', 'reward_amount', 'reward_end_date', 'max_users', 'cron_job_status'],
+                where: { reward_type: rewardEnum.AIRDROPREWARD }
+            }
+        ))
+        if (airdropData == null || airdropData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, airdropData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateAirdropSettings(req, res) {
+    try {
+        const obj = {
+            'cronJobStatus': req.body.cronJobStatus,
+            'rewardAmount': req.body.rewardAmount,
+            'maxUsers': req.body.maxUsers,
+        }
+        let err = {}, airdropSettings = {}
+
+        if (!(obj.rewardAmount > 0) && !(obj.maxUsers > 0))
+            return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
+
+        //Updading passcode
+        [err, airdropSettings] = await utils.to(db.models.reward_conf.update(
+            {
+                cron_job_status: obj.cronJobStatus,
+                reward_amount: obj.rewardAmount,
+                max_users: obj.maxUsers
+            },
+            { where: { reward_type: rewardEnum.AIRDROPREWARD } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (airdropSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -561,5 +860,13 @@ module.exports = {
     getUserById,
     getTransactionsByUserId,
     getLoginHistoriesByUserId,
-    getReferrals
+    getReferrals,
+    sendUserResetPasswordRequest,
+    listTransactions,
+    resendLinkEmail,
+    listSPRewardSettings,
+    updateSPRewardSettings,
+    listAirdropSettings,
+    updateAirdropSettings,
+
 }

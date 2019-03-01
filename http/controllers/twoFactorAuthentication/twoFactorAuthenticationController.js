@@ -67,7 +67,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 		if (err) return response.errReturned(res, err)
 		if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
-		const formattedToken = authenticator.verifyToken(admin.twofa_formatted_key, obj.code)
+		const formattedToken = authenticator.verifyToken(admin.twofa_formatted_key == null ? '' : admin.twofa_formatted_key, obj.code)
 		if (!formattedToken) return response.sendResponse(res, resCode.NOT_FOUND, 'Code Not Verified')
 
 		if (obj.state == 1) {
@@ -76,7 +76,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				{ is_twofa_enable: true, is_twofa_verified: true },
 				{ where: { id: obj.adminId } }
 			))
-			if(!update) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+			if (!update) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
 			const data = {
 				id: admin.id,
 				name: admin.name,
@@ -94,7 +94,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				{ is_twofa_enable: false, is_twofa_verified: false, twofa_formatted_key: null },
 				{ where: { id: obj.adminId } }
 			))
-			if(!update) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+			if (!update) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
 			const data = {
 				id: admin.id,
 				name: admin.name,
@@ -115,10 +115,10 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 async function verifyTwoFactorAuthentication(req, res) {
 	try {
 		const obj = {
-			'email' : req.auth.email,
-			'code' : req.body.authenticationCode	
+			'email': req.auth.email,
+			'code': req.body.authenticationCode
 		}
-		
+
 		let err, admin = {}, token = {}
 
 		if (!(obj.email && obj.code))
@@ -126,7 +126,7 @@ async function verifyTwoFactorAuthentication(req, res) {
 
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
 		if (admin == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-		if(err) return response.errReturned(res, err)
+		if (err) return response.errReturned(res, err)
 		if (!admin.is_twofa_enable) return response.sendResponse(res, resCode.NOT_FOUND, '2FA is not enabled for this Admin')
 
 		const formattedToken = authenticator.verifyToken(admin.twofa_formatted_key, obj.code)
