@@ -13,6 +13,7 @@ const emailTemplates = require('../../../etc/emailTemplates')
 const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
+const Sequelize = require('sequelize')
 
 const invisibleCaptcha = new recaptcha({
     siteKey: process.env.INVISIBLE_CAPTCHA_SITE_KEY,
@@ -34,7 +35,25 @@ async function signUp(req, res) {
             'refer_destination': req.body.destination
         }
 
-        let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}
+        let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}, result = {}, perDayLimit = {};
+
+        //Checking daily signup limit
+        [err, result] = await await utils.to(db.models.users.count({
+            where: {
+                createdAt: {
+                    [Sequelize.Op.gt]: new Date(new Date() - 24 * 60 * 60 * 1000),
+                    //[Sequelize.Op.lt]: new Date(new Date() + 24 * 60 * 60 * 1000)
+                }
+            }
+        }));
+        [err, perDayLimit] = await utils.to(db.models.reward_conf.findOne(
+            {
+                where: { reward_type: rewardEnum.SIGNUPREWARD }
+            }
+        ))
+        if(perDayLimit.max_users != null && result > perDayLimit.max_users){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.SIGNUP_LIMIT)
+        }
 
         //Checking terms and conditions
         if (!obj.is_agree)

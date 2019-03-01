@@ -25,8 +25,14 @@ router.post('/listTransactions', authorize.authenticateToken, adminController.li
 router.post('/resendLinkEmail', authorize.authenticateToken, adminController.resendLinkEmail)
 router.post('/updateSPRewardSettings', authorize.authenticateToken, adminController.updateSPRewardSettings)
 router.post('/updateAirdropSettings', authorize.authenticateToken, adminController.updateAirdropSettings)
+router.post('/updateSignupLimitPerDay', authorize.authenticateToken, adminController.updateSignupLimitPerDay)
+router.post('/updateCommissionSettings', authorize.authenticateToken, adminController.updateCommissionSettings)
+router.post('/updateRewardSettings', authorize.authenticateToken, adminController.updateRewardSettings)
 
 router.get('/listSPRewardSettings', authorize.authenticateToken, adminController.listSPRewardSettings)
 router.get('/listAirdropSettings', authorize.authenticateToken, adminController.listAirdropSettings)
+router.get('/listSignupLimitPerDay', authorize.authenticateToken, adminController.listSignupLimitPerDay)
+router.get('/listCommissionSettings', authorize.authenticateToken, adminController.listCommissionSettings)
+router.get('/listRewardSettings', authorize.authenticateToken, adminController.listRewardSettings)
 
 module.exports = router
