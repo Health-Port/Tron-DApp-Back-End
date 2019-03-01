@@ -88,7 +88,7 @@ async function getAllergyListByUser(req, res) {
         // tronUtils.getAllergyForm(utils.decrypt(user.tron_wallet_public_key));
 
         [err, result] = await utils.to(
-            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee')
+            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         )
         if (err) {
             if(err == 'Bandwidth is low'){
