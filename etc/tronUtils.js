@@ -53,7 +53,8 @@ async function getTrxBalance(privateKey, address) {
     try {
         let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
         let balance = await tronWeb.trx.getBalance(address);
-        if (balance && balance > 0) return balance;
+        if (balance && balance > 0) 
+            return balance/1000000;
         else return 0;
 
     } catch (error) {

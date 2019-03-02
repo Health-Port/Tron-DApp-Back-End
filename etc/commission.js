@@ -19,7 +19,7 @@ async function cutCommission(tron_wallet_public_key, type, commission_type) {
             if (balance < commissionObj.commission_amount) return Promise.reject('Insufficient Balance for fee to deduct');
             let trxId = await tronUtils.sendTRC10Token(process.env.COMMISSION_ACCOUNT_ADDRESS_KEY, parseInt(commissionObj.commission_amount), privateKey);
             [err, obj] = await utils.to(db.models.transections.bulkCreate([
-                { user_id: user.id, address: utils.encrypt(process.env.COMMISSION_ACCOUNT_ADDRESS_KEY), number_of_token: commissionObj.commission_amount, trx_hash: trxId, type: type },
+                { user_id: -2, address: utils.encrypt(process.env.COMMISSION_ACCOUNT_ADDRESS_KEY), number_of_token: commissionObj.commission_amount, trx_hash: trxId, type: type },
                 { user_id: user.id, address: tron_wallet_public_key, number_of_token: commissionObj.commission_amount, trx_hash: trxId, type: type }
             ]));
             return obj;

@@ -14,6 +14,7 @@ const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
 const Sequelize = require('sequelize')
+const get_ip = require('ipware')().get_ip;
 
 const invisibleCaptcha = new recaptcha({
     siteKey: process.env.INVISIBLE_CAPTCHA_SITE_KEY,
@@ -51,7 +52,7 @@ async function signUp(req, res) {
                 where: { reward_type: rewardEnum.SIGNUPREWARD }
             }
         ))
-        if(perDayLimit.max_users != null && result > perDayLimit.max_users){
+        if (perDayLimit.max_users != null && result > perDayLimit.max_users) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.SIGNUP_LIMIT)
         }
 
@@ -140,7 +141,7 @@ async function signIn(req, res) {
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
-            'ip_address': req.connection.remoteAddress,
+            'ip_address': get_ip(req),
             'captcha_key': req.body.captchaKey,
         }
 
@@ -195,11 +196,11 @@ async function signIn(req, res) {
 
         //Saving login history
         let loginHistory = {}
-        loginHistory = { 
-            user_id: user.id, 
-            ip_address: obj.ip_address 
+        loginHistory = {
+            user_id: user.id,
+            ip_address: obj.ip_address
         };
-        
+
         [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
 
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
@@ -411,7 +412,7 @@ async function verifyEmail(req, res) {
                         //Saving transection history into db
                         if (refRewardTrxId)
                             [err, data] = await utils.to(db.models.transections.bulkCreate([
-                                { user_id: refData.id, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' },
+                                { user_id: -1, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' },
                                 { user_id: refData.id, address: refData.tron_wallet_public_key, number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' }
                             ]))
                     }
@@ -440,7 +441,7 @@ async function verifyEmail(req, res) {
                     //Saving transection history into db
                     if (signupRewardTrxId) {
                         [err, data] = await utils.to(db.models.transections.bulkCreate([
-                            { user_id: user.id, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: signupRewardTrxId, type: 'New Account' },
+                            { user_id: -1, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: signupRewardTrxId, type: 'New Account' },
                             { user_id: user.id, address: user.tron_wallet_public_key, number_of_token: amount, trx_hash: signupRewardTrxId, type: 'New Account' }
                         ]))
                         rewardGiven = true
