@@ -2,6 +2,8 @@ const router = require('express').Router()
 const authorize = require('../../middlewares/authorization')
 const adminController = require('../controllers/admin/adminController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
+const dashboardController = require('../controllers/dashboard/dashboardController')
+
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -34,5 +36,13 @@ router.get('/listAirdropSettings', authorize.authenticateToken, adminController.
 router.get('/listSignupLimitPerDay', authorize.authenticateToken, adminController.listSignupLimitPerDay)
 router.get('/listCommissionSettings', authorize.authenticateToken, adminController.listCommissionSettings)
 router.get('/listRewardSettings', authorize.authenticateToken, adminController.listRewardSettings)
+
+//Dashboard Routes
+router.get('/getTrxEHRBalance', authorize.authenticateToken, dashboardController.getTrxEHRBalance)
+router.get('/getTotalUsersCount', authorize.authenticateToken, dashboardController.getTotalUsersCount)
+router.get('/getTokensRisedByCommission', authorize.authenticateToken, dashboardController.getTokensRisedByCommission)
+router.get('/getTokenDistributed', authorize.authenticateToken, dashboardController.getTokenDistributed)
+router.post('/getTransactionGraphData', authorize.authenticateToken, dashboardController.getTransactionGraphData)
+router.post('/getUserGraphData', authorize.authenticateToken, dashboardController.getUserGraphData)
 
 module.exports = router
