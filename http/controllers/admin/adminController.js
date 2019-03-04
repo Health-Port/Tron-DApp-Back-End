@@ -639,6 +639,11 @@ async function getLoginHistories(req, res) {
                     delete dbData[i].id
                 }
             }
+
+            if (!dbData || dbData == null || dbData.count == 0 || dbData.length == 0) {
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+            }
+
             //Returing successful response
             return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
@@ -711,9 +716,17 @@ async function getReferrals(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (referrals == null || referrals.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+        if (referrals == null || referrals.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
-        [err, rewardConfs] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: 'Referral Reward' } }))
+        //[err, rewardConfs] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: 'Referral Reward' } }))
+        //if (err) return response.errReturned(res, err);
+
+        [err, rewardConfs] = await utils.to(db.models.transections.findAll(
+            {
+                where: { type: 'Referal Reward', user_id: user.id },
+                order: [['createdAt', 'DESC']],
+            }))
         if (err) return response.errReturned(res, err)
 
         const data = []
@@ -981,7 +994,7 @@ async function updateRewardSettings(req, res) {
         }
 
         let err = {}, resutl = {}
-        
+
         for (let i = 0; i < obj.rewardData.length; i++) {
             //Updading
             [err, resutl] = await utils.to(db.models.reward_conf.update(
