@@ -155,17 +155,23 @@ function getIpInfo(ip) {
 }
 
 function getIpInfoMiddleware(req) {
-    var xForwardedFor = (req.headers['x-forwarded-for'] || '').replace(/:\d+$/, '');
+	var xForwardedFor = (req.headers["x-real-ip"] || '').replace(/:\d+$/, '');
+	console.log("ip address with real",xForwardedFor);
     var ip = xForwardedFor || req.connection.remoteAddress;
     req.ipInfo = getIpInfo(ip);
 }
+
+
+async function test(req,res) {
+	getIpInfoMiddleware(req);
+	res.status(200).json({message:"ip get",ip: req.ipInfo})
+}
 async function signIn(req, res) {
     try {
-    getIpInfoMiddleware(req);
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
-            'ip_address': req.ipInfo,
+            'ip_address':req.headers["x-real-ip"],
             'captcha_key': req.body.captchaKey,
         }
 
@@ -746,5 +752,6 @@ module.exports = {
     changeEmail,
     forgetPassword,
     resendLinkEmail,
-    confirmForgotPassword,
+	confirmForgotPassword,
+	test
 }

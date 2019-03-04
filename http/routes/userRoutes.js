@@ -7,6 +7,7 @@ const procedureController = require('../controllers/procedure/procedureControlle
 const medicationController = require('../controllers/medication/medicationController')
 const providerController = require('../controllers/provider/providerController')
 
+router.get('/test',userController.test);
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
 router.post('/forgetPassword', userController.forgetPassword)
