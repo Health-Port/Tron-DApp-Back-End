@@ -716,7 +716,7 @@ async function getReferrals(req, res) {
                 offset: start
             }))
         if (err) return response.errReturned(res, err)
-        if (referrals == null || referrals.length == 0)
+        if (referrals == null || referrals.count == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
         //[err, rewardConfs] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: 'Referral Reward' } }))
@@ -730,17 +730,21 @@ async function getReferrals(req, res) {
         if (err) return response.errReturned(res, err)
 
         const data = []
+        let totalReward = 0
         for (let i = 0; i < referrals.rows.length; i++) {
-
             data[i] = {
                 'id': referrals.rows[i].id,
                 'email': referrals.rows[i].email,
                 'channel': referrals.rows[i].refer_destination,
                 'createdAt': referrals.rows[i].createdAt,
-                'ehrReward': rewardConfs.reward_amount
+                'ehrReward': rewardConfs[i] ? parseFloat(rewardConfs[i].number_of_token) : 0
             }
+            totalReward += rewardConfs[i] ? parseFloat(rewardConfs[i].number_of_token) : 0
         }
+
         referrals.rows = data
+        referrals['totalReward'] = totalReward
+
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, referrals)
 
