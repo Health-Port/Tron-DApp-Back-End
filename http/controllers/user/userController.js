@@ -155,7 +155,8 @@ function getIpInfo(ip) {
 }
 
 function getIpInfoMiddleware(req) {
-    var xForwardedFor = (req.headers['x-forwarded-for'] || '').replace(/:\d+$/, '');
+	var xForwardedFor = (req.headers['X-Real-IP'] || '').replace(/:\d+$/, '');
+	console.log(xForwardedFor);
     var ip = xForwardedFor || req.connection.remoteAddress;
     req.ipInfo = getIpInfo(ip);
 }
