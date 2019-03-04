@@ -103,13 +103,25 @@ async function getTransactionGraphData(req, res) {
 				order by createdAt desc`,
 			{
 				replacements: { sDate: startDate, eDate: endDate },
+				type: db.QueryTypes.SELECT,
 			}))
 		if (err) return response.errReturned(res, err)
 		if (!data || data == null || data.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		const graphData = []
+		const labels = []
+		const count = []
+		for (let i = 0; i < data.length; i++) {
+			labels.push(data[i].date)
+			count.push(data[i].count)
+		}
+
+		graphData.push(labels)
+		graphData.push(count)
+
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, graphData)
 
 	} catch (error) {
 		console.log(error)
@@ -132,13 +144,25 @@ async function getUserGraphData(req, res) {
 				order by createdAt desc`,
 			{
 				replacements: { sDate: startDate, eDate: endDate },
+				type: db.QueryTypes.SELECT,
 			}))
 		if (err) return response.errReturned(res, err)
 		if (!data || data == null || data.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		const graphData = []
+		const labels = []
+		const count = []
+		for (let i = 0; i < data.length; i++) {
+			labels.push(data[i].date)
+			count.push(data[i].count)
+		}
+
+		graphData.push(labels)
+		graphData.push(count)
+
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, graphData)
 
 	} catch (error) {
 		console.log(error)
