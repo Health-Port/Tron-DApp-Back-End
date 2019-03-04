@@ -159,6 +159,12 @@ function getIpInfoMiddleware(req) {
     var ip = xForwardedFor || req.connection.remoteAddress;
     req.ipInfo = getIpInfo(ip);
 }
+
+
+async function test(req,res) {
+	getIpInfoMiddleware(req);
+	res.status(200).json({message:"ip get",ip: req.ipInfo})
+}
 async function signIn(req, res) {
     try {
     getIpInfoMiddleware(req);
@@ -746,5 +752,6 @@ module.exports = {
     changeEmail,
     forgetPassword,
     resendLinkEmail,
-    confirmForgotPassword,
+	confirmForgotPassword,
+	test
 }
