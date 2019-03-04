@@ -1,4 +1,3 @@
-const Sequelize = require('sequelize')
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const tronUtils = require('../../../etc/tronUtils')
@@ -91,10 +90,10 @@ async function getTokenDistributed(req, res) {
 async function getTransactionGraphData(req, res) {
 	try {
 		const { startDate, endDate } = req.body
-		let err = {}, data = {};
+		let err = {}, data = {}
 
-		//startDate = new Date(startDate).getTime();
-		//endDate = new Date(endDate).getTime();
+		if (!startDate || !endDate)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
 		[err, data] = await utils.to(db.query(`
 				select CAST(createdAt AS DATE) as date, count(*) as count from transections 
@@ -106,7 +105,8 @@ async function getTransactionGraphData(req, res) {
 				replacements: { sDate: startDate, eDate: endDate },
 			}))
 		if (err) return response.errReturned(res, err)
-		//if(!data || data.)
+		if (!data || data == null || data.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
@@ -119,28 +119,27 @@ async function getTransactionGraphData(req, res) {
 
 async function getUserGraphData(req, res) {
 	try {
-		let { startDate, endDate } = req.body
+		const { startDate, endDate } = req.body
 		let err = {}, data = {}
 
-		if (!startDate)
-			startDate = new Date(new Date() - 7 * 24 * 60 * 60 * 1000)
-		if (!endDate)
-			endDate = new Date(new Date());
+		if (!startDate || !endDate)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
-		[err, data] = await await utils.to(db.models.users.findAll({
-			attributes: ['id', 'createdAt'],
-			where: {
-				createdAt: {
-					[Sequelize.Op.gt]: startDate,
-					[Sequelize.Op.lt]: endDate
-				}
-			},
-			order: [['createdAt', 'DESC']]
-		}))
+		[err, data] = await utils.to(db.query(`
+				select CAST(createdAt AS DATE) as date, count(*) as count from users 
+				where createdAt >= :sDate and createdAt <= :eDate
+				Group by CAST(createdAt AS DATE)
+				order by createdAt desc`,
+			{
+				replacements: { sDate: startDate, eDate: endDate },
+			}))
 		if (err) return response.errReturned(res, err)
+		if (!data || data == null || data.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+
 	} catch (error) {
 		console.log(error)
 		return response.errReturned(res, error)

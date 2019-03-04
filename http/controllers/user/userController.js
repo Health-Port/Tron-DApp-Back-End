@@ -144,10 +144,10 @@ function getIpInfo(ip) {
         ip = ip.split(':').reverse()[0]
     }
     var lookedUpIP = geoip.lookup(ip);
-    if ((ip === '127.0.0.1'||ip == "::1")) {
+    if ((ip === '127.0.0.1' || ip == "::1")) {
         return "127.0.0.1"
     }
-    if (!lookedUpIP){
+    if (!lookedUpIP) {
         return { error: "Error occured while trying to process the information" }
     }
     console.log(lookedUpIP);
@@ -155,23 +155,23 @@ function getIpInfo(ip) {
 }
 
 function getIpInfoMiddleware(req) {
-	var xForwardedFor = (req.headers["x-real-ip"] || '').replace(/:\d+$/, '');
-	console.log("ip address with real",xForwardedFor);
+    var xForwardedFor = (req.headers["x-real-ip"] || '').replace(/:\d+$/, '');
+    console.log("ip address with real", xForwardedFor);
     var ip = xForwardedFor || req.connection.remoteAddress;
     req.ipInfo = getIpInfo(ip);
 }
 
 
-async function test(req,res) {
-	getIpInfoMiddleware(req);
-	res.status(200).json({message:"ip get",ip: req.ipInfo})
+async function test(req, res) {
+    getIpInfoMiddleware(req);
+    res.status(200).json({ message: "ip get", ip: req.ipInfo })
 }
 async function signIn(req, res) {
     try {
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
-            'ip_address':req.headers["x-real-ip"],
+            'ip_address': req.headers["x-real-ip"],
             'captcha_key': req.body.captchaKey,
         }
 
@@ -232,6 +232,7 @@ async function signIn(req, res) {
         };
 
         [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
+        if (err) return response.errReturned(res, err)
 
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
@@ -752,6 +753,6 @@ module.exports = {
     changeEmail,
     forgetPassword,
     resendLinkEmail,
-	confirmForgotPassword,
-	test
+    confirmForgotPassword,
+    test
 }
