@@ -38,7 +38,7 @@ var ResponseMessagesEnum = {
     REQUIRED_FIELDS_EMPTY: "Required fields cannot be empty.",
     SUCCESSFULLY_LOGGEDIN: "User login successfully.",
     SUCCESS: "Success",
-    SIGNUP_LIMIT: "Sign Up Limit for today has exceeded, please come back tomorrow for registration",
+    SIGNUP_LIMIT: "Sign Up limit has exceeded, come back tomorrow for registration",
     TOKEN_ERROR: "Unable to generate token.",
     TRON_IS_NOT_CONNECTED: "Tron node is not connected.",
     TRON_BALANCE_IS_ZERO: "Your have insufficient Tron balance.",

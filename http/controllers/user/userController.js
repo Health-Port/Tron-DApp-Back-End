@@ -14,8 +14,6 @@ const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
 const Sequelize = require('sequelize')
-const get_ip = require('ipware')().get_ip;
-
 const invisibleCaptcha = new recaptcha({
     siteKey: process.env.INVISIBLE_CAPTCHA_SITE_KEY,
     secretKey: process.env.INVISIBLE_CAPTCHA_SITE_SECRET
@@ -136,12 +134,38 @@ async function signUp(req, res) {
     }
 }
 
+var geoip = require('geoip-lite');
+
+function getIpInfo(ip) {
+    // IPV6 addresses can include IPV4 addresses
+    // So req.ip can be '::ffff:86.3.182.58'
+    // However geoip-lite returns null for these
+    if (ip.includes('::ffff:')) {
+        ip = ip.split(':').reverse()[0]
+    }
+    var lookedUpIP = geoip.lookup(ip);
+    if ((ip === '127.0.0.1'||ip == "::1")) {
+        return "127.0.0.1"
+    }
+    if (!lookedUpIP){
+        return { error: "Error occured while trying to process the information" }
+    }
+    console.log(lookedUpIP);
+    return lookedUpIP;
+}
+
+function getIpInfoMiddleware(req) {
+    var xForwardedFor = (req.headers['x-forwarded-for'] || '').replace(/:\d+$/, '');
+    var ip = xForwardedFor || req.connection.remoteAddress;
+    req.ipInfo = getIpInfo(ip);
+}
 async function signIn(req, res) {
     try {
+    getIpInfoMiddleware(req);
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
-            'ip_address': get_ip(req),
+            'ip_address': req.ipInfo,
             'captcha_key': req.body.captchaKey,
         }
 
