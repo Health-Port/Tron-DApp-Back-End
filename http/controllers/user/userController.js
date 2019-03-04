@@ -168,11 +168,10 @@ async function test(req,res) {
 }
 async function signIn(req, res) {
     try {
-    getIpInfoMiddleware(req);
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
-            'ip_address': req.ipInfo,
+            'ip_address':req.headers["x-real-ip"],
             'captcha_key': req.body.captchaKey,
         }
 
