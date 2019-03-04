@@ -14,7 +14,7 @@ async function getTrxEHRBalance(req, res) {
 
 		const trx = await tronUtils.getTrxBalance(privateKey, publicAddress)
 		const ehr = await tronUtils.getTRC10TokenBalance(privateKey, publicAddress)
-		
+
 		const data = {
 			'address': publicAddress,
 			'trxBalance': trx,
@@ -90,25 +90,23 @@ async function getTokenDistributed(req, res) {
 
 async function getTransactionGraphData(req, res) {
 	try {
-		let { startDate, endDate } = req.body
-		let err = {}, data = {}
+		const { startDate, endDate } = req.body
+		let err = {}, data = {};
 
-		if (!startDate)
-			startDate = new Date(new Date() - 7 * 24 * 60 * 60 * 1000)
-		if (!endDate)
-			endDate = new Date(new Date());
+		//startDate = new Date(startDate).getTime();
+		//endDate = new Date(endDate).getTime();
 
-		[err, data] = await await utils.to(db.models.transections.findAll({
-			attributes: ['id', 'createdAt'],
-			where: {
-				createdAt: {
-					[Sequelize.Op.gt]: startDate,
-					[Sequelize.Op.lt]: endDate
-				}
-			},
-			order: [['createdAt', 'DESC']]
-		}))
+		[err, data] = await utils.to(db.query(`
+				select CAST(createdAt AS DATE) as date, count(*) as count from transections 
+				where createdAt >= :sDate and createdAt <= :eDate
+				and user_id > 0
+				Group by CAST(createdAt AS DATE)
+				order by createdAt desc`,
+			{
+				replacements: { sDate: startDate, eDate: endDate },
+			}))
 		if (err) return response.errReturned(res, err)
+		//if(!data || data.)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
@@ -118,6 +116,7 @@ async function getTransactionGraphData(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
 async function getUserGraphData(req, res) {
 	try {
 		let { startDate, endDate } = req.body
