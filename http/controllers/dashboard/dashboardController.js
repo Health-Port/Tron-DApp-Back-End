@@ -1,4 +1,3 @@
-const Sequelize = require('sequelize')
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const tronUtils = require('../../../etc/tronUtils')
