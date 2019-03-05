@@ -89,8 +89,19 @@ async function getTokenDistributed(req, res) {
 
 async function getTransactionGraphData(req, res) {
 	try {
-		const { startDate, endDate } = req.body
+		let { startDate, endDate } = req.body
 		let err = {}, data = {}
+
+		startDate = new Date(startDate)
+		endDate = new Date(endDate)
+		endDate = new Date(
+			endDate.getFullYear(),
+			endDate.getMonth(),
+			endDate.getDate() + 1
+		)
+		if (startDate >= endDate) {
+			return response.sendResponse(res, resCode.BAD_REQUEST, 'Invalid date range.')
+		}
 
 		if (!startDate || !endDate)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
@@ -109,13 +120,38 @@ async function getTransactionGraphData(req, res) {
 		if (!data || data == null || data.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		//Date workin
+		const dates = []
+		let currentDate = new Date(
+			startDate.getFullYear(),
+			startDate.getMonth(),
+			startDate.getDate()
+		)
+		while (currentDate <= endDate) {
+			dates.push(currentDate.toISOString().substring(0, 10))
+			currentDate = new Date(
+				currentDate.getFullYear(),
+				currentDate.getMonth(),
+				currentDate.getDate() + 1, // Will increase month if over range
+			)
+		}
+		dates.reverse()
 		const graphData = []
 		const labels = []
 		const count = []
-		for (let i = 0; i < data.length; i++) {
-			labels.push(data[i].date)
-			count.push(data[i].count)
+
+		for (let index = 0; index < dates.length; index++) {
+			const obj = data.find(x => x.date == dates[index])
+			if (obj) {
+				labels.push(obj.date)
+				count.push(obj.count)
+			}
+			else {
+				labels.push(dates[index])
+				count.push(0)
+			}
 		}
+		//Date working end
 
 		graphData.push(labels)
 		graphData.push(count)
@@ -131,8 +167,19 @@ async function getTransactionGraphData(req, res) {
 
 async function getUserGraphData(req, res) {
 	try {
-		const { startDate, endDate } = req.body
+		let { startDate, endDate } = req.body
 		let err = {}, data = {}
+
+		startDate = new Date(startDate)
+		endDate = new Date(endDate)
+		endDate = new Date(
+			endDate.getFullYear(),
+			endDate.getMonth(),
+			endDate.getDate() + 1
+		)
+		if (startDate >= endDate) {
+			return response.sendResponse(res, resCode.BAD_REQUEST, 'Invalid date range.')
+		}
 
 		if (!startDate || !endDate)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
@@ -150,13 +197,38 @@ async function getUserGraphData(req, res) {
 		if (!data || data == null || data.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		//Date workin
+		const dates = []
+		let currentDate = new Date(
+			startDate.getFullYear(),
+			startDate.getMonth(),
+			startDate.getDate()
+		)
+		while (currentDate <= endDate) {
+			dates.push(currentDate.toISOString().substring(0, 10))
+			currentDate = new Date(
+				currentDate.getFullYear(),
+				currentDate.getMonth(),
+				currentDate.getDate() + 1, // Will increase month if over range
+			)
+		}
+		dates.reverse()
 		const graphData = []
 		const labels = []
 		const count = []
-		for (let i = 0; i < data.length; i++) {
-			labels.push(data[i].date)
-			count.push(data[i].count)
+
+		for (let index = 0; index < dates.length; index++) {
+			const obj = data.find(x => x.date == dates[index])
+			if (obj) {
+				labels.push(obj.date)
+				count.push(obj.count)
+			}
+			else {
+				labels.push(dates[index])
+				count.push(0)
+			}
 		}
+		//Date working end
 
 		graphData.push(labels)
 		graphData.push(count)

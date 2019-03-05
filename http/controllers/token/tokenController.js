@@ -187,13 +187,21 @@ async function getReferralsByUser(req, res) {
             limit: pageSize,
             offset: start
         }));
-        [err, rewardObj] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: rewardEnum.REFERRALREWARD } }));
+
+        //[err, rewardObj] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: rewardEnum.REFERRALREWARD } }));
+        [err, rewardObj] = await utils.to(db.models.transections.findAll(
+            {
+                where: { type: 'Referal Reward', user_id: user_id },
+                order: [['createdAt', 'DESC']],
+            }))
+        if (err) return response.errReturned(res, err)
+
         let data = [];
         for (let i = 0; i < users.rows.length; i++) {
             data[i] = {
                 'email': users.rows[i].email,
                 'channel': users.rows[i].refer_destination,
-                'referal_reward': parseInt(rewardObj.reward_amount)
+                'referal_reward': rewardObj[i] ? parseFloat(rewardObj[i].number_of_token) : 0
             }
         }
 
