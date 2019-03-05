@@ -10,5 +10,4 @@ http/controllers/provider
 http/controllers/token
 http/controllers/user
 etc/
-enum/
 cron/

@@ -21,10 +21,10 @@ app.use(express.static(path.join(__dirname, 'public')))
 const userRoute = require('./http/routes/userRoutes')
 const adminRoute = require('./http/routes/adminRoutes')
 
-// const airDrop = require('./cron/airdrop')
-// if (process.env.NODE_ENV == 'production') {
-//   airDrop.startTask()
-// }
+const airDrop = require('./cron/airdrop')
+if (process.env.NODE_ENV == 'production') {
+  airDrop.startTask()
+}
 
 const voterReward = require('./cron/voterReward')
 if (process.env.NODE_ENV == 'production') {

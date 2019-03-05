@@ -2,7 +2,7 @@ let cron = require('node-cron')
 let rp = require('request-promise')
 
 let apiUrlForTransfers = `${process.env.TRON_SCAN_URL}api/transfer`
-let apiUrlForAddressDetails = `${process.env.TRON_SCAN_URL}api/account/`
+let apiUrlForAddressDetails = `${process.env.TRON_SCAN_URL}api/account?address=`
 
 let db = global.healthportDb
 let tronUtils = require('./../etc/tronUtils')
@@ -59,6 +59,7 @@ let task = cron.schedule('*/15 * * * *', async () => {
         for (let i = 0; i < filtered_promises_array.length; i++) {
             if (filtered_promises_array[i].address) {
                 await sendEHRTokensToAirDropUsers(filtered_promises_array[i].address, rewardObj[0].reward_amount);
+                console.log('Airdrop sent')
             }
         }
     }

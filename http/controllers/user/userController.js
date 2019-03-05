@@ -14,6 +14,7 @@ const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
 const Sequelize = require('sequelize')
+
 const invisibleCaptcha = new recaptcha({
     siteKey: process.env.INVISIBLE_CAPTCHA_SITE_KEY,
     secretKey: process.env.INVISIBLE_CAPTCHA_SITE_SECRET
@@ -41,7 +42,6 @@ async function signUp(req, res) {
             where: {
                 createdAt: {
                     [Sequelize.Op.gt]: new Date(new Date() - 24 * 60 * 60 * 1000),
-                    //[Sequelize.Op.lt]: new Date(new Date() + 24 * 60 * 60 * 1000)
                 }
             }
         }));

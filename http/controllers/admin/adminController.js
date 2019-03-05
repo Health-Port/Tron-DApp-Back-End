@@ -600,6 +600,12 @@ async function getLoginHistories(req, res) {
             fromDate = new Date(fromDate).getTime()
 
             toDate = `${obj.to.year}-${obj.to.month}-${obj.to.day}`
+            toDate = new Date(toDate)
+            toDate = new Date(
+                toDate.getFullYear(),
+                toDate.getMonth(),
+                toDate.getDate() + 1
+            )
             toDate = new Date(toDate).getTime()
         }
 
@@ -611,7 +617,10 @@ async function getLoginHistories(req, res) {
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
-        [err, dbData] = await utils.to(db.query('select l.id, l.user_id, u.name, u.email, u.role, l.createdAt, l.ip_address from users u inner join login_histories l ON u.id = l.user_id order by l.createdAt Desc',
+        [err, dbData] = await utils.to(db.query(`
+                        select l.id, l.user_id, u.name, u.email, u.role, l.createdAt, l.ip_address from users u 
+                        inner join login_histories l ON u.id = l.user_id 
+                        order by l.createdAt Desc`,
             {
                 type: db.QueryTypes.SELECT,
             }))
