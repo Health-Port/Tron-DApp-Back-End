@@ -50,7 +50,7 @@ const ResponseMessagesEnum = {
     USER_NOT_FOUND: 'User not found.',
     USER_KYC_SUBMITTED: 'User Kyc details submitted successfully',
     UNABLE_TO_SIGNUP_RIGHT_NOW: 'Sorry unable to signup right now.',
-    UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.',
+    UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.'
 }
 
 module.exports = ResponseMessagesEnum
