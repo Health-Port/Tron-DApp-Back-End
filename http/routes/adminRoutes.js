@@ -2,6 +2,8 @@ const router = require('express').Router()
 const authorize = require('../../middlewares/authorization')
 const adminController = require('../controllers/admin/adminController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
+const dashboardController = require('../controllers/dashboard/dashboardController')
+
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -10,8 +12,37 @@ router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.authenticateToken, adminController.changePassword)
 router.post('/confirmForgotPassword', authorize.authenticateToken, adminController.confirmForgotPassword)
 
-router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication);
-router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication);
-router.post('/verifyTwoFactorAuthentication', twoFactorAuthenticationController.verifyTwoFactorAuthentication);
+router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
+router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
+router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication)
+
+router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
+router.post('/getUsers', authorize.authenticateToken, adminController.getUsers)
+router.post('/getUserById', authorize.authenticateToken, adminController.getUserById)
+router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
+router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
+router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)
+router.post('/sendUserResetPasswordRequest', authorize.authenticateToken, adminController.sendUserResetPasswordRequest)
+router.post('/listTransactions', authorize.authenticateToken, adminController.listTransactions)
+router.post('/resendLinkEmail', authorize.authenticateToken, adminController.resendLinkEmail)
+router.post('/updateSPRewardSettings', authorize.authenticateToken, adminController.updateSPRewardSettings)
+router.post('/updateAirdropSettings', authorize.authenticateToken, adminController.updateAirdropSettings)
+router.post('/updateSignupLimitPerDay', authorize.authenticateToken, adminController.updateSignupLimitPerDay)
+router.post('/updateCommissionSettings', authorize.authenticateToken, adminController.updateCommissionSettings)
+router.post('/updateRewardSettings', authorize.authenticateToken, adminController.updateRewardSettings)
+
+router.get('/listSPRewardSettings', authorize.authenticateToken, adminController.listSPRewardSettings)
+router.get('/listAirdropSettings', authorize.authenticateToken, adminController.listAirdropSettings)
+router.get('/listSignupLimitPerDay', authorize.authenticateToken, adminController.listSignupLimitPerDay)
+router.get('/listCommissionSettings', authorize.authenticateToken, adminController.listCommissionSettings)
+router.get('/listRewardSettings', authorize.authenticateToken, adminController.listRewardSettings)
+
+//Dashboard Routes
+router.get('/getTrxEHRBalance', authorize.authenticateToken, dashboardController.getTrxEHRBalance)
+router.get('/getTotalUsersCount', authorize.authenticateToken, dashboardController.getTotalUsersCount)
+router.get('/getTokensRisedByCommission', authorize.authenticateToken, dashboardController.getTokensRisedByCommission)
+router.get('/getTokenDistributed', authorize.authenticateToken, dashboardController.getTokenDistributed)
+router.post('/getTransactionGraphData', authorize.authenticateToken, dashboardController.getTransactionGraphData)
+router.post('/getUserGraphData', authorize.authenticateToken, dashboardController.getUserGraphData)
 
 module.exports = router

@@ -3,3 +3,11 @@ jest.config.js
 *.test.js
 scripts/
 test/
+http/controllers/allergy
+http/controllers/medication
+http/controllers/procedure
+http/controllers/provider
+http/controllers/token
+http/controllers/user
+etc/
+cron/

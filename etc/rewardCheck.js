@@ -27,7 +27,8 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             } else {
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -55,7 +56,8 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             } else {
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -83,7 +85,8 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             } else {
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -121,7 +124,7 @@ async function sendDocumentReward(
             if (refRewardTrxId) {
                 [err, obj] = await utils.to(db.models.transections.bulkCreate([
                     {
-                        user_id: user_id,
+                        user_id: -1,
                         address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY),
                         number_of_token: amount,
                         trx_hash: refRewardTrxId,
@@ -136,7 +139,8 @@ async function sendDocumentReward(
                 ]));
                 [err, result] =  await utils.to(cutCommission(
                     tron_wallet_public_key,
-                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION
+                    rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
+                    'Upload'
                 ));
                 if (err) {
                     if (err == 'Bandwidth is low') {
@@ -199,7 +203,7 @@ async function checkAllDocumentsReward(user_id, tron_wallet_public_key) {
                 );
                 [err, obj] = await utils.to(db.models.transections.bulkCreate([
                     {
-                        user_id: user_id,
+                        user_id: -1,
                         address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY),
                         number_of_token: amount,
                         trx_hash: refRewardTrxId,

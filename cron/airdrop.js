@@ -2,7 +2,7 @@ let cron = require('node-cron')
 let rp = require('request-promise')
 
 let apiUrlForTransfers = `${process.env.TRON_SCAN_URL}api/transfer`
-let apiUrlForAddressDetails = `${process.env.TRON_SCAN_URL}api/account/`
+let apiUrlForAddressDetails = `${process.env.TRON_SCAN_URL}api/account?address=`
 
 let db = global.healthportDb
 let tronUtils = require('./../etc/tronUtils')
@@ -19,7 +19,7 @@ let options = {
 
 let task = cron.schedule('*/15 * * * *', async () => {
     try {
-        let promisesArray = []
+        let promisesArray = [], err;
         //DB Queries
         [err, airDropUsersCount] = await utils.to(db.models.air_drop_users.count())
         if (err) {
@@ -38,8 +38,8 @@ let task = cron.schedule('*/15 * * * *', async () => {
         if (airDropUsersCount >= rewardObj[0].max_users) {
             return
         }
-        if (new Date(rewardObj[0].reward_end_date) < new Date()) {
-            return
+        if (!rewardObj[0].cron_job_status) {
+            return;
         }
         //Getting Transactions which are on TRON Network
         options.uri = apiUrlForTransfers
@@ -59,6 +59,7 @@ let task = cron.schedule('*/15 * * * *', async () => {
         for (let i = 0; i < filtered_promises_array.length; i++) {
             if (filtered_promises_array[i].address) {
                 await sendEHRTokensToAirDropUsers(filtered_promises_array[i].address, rewardObj[0].reward_amount);
+                console.log('Airdrop sent')
             }
         }
     }

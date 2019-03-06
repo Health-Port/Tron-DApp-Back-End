@@ -13,6 +13,7 @@ const emailTemplates = require('../../../etc/emailTemplates')
 const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
+const Sequelize = require('sequelize')
 
 const invisibleCaptcha = new recaptcha({
     siteKey: process.env.INVISIBLE_CAPTCHA_SITE_KEY,
@@ -34,7 +35,31 @@ async function signUp(req, res) {
             'refer_destination': req.body.destination
         }
 
-        let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}
+        let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}, result = {}, perDayLimit = {};
+        
+        let currentDate = new Date()
+        currentDate = new Date(
+			currentDate.getFullYear(),
+			currentDate.getMonth(),
+			currentDate.getDate()
+        );
+        
+        //Checking daily signup limit
+        [err, result] = await await utils.to(db.models.users.count({
+            where: {
+                createdAt: {
+                    [Sequelize.Op.gt]: currentDate //new Date(new Date() - 24 * 60 * 60 * 1000),
+                }
+            }
+        }));
+        [err, perDayLimit] = await utils.to(db.models.reward_conf.findOne(
+            {
+                where: { reward_type: rewardEnum.SIGNUPREWARD }
+            }
+        ))
+        if (perDayLimit.max_users != null && result >= perDayLimit.max_users) {
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.SIGNUP_LIMIT)
+        }
 
         //Checking terms and conditions
         if (!obj.is_agree)
@@ -116,15 +141,46 @@ async function signUp(req, res) {
     }
 }
 
+var geoip = require('geoip-lite');
+
+function getIpInfo(ip) {
+    // IPV6 addresses can include IPV4 addresses
+    // So req.ip can be '::ffff:86.3.182.58'
+    // However geoip-lite returns null for these
+    if (ip.includes('::ffff:')) {
+        ip = ip.split(':').reverse()[0]
+    }
+    var lookedUpIP = geoip.lookup(ip);
+    if ((ip === '127.0.0.1' || ip == "::1")) {
+        return "127.0.0.1"
+    }
+    if (!lookedUpIP) {
+        return { error: "Error occured while trying to process the information" }
+    }
+    console.log(lookedUpIP);
+    return lookedUpIP;
+}
+
+function getIpInfoMiddleware(req) {
+    var xForwardedFor = (req.headers["x-real-ip"] || '').replace(/:\d+$/, '');
+    console.log("ip address with real", xForwardedFor);
+    var ip = xForwardedFor || req.connection.remoteAddress;
+    req.ipInfo = getIpInfo(ip);
+}
+
+
+async function test(req, res) {
+    getIpInfoMiddleware(req);
+    res.status(200).json({ message: "ip get", ip: req.ipInfo })
+}
 async function signIn(req, res) {
     try {
         const obj = {
             'email': req.body.email,
             'password': req.body.password,
+            'ip_address': req.headers["x-real-ip"],
             'captcha_key': req.body.captchaKey,
         }
-
-        let err, user = {}, token = {}, passCode = {}, captcha = {}, passwordCheck = {}
 
         //Validating captcha only when environment is not dev
         if (process.env.NODE_ENV != 'dev') {
@@ -174,6 +230,17 @@ async function signIn(req, res) {
             total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
             user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key)),
         }
+
+        //Saving login history
+        let loginHistory = {}
+        loginHistory = {
+            user_id: user.id,
+            ip_address: obj.ip_address
+        };
+
+        [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
+        if (err) return response.errReturned(res, err)
+
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
@@ -235,7 +302,7 @@ async function forgetPassword(req, res) {
                 pass_code: passcode,
                 type: 'forget'
             }))
-        if(err) console.log(objPasscode);
+        if (err) console.log(objPasscode);
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken(authentication))
@@ -383,7 +450,7 @@ async function verifyEmail(req, res) {
                         //Saving transection history into db
                         if (refRewardTrxId)
                             [err, data] = await utils.to(db.models.transections.bulkCreate([
-                                { user_id: refData.id, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' },
+                                { user_id: -1, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' },
                                 { user_id: refData.id, address: refData.tron_wallet_public_key, number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' }
                             ]))
                     }
@@ -412,7 +479,7 @@ async function verifyEmail(req, res) {
                     //Saving transection history into db
                     if (signupRewardTrxId) {
                         [err, data] = await utils.to(db.models.transections.bulkCreate([
-                            { user_id: user.id, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: signupRewardTrxId, type: 'New Account' },
+                            { user_id: -1, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: signupRewardTrxId, type: 'New Account' },
                             { user_id: user.id, address: user.tron_wallet_public_key, number_of_token: amount, trx_hash: signupRewardTrxId, type: 'New Account' }
                         ]))
                         rewardGiven = true
@@ -694,4 +761,5 @@ module.exports = {
     forgetPassword,
     resendLinkEmail,
     confirmForgotPassword,
+    test
 }

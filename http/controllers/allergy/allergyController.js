@@ -42,11 +42,6 @@ async function saveAllergyListByUser(req, res) {
         
         [err, allergies] = await utils.to(db.models.allergies.bulkCreate(allergy_form));
 
-        // Saving allergy form at bloack chain for (let i = 0; i < allergies.length;
-        // i++) {     let txId = await tronUtils.saveAllergyForm(
-        // utils.decrypt(user.tron_wallet_public_key),         allergies[i].substance,
-        // allergies[i].category,         allergies[i].severity,
-        // allergies[i].reactions); } Returing successful response with data
         return response.sendResponse(
             res,
             resCode.SUCCESS,
@@ -93,7 +88,7 @@ async function getAllergyListByUser(req, res) {
         // tronUtils.getAllergyForm(utils.decrypt(user.tron_wallet_public_key));
 
         [err, result] = await utils.to(
-            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee')
+            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         )
         if (err) {
             if(err == 'Bandwidth is low'){
