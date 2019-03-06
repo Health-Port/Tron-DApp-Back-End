@@ -108,7 +108,7 @@ async function getTransactionGraphData(req, res) {
 
 		[err, data] = await utils.to(db.query(`
 				select CAST(createdAt AS DATE) as date, count(*) as count from transections 
-				where createdAt >= :sDate and createdAt <= :eDate
+				where createdAt >= :sDate and createdAt < :eDate
 				and user_id > 0
 				Group by CAST(createdAt AS DATE)
 				order by createdAt desc`,
@@ -175,7 +175,7 @@ async function getUserGraphData(req, res) {
 		endDate = new Date(
 			endDate.getFullYear(),
 			endDate.getMonth(),
-			endDate.getDate() + 1
+			endDate.getDate()
 		)
 		if (startDate >= endDate) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, 'Invalid date range.')
