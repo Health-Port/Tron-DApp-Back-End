@@ -36,15 +36,23 @@ async function signUp(req, res) {
         }
 
         let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}, result = {}, perDayLimit = {};
-
+        
+        let currentDate = new Date()
+        currentDate = new Date(
+			currentDate.getFullYear(),
+			currentDate.getMonth(),
+			currentDate.getDate()
+        );
+        
         //Checking daily signup limit
         [err, result] = await await utils.to(db.models.users.count({
             where: {
                 createdAt: {
-                    [Sequelize.Op.gt]: new Date(new Date() - 24 * 60 * 60 * 1000),
+                    [Sequelize.Op.gt]: currentDate //new Date(new Date() - 24 * 60 * 60 * 1000),
                 }
             }
         }));
+        console.log('today singup users', result);
         [err, perDayLimit] = await utils.to(db.models.reward_conf.findOne(
             {
                 where: { reward_type: rewardEnum.SIGNUPREWARD }
