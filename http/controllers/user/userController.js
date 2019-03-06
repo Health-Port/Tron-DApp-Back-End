@@ -52,13 +52,12 @@ async function signUp(req, res) {
                 }
             }
         }));
-        console.log('today singup users', result);
         [err, perDayLimit] = await utils.to(db.models.reward_conf.findOne(
             {
                 where: { reward_type: rewardEnum.SIGNUPREWARD }
             }
         ))
-        if (perDayLimit.max_users != null && result > perDayLimit.max_users) {
+        if (perDayLimit.max_users != null && result >= perDayLimit.max_users) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.SIGNUP_LIMIT)
         }
 
