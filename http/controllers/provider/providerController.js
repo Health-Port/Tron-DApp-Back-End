@@ -27,47 +27,21 @@ async function getAllProviders(req, res) {
         }
         data = _.orderBy(data, ['share_with_name'], ['asc']);
 
-        [err, obj] = await utils.to(db.models.patient_provider_records.findAll({ where: { type: type, user_id: user_id } }));
+        if (type != 'all') {
+            [err, obj] = await utils.to(db.models.patient_provider_records.findAll({ where: { type: type, user_id: user_id } }));
+        } else {
+            [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
+                {
+                    where: { user_id: user_id },
+                    group: ['share_with_id']
+                }));
+        }
 
         finalData.push(obj);
         finalData.push(data);
 
         //Returing successful response with data
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, finalData);
-
-    } catch (error) {
-        console.log(error);
-        return response.errReturned(res, error);
-    }
-}
-
-async function shareListWithProviders(req, res) {
-    try {
-        let user_id = req.body.userId;
-        let share_with = req.body.shareWith;
-        let type = req.body.type;
-
-        let err, providers;
-
-        //Deleting existing records
-        [err, providers] = await utils.to(db.models.patient_provider_records.destroy(
-            {
-                where: { user_id: user_id, type: type }
-            }));
-
-        //Inserting updated records.
-        for (let i = 0; i < share_with.length; i++) {
-            [err, providers] = await utils.to(db.models.patient_provider_records.create(
-                {
-                    user_id: user_id,
-                    type: type,
-                    share_with_id: share_with[i].share_with_id,
-                    share_with_name: share_with[i].share_with_name
-                }));
-        }
-
-        //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS);
 
     } catch (error) {
         console.log(error);
@@ -93,7 +67,7 @@ async function getProviderSharedData(req, res) {
         let end = parseInt(start + pageSize);
 
         //Getting provider data and total count
-        
+
         let returnableData = {};
         [err, dbData] = await utils.to(db.query('select p.user_id, u.name, u.email, p.type from users u ' +
             'inner join patient_provider_records p on u.id = user_id where p.share_with_id = :share_with_id order by u.id desc',
@@ -110,7 +84,7 @@ async function getProviderSharedData(req, res) {
             } else if (searchValue) {
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()));
             }
-            
+
             returnableData['count'] = dbData.length;
             let slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData;
@@ -169,6 +143,57 @@ async function getProviderSharedDocument(req, res) {
         return response.errReturned(res, error);
     }
 }
+
+async function shareListWithProviders(req, res) {
+    try {
+        let user_id = req.body.userId;
+        let share_with = req.body.shareWith;
+        let type = req.body.type;
+
+        let err, providers;
+        if (type != 'all') {
+            //Deleting existing records
+            [err, providers] = await utils.to(db.models.patient_provider_records.destroy(
+                {
+                    where: { user_id: user_id, type: type }
+                }));
+
+            //Inserting updated records.
+            for (let i = 0; i < share_with.length; i++) {
+                [err, providers] = await utils.to(db.models.patient_provider_records.create(
+                    {
+                        user_id: user_id,
+                        type: type,
+                        share_with_id: share_with[i].share_with_id,
+                        share_with_name: share_with[i].share_with_name
+                    }));
+            }
+        } else {
+            //Deleting existing records
+            [err, providers] = await utils.to(db.models.patient_provider_records.destroy(
+                {
+                    where: { user_id: user_id }
+                }));
+
+            //Inserting updated records.
+            for (let i = 0; i < share_with.length; i++) {
+                [err, providers] = await utils.to(db.models.patient_provider_records.bulkCreate(
+                    [
+                        { user_id: user_id, type: 'medications', share_with_id: share_with[i].share_with_id, share_with_name: share_with[i].share_with_name },
+                        { user_id: user_id, type: 'procedures', share_with_id: share_with[i].share_with_id, share_with_name: share_with[i].share_with_name },
+                        { user_id: user_id, type: 'allergies', share_with_id: share_with[i].share_with_id, share_with_name: share_with[i].share_with_name },
+                    ]));
+            }
+        }
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS);
+
+    } catch (error) {
+        console.log(error);
+        return response.errReturned(res, error);
+    }
+}
+
 module.exports = {
     getAllProviders,
     shareListWithProviders,
