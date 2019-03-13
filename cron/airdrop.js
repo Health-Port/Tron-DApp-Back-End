@@ -1,7 +1,7 @@
 let cron = require('node-cron')
 let rp = require('request-promise')
 
-let apiUrlForTransfers = `${process.env.TRON_SCAN_URL}api/transfer?limit=50`
+let apiUrlForTransfers = `${process.env.TRON_SCAN_URL}api/transfer?limit=20`
 let apiUrlForAddressDetails = `${process.env.TRON_SCAN_URL}api/account?address=`
 
 let db = global.healthportDb
@@ -20,13 +20,9 @@ let options = {
 let task = cron.schedule('*/15 * * * *', async () => {
     try {
         console.log('Airdrop cron started')
-        let promisesArray = [], err;
+        let promisesArray = [], err, rewardObj;
+        
         //DB Queries
-        [err, airDropUsersCount] = await utils.to(db.models.air_drop_users.count())
-        if (err) {
-            console.log(err)
-            return
-        }
         [err, rewardObj] = await utils.to(db.models.reward_conf.findAll({
             where: {
                 reward_type: rewardEnum.AIRDROPREWARD
@@ -36,9 +32,7 @@ let task = cron.schedule('*/15 * * * *', async () => {
             console.log(err)
             return
         }
-        if (airDropUsersCount >= rewardObj[0].max_users) {
-            return
-        }
+       
         if (!rewardObj[0].cron_job_status) {
             return;
         }
