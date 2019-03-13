@@ -30,6 +30,7 @@ async function getTRC10TokenBalance(privateKey, address) {
     try {
         let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
         let account = await tronWeb.trx.getAccount(address);
+        let balance = 0;
         if (account == "") {
             console.log('account info blank');
             return getTRC10TokenBalance(privateKey, address);
@@ -37,12 +38,14 @@ async function getTRC10TokenBalance(privateKey, address) {
         else if (account.assetV2) {
             for (let i = 0; i < account.assetV2.length; i++) {
                 if (account.assetV2[i].key == process.env.TRON_TOKEN_ID) {
-                    return account.assetV2[i].value;
+                    balance = account.assetV2[i].value
                 }
             }
         } else {
-            return 0;
+            balance = 0;
         }
+        return balance;
+
     } catch (error) {
         console.log(error);
         throw error;
@@ -53,8 +56,8 @@ async function getTrxBalance(privateKey, address) {
     try {
         let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
         let balance = await tronWeb.trx.getBalance(address);
-        if (balance && balance > 0) 
-            return balance/1000000;
+        if (balance && balance > 0)
+            return balance / 1000000;
         else return 0;
 
     } catch (error) {
