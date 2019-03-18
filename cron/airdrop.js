@@ -1,7 +1,7 @@
 let cron = require('node-cron')
 let rp = require('request-promise')
 
-let apiUrlForTransfers = `${process.env.TRON_SCAN_URL}api/transfer?limit=20`
+let apiUrlForTransfers = `${process.env.TRON_SCAN_URL}api/transfer?limit=20&token=_`
 let apiUrlForAddressDetails = `${process.env.TRON_SCAN_URL}api/account?address=`
 
 let db = global.healthportDb
