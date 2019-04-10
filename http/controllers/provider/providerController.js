@@ -6,7 +6,7 @@ const roleEnum = require('./../../../enum/roleEnum');
 const resCode = require('../../../enum/responseCodesEnum');
 const resMessage = require('../../../enum/responseMessagesEnum');
 var cutCommission = require('./../../../etc/commission');
-
+const Sequelize = require('sequelize')
 const db = global.healthportDb;
 
 async function getAllProviders(req, res) {
@@ -33,7 +33,8 @@ async function getAllProviders(req, res) {
             [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
                 {
                     where: { user_id: user_id },
-                    group: ['share_with_id']
+                    group: ['share_with_id'],
+                    having: Sequelize.literal('COUNT(share_with_id) = 3')
                 }));
         }
 
