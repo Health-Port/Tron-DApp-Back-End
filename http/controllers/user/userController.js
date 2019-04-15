@@ -419,8 +419,8 @@ async function verifyEmail(req, res) {
                         //Saving transection history into db
                         if (refRewardTrxId)
                             [err, data] = await utils.to(db.models.transections.bulkCreate([
-                                { user_id: -1, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' },
-                                { user_id: refData.id, address: refData.tron_wallet_public_key, number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referal Reward' }
+                                { user_id: -1, address: utils.encrypt(process.env.MAIN_ACCOUNT_ADDRESS_KEY), number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referral Reward' },
+                                { user_id: refData.id, address: refData.tron_wallet_public_key, number_of_token: amount, trx_hash: refRewardTrxId, type: 'Referral Reward' }
                             ]))
                     }
 
