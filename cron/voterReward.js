@@ -17,8 +17,8 @@ var options = {
     json: true // Automatically parses the JSON string in the response
 };
 
-//Cron Job Every 6 hours
-var task = cron.schedule('0 0,6,12,18 * * *', async () => {
+//Cron Job every day @ 12:00am
+var task = cron.schedule('0 12 * * *', async () => {
     try {
         let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0, combineReward;
         console.log('Cron job started for reward distribution');
@@ -29,10 +29,9 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
             }
         }));
         //checking cron job status
-        if (!rewardObj || rewardObj.length == 0 || !rewardObj[0].cron_job_status) {
+        if (!rewardObj || rewardObj.length == 0 || !rewardObj[0].cron_job_status || rewardObj[0].reward_per_vote == 0) {
             return;
         }
-
         //Getting Transactions which are on TRON Network
         options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
         var response = await rp(options);
@@ -48,9 +47,14 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
         }
 
         response.data = data;
-
+        for (let i = 0; i < response.data.length; i++) {
+            if (response.data[i].voterAddress != response.data[i].candidateAddress) {
+                await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardObj[0].reward_per_vote);
+            }
+        }
+        //#region old logic
         //Getting reward data from db
-        [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
+        /*[err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
 
         for (let i = 0; i < response.data.length; i++) {
             let cycleNo = getCycleNoByTime(response.data[i].timestamp);
@@ -123,10 +127,10 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
 
         for (let i = 0; i < rewardData.length; i++) {
             if (currentCycle == rewardData[i].cycle_no) {
-                let votePercentageOfAUser = ((rewardData[i].votes / cycleNoArray[currentCycle]) * 100);
-                let ehrMaxCount = rewardObj[0].reward_per_vote > 0 ? totalNumberOfVotes * rewardObj[0].reward_per_vote : totalNumberOfVotes;
-                ehrMaxCount = ehrMaxCount < rewardObj[0].max_amount ? ehrMaxCount : rewardObj[0].max_amount;
-                let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (ehrMaxCount / 4)) / 100);
+                //let votePercentageOfAUser = ((rewardData[i].votes / cycleNoArray[currentCycle]) * 100);
+                //let ehrMaxCount = rewardObj[0].reward_per_vote > 0 ? totalNumberOfVotes * rewardObj[0].reward_per_vote : totalNumberOfVotes;
+                //ehrMaxCount = ehrMaxCount < rewardObj[0].max_amount ? ehrMaxCount : rewardObj[0].max_amount;
+                let numberOfRewardAmount = rewardObj[0].reward_per_vote * rewardData[i].votes;
                 if (rewardData[i].total_reward != numberOfRewardAmount) {
                     [err, update] = await utils.to(db.models.voter_rewards.update(
                         { total_reward: numberOfRewardAmount },
@@ -144,11 +148,12 @@ var task = cron.schedule('0 0,6,12,18 * * *', async () => {
                 }));
             for (let i = 0; i < combineReward.length; i++) {
                 if (combineReward[i].total_reward > 0) {
-                    await sendEHRTokensToAirVoterUsers(combineReward[i].voter_address, combineReward[i].total_reward);
+                    //await sendEHRTokensToAirVoterUsers(combineReward[i].voter_address, combineReward[i].total_reward);
                 }
             }
 
-        }
+        }*/
+        //#endregion
     }
     catch (exp) {
         console.log(exp);
