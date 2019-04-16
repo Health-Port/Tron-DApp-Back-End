@@ -20,7 +20,7 @@ var options = {
 //Cron Job every day @ 12:00am
 var task = cron.schedule('0 12 * * *', async () => {
     try {
-        let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0, combineReward;
+        let err, rewardObj, pageSize = 50, start = 0;
         console.log('Cron job started for reward distribution');
         //DB Queries
         [err, rewardObj] = await utils.to(db.models.reward_conf.findAll({
@@ -85,29 +85,6 @@ async function sendEHRTokensToAirVoterUsers(to, amount) {
     } catch (error) {
         console.log(error);
     }
-}
-function rearrangeCycleArray(dbcycle) {
-    dt = []
-    for (let i = 0; i <= 4; i++) {
-        if (dbcycle[i]) {
-            if (dbcycle[i].cycle_no == 1)
-                dt[1] = dbcycle[i].totalCycleVotes;
-            if (dbcycle[i].cycle_no == 2)
-                dt[2] = dbcycle[i].totalCycleVotes;
-            if (dbcycle[i].cycle_no == 3)
-                dt[3] = dbcycle[i].totalCycleVotes;
-            if (dbcycle[i].cycle_no == 4)
-                dt[4] = dbcycle[i].totalCycleVotes;
-        }
-    }
-    return dt;
-}
-function getCycleNoByTime(datetime) {
-    var hours = new Date(datetime).getUTCHours();
-    if (hours >= 0 && hours < 6) return 1;
-    if (hours >= 6 && hours < 12) return 2;
-    if (hours >= 12 && hours < 18) return 3;
-    if (hours >= 18 && hours < 24) return 4;
 }
 
 function startTask() {
