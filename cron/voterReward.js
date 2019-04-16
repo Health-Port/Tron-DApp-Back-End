@@ -35,7 +35,6 @@ var task = cron.schedule('0 12 * * *', async () => {
         //Getting Transactions which are on TRON Network
         options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
         var response = await rp(options);
-        let totalNumberOfVotes = response.totalVotes;
 
         let totalPages = Math.ceil(response.total / pageSize);
         let data = response.data;
@@ -45,11 +44,17 @@ var task = cron.schedule('0 12 * * *', async () => {
             let response = await rp(options);
             data = data.concat(response.data);
         }
-
         response.data = data;
+
+        let rewardPerVote = rewardObj[0].reward_per_vote
+        if (!(response.totalVotes * rewardPerVote <= rewardObj[0].max_amount)) {
+            rewardPerVote = Math.floor(rewardObj[0].max_amount / response.totalVotes)
+        }
+        rewardPerVote = rewardPerVote == 0 ? 1 : rewardPerVote
+        
         for (let i = 0; i < response.data.length; i++) {
             if (response.data[i].voterAddress != response.data[i].candidateAddress) {
-                await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardObj[0].reward_per_vote);
+                await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardPerVote);
             }
         }
         //#region old logic
@@ -206,6 +211,7 @@ function getCycleNoByTime(datetime) {
     if (hours >= 12 && hours < 18) return 3;
     if (hours >= 18 && hours < 24) return 4;
 }
+
 function startTask() {
     task.start();
 }
