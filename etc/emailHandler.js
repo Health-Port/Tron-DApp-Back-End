@@ -9,7 +9,7 @@ class EmailHandler {
         const mailOptions = {
             from: `Health Port <${process.env.SMTP_EMAIL}>`, // sender address
             to: toEmail, // list of receivers
-            bcc: process.env.SMTP_EMAIL,
+            //bcc: process.env.SMTP_EMAIL,
             subject: subject, // Subject line
             html: body
         };
