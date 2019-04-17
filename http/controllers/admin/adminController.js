@@ -733,7 +733,7 @@ async function getReferrals(req, res) {
 
         [err, rewardConfs] = await utils.to(db.models.transections.findAll(
             {
-                where: { type: 'Referal Reward', user_id: user.id },
+                where: { type: 'Referral Reward', user_id: user.id },
                 order: [['createdAt', 'DESC']],
             }))
         if (err) return response.errReturned(res, err)
