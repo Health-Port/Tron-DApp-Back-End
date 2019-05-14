@@ -44,9 +44,9 @@ async function signIn(req, res) {
             from permissions p 
             inner join features f ON p.feature_id = f.id
             inner join roles r ON r.id = p.role_id
-            where p.role_id = :roleId`,
+            where p.role_id = :roleId and r.status = :status`,
             {
-                replacements: { roleId: parseInt(admin.role_id) },
+                replacements: { roleId: parseInt(admin.role_id), status: true },
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
