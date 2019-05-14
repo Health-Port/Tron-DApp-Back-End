@@ -13,6 +13,10 @@ module.exports = (sequelize, Sequelize) => {
 		description: {
             type: Sequelize.STRING,
             allowNull: true
+        }, 
+        status: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: true
         }
     })
     return roles
