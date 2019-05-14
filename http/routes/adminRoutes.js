@@ -3,7 +3,7 @@ const authorize = require('../../middlewares/authorization')
 const adminController = require('../controllers/admin/adminController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 const dashboardController = require('../controllers/dashboard/dashboardController')
-
+const featureController = require('../controllers/feature/featureController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -44,5 +44,9 @@ router.get('/getTokensRisedByCommission', authorize.authenticateToken, dashboard
 router.get('/getTokenDistributed', authorize.authenticateToken, dashboardController.getTokenDistributed)
 router.post('/getTransactionGraphData', authorize.authenticateToken, dashboardController.getTransactionGraphData)
 router.post('/getUserGraphData', authorize.authenticateToken, dashboardController.getUserGraphData)
+
+
+//Features Routes
+router.post('/addFeature', authorize.authenticateToken, featureController.addFeature)
 
 module.exports = router

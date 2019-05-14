@@ -19,7 +19,7 @@ async function signIn(req, res) {
             'email': req.body.email,
             'password': req.body.password
         }
-        let err, admin = {}, token = {}
+        let err, admin = {}, token = {}, permissions = {}
 
         //Checking empty email and password 
         if (!(obj.email && obj.password))
@@ -34,8 +34,30 @@ async function signIn(req, res) {
         if (err) return response.errReturned(res, err)
         if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
         if (obj.password != admin.password)
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
 
+        //****Getting permissions by role id****///
+        //
+        //
+        [err, permissions] = await utils.to(db.query(`
+        select * 
+            from permissions p 
+            inner join features f ON p.feature_id = f.id
+            inner join roles r ON r.id = p.role_id
+            where p.role_id = :roleId`,
+            {
+                replacements: { roleId: parseInt(admin.role_id) },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        const p = {}
+        for (let i = 0; i < permissions.length; i++) {
+            if (permissions[i].parent_id == 0) {
+                p.permissions[i] = permissions[i]
+            }else {
+                p.child = permissions[i]
+            }
+        }
         //Returing successful response with data
         const data = {
             id: admin.id,
@@ -43,11 +65,11 @@ async function signIn(req, res) {
             email: admin.email,
             is_admin: admin.is_admin,
             twofa_enable: admin.twofa_enable,
-            is_twofa_verified: admin.is_twofa_verified
+            is_twofa_verified: admin.is_twofa_verified,
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
-
+        data.permissions = p
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
