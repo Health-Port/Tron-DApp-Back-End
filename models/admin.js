@@ -5,6 +5,10 @@ module.exports = (sequelize, Sequelize) => {
             autoIncrement: true,
             unique: true,
         },
+        role_id: {
+            type: Sequelize.INTEGER,
+            allowNull: false
+		},
         name: {
             type: Sequelize.STRING,
             allowNull: true

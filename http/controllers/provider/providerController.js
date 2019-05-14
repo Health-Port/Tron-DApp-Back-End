@@ -22,7 +22,9 @@ async function getAllProviders(req, res) {
         for (let i = 0; i < providers.length; i++) {
             data[i] = {
                 'share_with_id': providers[i].id,
-                'share_with_name': providers[i].name
+                'share_with_name': providers[i].name,
+                'email': providers[i].email,
+                'share_with_name_email': `${providers[i].name} , ${providers[i].email}`
             }
         }
         data = _.orderBy(data, ['share_with_name'], ['asc']);
