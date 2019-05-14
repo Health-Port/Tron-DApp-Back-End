@@ -36,7 +36,7 @@ async function getAllProviders(req, res) {
             [err, obj] = await utils.to(db.query(`
             select p.share_with_id as id, p.share_with_name as name, u.email as email 
                 from patient_provider_records p
-                inner join users u ON u.id = p.user_id
+                inner join users u ON u.id = p.share_with_id
                 where p.user_Id = :userId and p.type = :type`,
 			{
 				replacements: { type: type, userId: user_id },
@@ -61,7 +61,7 @@ async function getAllProviders(req, res) {
             [err, obj] = await utils.to(db.query(`
             select p.share_with_id as id, p.share_with_name as name, u.email as email 
                 from patient_provider_records p
-                inner join users u ON u.id = p.user_id
+                inner join users u ON u.id = p.share_with_id
                 where p.user_Id = :userId
                 group by p.share_with_id
                 having COUNT(p.share_with_id) = 3`,
