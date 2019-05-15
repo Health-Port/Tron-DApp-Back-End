@@ -51,13 +51,13 @@ async function signIn(req, res) {
             }))
         if (err) return response.errReturned(res, err)
         const p = {}
-        for (let i = 0; i < permissions.length; i++) {
+        /*for (let i = 0; i < permissions.length; i++) {
             if (permissions[i].parent_id == 0) {
                 p.permissions[i] = permissions[i]
             }else {
                 p.child = permissions[i]
             }
-        }
+        }*/
         //Returing successful response with data
         const data = {
             id: admin.id,
