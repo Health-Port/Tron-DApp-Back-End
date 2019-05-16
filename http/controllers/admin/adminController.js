@@ -66,6 +66,16 @@ async function signIn(req, res) {
         if (!permissions || permissions.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+        const menuItems = []
+        for (let i = 0; i < permissions.length; i++) {
+            if (permissions[i].parentId == 0) {
+                menuItems.push(permissions[i])
+            } else if (menuItems[menuItems.length - 1].featureId == permissions[i].parentId) {
+                menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId == 
+                                                            menuItems[menuItems.length - 1].featureId))
+                i = i + menuItems[menuItems.length - 1].children.length - 1
+            }
+        }
         //Returing successful response with data
         const data = {
             id: admin.id,
@@ -77,6 +87,7 @@ async function signIn(req, res) {
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
+        data.permissions = menuItems
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
