@@ -4,6 +4,7 @@ const adminController = require('../controllers/admin/adminController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 const dashboardController = require('../controllers/dashboard/dashboardController')
 const featureController = require('../controllers/feature/featureController')
+const roleController = require('../controllers/role/roleController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -48,5 +49,8 @@ router.post('/getUserGraphData', authorize.authenticateToken, dashboardControlle
 
 //Features Routes
 router.post('/addFeature', authorize.authenticateToken, featureController.addFeature)
+
+//Role Routes
+router.post('/getAllRoles', authorize.authenticateToken, roleController.getAllRoles)
 
 module.exports = router
