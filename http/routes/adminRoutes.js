@@ -50,9 +50,12 @@ router.post('/getUserGraphData', authorize.authenticateToken, dashboardControlle
 
 //Features Routes
 router.post('/addFeature', authorize.authenticateToken, featureController.addFeature)
+router.get('/getAllFeatures', authorize.authenticateToken, featureController.getAllFeatures)
 
 //Role Routes
 router.post('/getAllRoles', authorize.authenticateToken, roleController.getAllRoles)
+router.get('/getRoleByID/:roleId', authorize.authenticateToken, roleController.getRoleByID)
+router.post('/addNewRole', authorize.authenticateToken, roleController.addNewRole)
 
 //Login History Routes
 router.get('/getLoginHistorybyID/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyID)

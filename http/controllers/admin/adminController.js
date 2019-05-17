@@ -70,11 +70,14 @@ async function signIn(req, res) {
         for (let i = 0; i < permissions.length; i++) {
             if (permissions[i].parentId == 0) {
                 menuItems.push(permissions[i])
-            } else if (menuItems[menuItems.length - 1].featureId == permissions[i].parentId) {
-                menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId == 
-                                                            menuItems[menuItems.length - 1].featureId))
-                i = i + menuItems[menuItems.length - 1].children.length - 1
-            }
+                menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId ==
+                    menuItems[menuItems.length - 1].featureId))
+
+            } //else if (menuItems[menuItems.length - 1].featureId == permissions[i].parentId) {
+            //menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId == 
+            //                                           menuItems[menuItems.length - 1].featureId))
+            //i = i + menuItems[menuItems.length - 1].children.length - 1
+            //}
         }
         //Returing successful response with data
         const data = {
