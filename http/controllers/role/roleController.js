@@ -122,8 +122,43 @@ async function getRoleByID(req, res) {
 
 async function addNewRole(req, res) {
 	try {
-		//const { name, description, status, features } = req.body
-		//let err = {}, role = {};
+		const { id } = req.auth
+		const { name, description, features } = req.body
+
+		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = [];
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking if role already exists
+		[err, role] = await utils.to(db.models.roles.findOne({ where: { name } }))
+		if (err) return response.errReturned(res, err)
+		if (role != null)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_ALREADY_EXIST);
+
+		//Saving role in db
+		[err, role] = await utils.to(db.models.roles.create({ name, description, status: true }))
+		if (err) return response.errReturned(res, err)
+		if (!role) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Mapping properties name required for permission table
+		mappedFeatures = features.map(elem => (
+			{
+				feature_id: elem.id,
+				role_id: role.id
+			}
+		));
+
+		//Saving permssion against newly created role
+		[err, permissions] = await utils.to(db.models.permissions.bulkCreate(mappedFeatures))
+		if (err) return response.errReturned(res, err)
+		if (!permissions) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
 
 	} catch (error) {
 		console.log(error)

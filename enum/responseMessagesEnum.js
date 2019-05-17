@@ -36,6 +36,7 @@ const ResponseMessagesEnum = {
     PASSWORD_COMPLEXITY: 'Password must be between 8 to 30 characters with 1 uppercase letter, 1 special character and alphanumric characters.',
     PASSWORD_CHANGED: 'Your Password updated successfully, please login to continue.',
     REQUIRED_FIELDS_EMPTY: 'Required fields cannot be empty.',
+    ROLE_ALREADY_EXIST: 'Role already exist.',
     SUCCESSFULLY_LOGGEDIN: 'User login successfully.',
     SUCCESS: 'Success',
     SIGNUP_LIMIT: 'Sign Up limit has exceeded, come back tomorrow for registration',
