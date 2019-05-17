@@ -17,7 +17,8 @@ async function signIn(req, res) {
     try {
         const obj = {
             'email': req.body.email,
-            'password': req.body.password
+            'password': req.body.password,
+            'ip_address': req.headers['x-real-ip']
         }
         let err, admin = {}, token = {}, permissions = {}
 
@@ -34,13 +35,25 @@ async function signIn(req, res) {
         if (err) return response.errReturned(res, err)
         if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
         if (obj.password != admin.password)
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
+
+        //**** //Saving login history */
+        if (process.env.NODE_ENV != 'dev') {
+            let loginHistory = {}
+            loginHistory = {
+                admin_id: admin.id,
+                ip_address: obj.ip_address
+            };
+            [err, loginHistory] = await utils.to(db.models.admin_sessions.create(loginHistory))
+            if (err) return response.errReturned(res, err)
+        }
         //****Getting permissions by role id****///
         //
         //
         [err, permissions] = await utils.to(db.query(`
-        select * 
+        select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,
+            f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence 
             from permissions p 
             inner join features f ON p.feature_id = f.id
             inner join roles r ON r.id = p.role_id
@@ -50,14 +63,19 @@ async function signIn(req, res) {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        const p = {}
-        /*for (let i = 0; i < permissions.length; i++) {
-            if (permissions[i].parent_id == 0) {
-                p.permissions[i] = permissions[i]
-            }else {
-                p.child = permissions[i]
+        if (!permissions || permissions.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        const menuItems = []
+        for (let i = 0; i < permissions.length; i++) {
+            if (permissions[i].parentId == 0) {
+                menuItems.push(permissions[i])
+            } else if (menuItems[menuItems.length - 1].featureId == permissions[i].parentId) {
+                menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId == 
+                                                            menuItems[menuItems.length - 1].featureId))
+                i = i + menuItems[menuItems.length - 1].children.length - 1
             }
-        }*/
+        }
         //Returing successful response with data
         const data = {
             id: admin.id,
@@ -69,7 +87,7 @@ async function signIn(req, res) {
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
-        data.permissions = p
+        data.permissions = menuItems
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
