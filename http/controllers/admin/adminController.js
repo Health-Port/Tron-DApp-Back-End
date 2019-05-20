@@ -1073,6 +1073,68 @@ async function updateRewardSettings(req, res) {
     }
 }
 
+async function getAllAdmins(req, res) {
+    try {
+        const obj = {
+            'searchValue': req.body.searchValue,
+            'pageNumber': req.body.pageNumber,
+            'pageSize': req.body.pageSize,
+            'role': req.body.role,
+            'status': req.body.status
+        }
+        const { id } = req.auth
+        let err = {}, dbData = {}, admin = {}
+        const returnableData = {};
+
+        //Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+            
+        //Paging
+        let pageSize = parseInt(obj.pageSize)
+        let pageNumber = parseInt(obj.pageNumber)
+        if (!pageNumber) pageNumber = 0
+        if (!pageSize) pageSize = 10
+        const start = parseInt(pageNumber * pageSize)
+        const end = parseInt(start + pageSize);
+
+        [err, dbData] = await utils.to(db.query(`
+        Select a.id as id, a.name, a.email, r.name as role, a.status, a.createdAt as dateCreated 
+            From admins a
+            Inner join roles r ON a.role_id = r.id
+            Where a.status = :status
+            Order by a.createdAt desc`,
+            {
+                replacements: { status: obj.status ? obj.status : true },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+
+        if (dbData) {
+            if (obj.role && obj.searchValue) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            } else if (obj.role) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
+            } else if (obj.searchValue) {
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            }
+
+            returnableData['count'] = dbData.length
+            const slicedData = dbData.slice(start, end)
+            returnableData['rows'] = slicedData
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1097,5 +1159,6 @@ module.exports = {
     listCommissionSettings,
     updateCommissionSettings,
     listRewardSettings,
-    updateRewardSettings
+    updateRewardSettings,
+    getAllAdmins
 }

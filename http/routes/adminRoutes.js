@@ -13,6 +13,7 @@ router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.authenticateToken, adminController.changePassword)
 router.post('/confirmForgotPassword', authorize.authenticateToken, adminController.confirmForgotPassword)
+router.post('/getAllAdmins', authorize.authenticateToken, adminController.getAllAdmins)
 
 router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
 router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
