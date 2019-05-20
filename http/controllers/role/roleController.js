@@ -8,10 +8,8 @@ const db = global.healthportDb
 async function getAllRoles(req, res) {
 	try {
 		const { id } = req.auth
-		const obj = {
-			'searchValue': req.body.searchValue,
-			'filter': req.body.status,
-		}
+		const { searchValue, filter } = req.body
+		let {pageNumber, pageSize} = req.body
 		let err = {}, dbData = {}, admin = {}
 		const returnableData = {};
 
@@ -22,8 +20,8 @@ async function getAllRoles(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
 		//Paging
-		let pageSize = parseInt(req.body.pageSize)
-		let pageNumber = parseInt(req.body.pageNumber)
+		pageSize = parseInt(pageSize)
+		pageNumber = parseInt(pageNumber)
 		if (!pageNumber) pageNumber = 0
 		if (pageNumber) pageNumber = pageNumber - 1
 		if (!pageSize) pageSize = 10
@@ -44,14 +42,15 @@ async function getAllRoles(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		if (dbData) {
-			if (obj.filter && obj.searchValue) {
-				dbData = dbData.filter(x => x.status == obj.filter)
-				dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()))
-			} else if (obj.filter) {
-				dbData = dbData.filter(x => x.status == obj.filter)
-			} else if (obj.searchValue) {
-				dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()))
+			if (filter && searchValue) {
+				dbData = dbData.filter(x => x.status == filter)
+				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
+			} else if (filter) {
+				dbData = dbData.filter(x => x.status == filter)
+			} else if (searchValue) {
+				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
 			}
+			
 			//Paging implementation
 			returnableData['count'] = dbData.length
 			const slicedData = dbData.slice(start, end)
@@ -165,6 +164,7 @@ async function addNewRole(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
 module.exports = {
 	getAllRoles,
 	getRoleByID,

@@ -13,7 +13,6 @@ router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.authenticateToken, adminController.changePassword)
 router.post('/confirmForgotPassword', authorize.authenticateToken, adminController.confirmForgotPassword)
-router.post('/getAllAdmins', authorize.authenticateToken, adminController.getAllAdmins)
 
 router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
 router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
@@ -48,17 +47,19 @@ router.get('/getTokenDistributed', authorize.authenticateToken, dashboardControl
 router.post('/getTransactionGraphData', authorize.authenticateToken, dashboardController.getTransactionGraphData)
 router.post('/getUserGraphData', authorize.authenticateToken, dashboardController.getUserGraphData)
 
+//Admin Routes
+router.post('/admins', authorize.authenticateToken, adminController.getAllAdmins)
 
 //Features Routes
-router.post('/addFeature', authorize.authenticateToken, featureController.addFeature)
-router.get('/getAllFeatures', authorize.authenticateToken, featureController.getAllFeatures)
+router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
+router.get('/features', authorize.authenticateToken, featureController.getAllFeatures)
 
 //Role Routes
-router.post('/getAllRoles', authorize.authenticateToken, roleController.getAllRoles)
-router.get('/getRoleByID/:roleId', authorize.authenticateToken, roleController.getRoleByID)
-router.post('/addNewRole', authorize.authenticateToken, roleController.addNewRole)
+router.post('/roles', authorize.authenticateToken, roleController.getAllRoles)
+router.post('/roles/add', authorize.authenticateToken, roleController.addNewRole)
+router.get('/roles/:roleId', authorize.authenticateToken, roleController.getRoleByID)
 
 //Login History Routes
-router.get('/getLoginHistorybyID/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyID)
+router.get('/history/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
 module.exports = router

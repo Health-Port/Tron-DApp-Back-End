@@ -48,9 +48,8 @@ async function signIn(req, res) {
             [err, loginHistory] = await utils.to(db.models.admin_sessions.create(loginHistory))
             if (err) return response.errReturned(res, err)
         }
+        
         //****Getting permissions by role id****///
-        //
-        //
         [err, permissions] = await utils.to(db.query(`
         select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,
             f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence 
@@ -72,13 +71,9 @@ async function signIn(req, res) {
                 menuItems.push(permissions[i])
                 menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId ==
                     menuItems[menuItems.length - 1].featureId))
-
-            } //else if (menuItems[menuItems.length - 1].featureId == permissions[i].parentId) {
-            //menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId == 
-            //                                           menuItems[menuItems.length - 1].featureId))
-            //i = i + menuItems[menuItems.length - 1].children.length - 1
-            //}
+            }
         }
+
         //Returing successful response with data
         const data = {
             id: admin.id,
@@ -1075,26 +1070,21 @@ async function updateRewardSettings(req, res) {
 
 async function getAllAdmins(req, res) {
     try {
-        const obj = {
-            'searchValue': req.body.searchValue,
-            'pageNumber': req.body.pageNumber,
-            'pageSize': req.body.pageSize,
-            'role': req.body.role,
-            'status': req.body.status
-        }
+        const { searchValue, role, status } = req.body
+        let { pageNumber, pageSize } = req.body
         const { id } = req.auth
         let err = {}, dbData = {}, admin = {}
         const returnableData = {};
 
         //Verifying user authenticity
-		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
-		if (err) return response.errReturned(res, err)
-		if (!admin || admin.length == 0)
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-            
+
         //Paging
-        let pageSize = parseInt(obj.pageSize)
-        let pageNumber = parseInt(obj.pageNumber)
+        pageSize = parseInt(pageSize)
+        pageNumber = parseInt(pageNumber)
         if (!pageNumber) pageNumber = 0
         if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
@@ -1107,19 +1097,19 @@ async function getAllAdmins(req, res) {
             Where a.status = :status
             Order by a.createdAt desc`,
             {
-                replacements: { status: obj.status ? obj.status : true },
+                replacements: { status: status ? status : true },
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
 
         if (dbData) {
-            if (obj.role && obj.searchValue) {
-                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
-                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
-            } else if (obj.role) {
-                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
-            } else if (obj.searchValue) {
-                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            if (role && searchValue) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
+            } else if (role) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+            } else if (searchValue) {
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
             }
 
             returnableData['count'] = dbData.length
