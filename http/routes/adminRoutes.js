@@ -57,7 +57,9 @@ router.get('/features', authorize.authenticateToken, featureController.getAllFea
 //Role Routes
 router.post('/roles', authorize.authenticateToken, roleController.getAllRoles)
 router.post('/roles/add', authorize.authenticateToken, roleController.addNewRole)
+router.get('/roles/active', authorize.authenticateToken, roleController.getAllActiveRoles)
 router.get('/roles/:roleId', authorize.authenticateToken, roleController.getRoleByID)
+
 
 //Login History Routes
 router.get('/history/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)

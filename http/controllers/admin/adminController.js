@@ -33,7 +33,10 @@ async function signIn(req, res) {
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (!admin.status)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
         if (obj.password != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
@@ -48,7 +51,7 @@ async function signIn(req, res) {
             [err, loginHistory] = await utils.to(db.models.admin_sessions.create(loginHistory))
             if (err) return response.errReturned(res, err)
         }
-        
+
         //****Getting permissions by role id****///
         [err, permissions] = await utils.to(db.query(`
         select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,

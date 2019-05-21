@@ -9,7 +9,7 @@ async function getAllRoles(req, res) {
 	try {
 		const { id } = req.auth
 		const { searchValue, filter } = req.body
-		let {pageNumber, pageSize} = req.body
+		let { pageNumber, pageSize } = req.body
 		let err = {}, dbData = {}, admin = {}
 		const returnableData = {};
 
@@ -50,7 +50,7 @@ async function getAllRoles(req, res) {
 			} else if (searchValue) {
 				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
 			}
-			
+
 			//Paging implementation
 			returnableData['count'] = dbData.length
 			const slicedData = dbData.slice(start, end)
@@ -165,8 +165,40 @@ async function addNewRole(req, res) {
 	}
 }
 
+async function getAllActiveRoles(req, res) {
+	try {
+		const { id } = req.auth
+
+		let err = {}, admin = {}, roles = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		[err, roles] = await utils.to(db.models.roles.findAll(
+			{
+				attributes: ['id', 'name'],
+				where: [{ status: true }],
+				order: [['name', 'ASC']]
+			}))
+		if (err) return response.errReturned(res, err)
+		if (roles == null || roles.count == 0 || roles.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	getAllRoles,
 	getRoleByID,
-	addNewRole
+	addNewRole,
+	getAllActiveRoles
 }
