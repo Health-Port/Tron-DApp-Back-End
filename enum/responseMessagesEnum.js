@@ -37,6 +37,8 @@ const ResponseMessagesEnum = {
     PASSWORD_CHANGED: 'Your Password updated successfully, please login to continue.',
     REQUIRED_FIELDS_EMPTY: 'Required fields cannot be empty.',
     ROLE_ALREADY_EXIST: 'Role already exist.',
+    ROLE_NOT_FOUND: 'Role not found.',
+    ROLE_UPDATED: 'Role updated successfully.',
     SUCCESSFULLY_LOGGEDIN: 'User login successfully.',
     SUCCESS: 'Success',
     SIGNUP_LIMIT: 'Sign Up limit has exceeded, come back tomorrow for registration',

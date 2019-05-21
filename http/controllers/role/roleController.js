@@ -99,8 +99,8 @@ async function getRoleByID(req, res) {
 		for (let i = 0; i < role.length; i++) {
 			if (role[i].parentId == 0) {
 				features.push(role[i])
-				features[features.length - 1].children = (role.filter(x => x.parentId ==
-					features[features.length - 1].featureId))
+				features[features.length - 1].children =
+					(role.filter(x => x.parentId == features[features.length - 1].featureId))
 			}
 		}
 
@@ -122,7 +122,7 @@ async function getRoleByID(req, res) {
 async function addNewRole(req, res) {
 	try {
 		const { id } = req.auth
-		const { name, description, features } = req.body
+		const { name, description, features, status } = req.body
 
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = [];
 
@@ -139,7 +139,7 @@ async function addNewRole(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_ALREADY_EXIST);
 
 		//Saving role in db
-		[err, role] = await utils.to(db.models.roles.create({ name, description, status: true }))
+		[err, role] = await utils.to(db.models.roles.create({ name, description, status }))
 		if (err) return response.errReturned(res, err)
 		if (!role) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
@@ -196,9 +196,63 @@ async function getAllActiveRoles(req, res) {
 	}
 }
 
+async function updateRoleById(req, res) {
+	try {
+		const { roleId } = req.params
+		const { id } = req.auth
+		const { name, description, features, status } = req.body
+
+		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = [];
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking if role already exists
+		[err, role] = await utils.to(db.models.roles.findOne({ where: { id: roleId } }))
+		if (err) return response.errReturned(res, err)
+		if (!role || role == null || role.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
+
+		//Updating role
+		[err, obj] = await utils.to(db.models.roles.update(
+			{ name, description, status },
+			{ where: { id: role.id } }
+		))
+		if (err) return response.errReturned(res, err)
+		if (obj[0] == 0) return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+		//Deleting existing permissions
+		[err, obj] = await utils.to(db.models.permissions.destroy({ where: { role_id: role.id } }))
+		if (err) return response.errReturned(res, err)
+
+		//Mapping properties name required for permission table
+		mappedFeatures = features.map(elem => (
+			{
+				feature_id: elem.id,
+				role_id: role.id
+			}
+		));
+
+		//Saving permssion against newly created role
+		[err, permissions] = await utils.to(db.models.permissions.bulkCreate(mappedFeatures))
+		if (err) return response.errReturned(res, err)
+		if (!permissions) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.ROLE_UPDATED)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 module.exports = {
 	getAllRoles,
 	getRoleByID,
 	addNewRole,
-	getAllActiveRoles
+	getAllActiveRoles,
+	updateRoleById
 }

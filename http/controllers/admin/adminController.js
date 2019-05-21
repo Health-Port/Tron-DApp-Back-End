@@ -69,11 +69,18 @@ async function signIn(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         const menuItems = []
+        const children = []
         for (let i = 0; i < permissions.length; i++) {
             if (permissions[i].parentId == 0) {
                 menuItems.push(permissions[i])
-                menuItems[menuItems.length - 1].children = (permissions.filter(x => x.parentId ==
-                    menuItems[menuItems.length - 1].featureId))
+                const filterd = (permissions.filter(x => x.parentId == menuItems[menuItems.length - 1].featureId))
+                for (let j = 0; j < filterd.length; j++) {
+                    if (!filterd[j].isFeature) {
+                        children[j] = filterd[j]
+                    }
+                }
+                if (children.length > 0)
+                    menuItems[menuItems.length - 1].children = children
             }
         }
 
