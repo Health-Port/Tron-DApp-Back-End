@@ -249,10 +249,53 @@ async function updateRoleById(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
+async function updateRoleStatusById(req, res) {
+	try {
+		const { id } = req.auth
+		const { roleId } = req.params
+		const { status } = req.body
+
+		let err = {}, admin = {}, obj = {}, role = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking if role already exists
+		[err, role] = await utils.to(db.models.roles.findOne({ where: { id: roleId } }))
+		if (err) return response.errReturned(res, err)
+		if (!role || role == null || role.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
+
+		//Updating role
+		[err, obj] = await utils.to(db.models.roles.update(
+			{ status },
+			{ where: { id: role.id } }
+		))
+		if (err) return response.errReturned(res, err)
+		if (obj[0] == 0)
+			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		if (status)
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.ROLE_ACTIVATED)
+		else
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.ROLE_BLOCKED)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	getAllRoles,
 	getRoleByID,
 	addNewRole,
 	getAllActiveRoles,
-	updateRoleById
+	updateRoleById,
+	updateRoleStatusById
 }

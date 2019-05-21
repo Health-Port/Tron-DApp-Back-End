@@ -58,6 +58,7 @@ router.get('/features', authorize.authenticateToken, featureController.getAllFea
 router.post('/roles', authorize.authenticateToken, roleController.getAllRoles)
 router.post('/roles/add', authorize.authenticateToken, roleController.addNewRole)
 router.put('/roles/update/:roleId', authorize.authenticateToken, roleController.updateRoleById)
+router.put('/roles/status/:roleId', authorize.authenticateToken, roleController.updateRoleStatusById)
 router.get('/roles/active', authorize.authenticateToken, roleController.getAllActiveRoles)
 router.get('/roles/:roleId', authorize.authenticateToken, roleController.getRoleByID)
 

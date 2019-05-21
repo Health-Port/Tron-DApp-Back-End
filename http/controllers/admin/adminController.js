@@ -52,21 +52,23 @@ async function signIn(req, res) {
             if (err) return response.errReturned(res, err)
         }
 
-        //****Getting permissions by role id****///
+        //Getting permissions by role id
         [err, permissions] = await utils.to(db.query(`
         select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,
-            f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence 
+            f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence, r.status 
             from permissions p 
             inner join features f ON p.feature_id = f.id
             inner join roles r ON r.id = p.role_id
-            where p.role_id = :roleId and r.status = :status`,
+            where p.role_id = :roleId`,
             {
-                replacements: { roleId: parseInt(admin.role_id), status: true },
+                replacements: { roleId: parseInt(admin.role_id) },
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
         if (!permissions || permissions.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (!permissions[0].status)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_IS_BLOCKED)
 
         const menuItems = []
         const children = []
@@ -95,7 +97,8 @@ async function signIn(req, res) {
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
-        data.permissions = menuItems
+        data.menuItems = menuItems
+        data.permissions = permissions.filter(x => x.isFeature)
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
