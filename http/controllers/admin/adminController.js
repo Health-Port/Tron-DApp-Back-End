@@ -1184,7 +1184,7 @@ async function getAdminById(req, res) {
     try {
         const { adminId } = req.params
         const { id } = req.auth
-        console.log(MAIN_ACCOUNT_PRIVATE_KEY)
+        
         let err = {}, admin = {};
 
         //Verifying user authenticity
