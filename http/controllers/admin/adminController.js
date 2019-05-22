@@ -1184,7 +1184,7 @@ async function getAdminById(req, res) {
     try {
         const { adminId } = req.params
         const { id } = req.auth
-        
+
         let err = {}, admin = {};
 
         //Verifying user authenticity
@@ -1206,7 +1206,7 @@ async function getAdminById(req, res) {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (admin == null || admin.length == 0) 
+        if (admin == null || admin.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         //Returing successful response
@@ -1217,6 +1217,55 @@ async function getAdminById(req, res) {
         return response.errReturned(res, error)
     }
 }
+
+async function updateAdminDetailsById(req, res) {
+    try {
+        const { adminId } = req.params
+        const { id } = req.auth
+        const { name, roleId, status } = req.body
+
+        let err = {}, admin = {}, obj = {}, role = {}
+
+        //Checking empty field
+        if (!(name && roleId, status))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Checking if admin already exists
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: adminId } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin == null || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Checking if role exists
+        [err, role] = await utils.to(db.models.roles.findOne({ where: { id: roleId } }))
+        if (err) return response.errReturned(res, err)
+        if (!role || role == null || role.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
+
+        //Updating admin status
+        [err, obj] = await utils.to(db.models.admins.update(
+            { name, role_id: roleId, status },
+            { where: { id: admin.id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_UPDATED_SUCCESSFULLY)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -1244,5 +1293,6 @@ module.exports = {
     updateRewardSettings,
     getAllAdmins,
     updateAdminById,
-    getAdminById
+    getAdminById,
+    updateAdminDetailsById
 }
