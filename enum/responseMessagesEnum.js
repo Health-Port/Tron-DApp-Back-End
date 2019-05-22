@@ -55,6 +55,8 @@ const ResponseMessagesEnum = {
     USER_ALREADY_EXIST: 'User already exist.',
     USER_IS_BLOCKEd: 'User is blocked.',
     USER_NOT_FOUND: 'User not found.',
+    USER_ACTIVATED: 'User is activated successfully.',
+    USER_BLOCKED: 'User is blocked successfully.',
     USER_KYC_SUBMITTED: 'User Kyc details submitted successfully',
     UNABLE_TO_SIGNUP_RIGHT_NOW: 'Sorry unable to signup right now.',
     UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.'

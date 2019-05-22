@@ -1138,6 +1138,47 @@ async function getAllAdmins(req, res) {
         return response.errReturned(res, error)
     }
 }
+
+async function updateAdminById(req, res) {
+    try {
+        const { adminId } = req.params
+        const { id } = req.auth
+        const { status } = req.body
+
+        let err = {}, admin = {}, obj = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Checking if admin already exists
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: adminId } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin == null || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Updating admin status
+        [err, obj] = await utils.to(db.models.admins.update(
+            { status },
+            { where: { id: admin.id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        if (status)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ACTIVATED)
+        else
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_BLOCKED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1163,5 +1204,6 @@ module.exports = {
     updateCommissionSettings,
     listRewardSettings,
     updateRewardSettings,
-    getAllAdmins
+    getAllAdmins,
+    updateAdminById
 }

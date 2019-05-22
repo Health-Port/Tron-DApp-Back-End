@@ -49,6 +49,7 @@ router.post('/getUserGraphData', authorize.authenticateToken, dashboardControlle
 
 //Admin Routes
 router.post('/admins', authorize.authenticateToken, adminController.getAllAdmins)
+router.put('/update/status/:adminId', authorize.authenticateToken, adminController.updateAdminById)
 
 //Features Routes
 router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
