@@ -15,7 +15,6 @@ jobs:
                 sudo git fetch
                 sudo git checkout staging
                 sudo git pull
-                sudo npm i
                 sudo MAIN_ACCOUNT_PRIVATE_KEY=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING pm2 restart health --update-env'
   deploy_master:
     machine:
