@@ -1179,6 +1179,44 @@ async function updateAdminById(req, res) {
         return response.errReturned(res, error)
     }
 }
+
+async function getAdminById(req, res) {
+    try {
+        const { adminId } = req.params
+        const { id } = req.auth
+
+        let err = {}, admin = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        [err, admin] = await utils.to(db.query(`
+            Select a.id, a.name, a.email, r.name as role, a.status, s.createdAt as lastLogin, a.createdAt 
+                From admins a
+                Left join admin_sessions s ON a.id = s.admin_id
+                Inner join roles r ON a.role_id = r.id 
+                Where a.id = :adminId 
+                Order by s.createdAt desc
+                Limit 1`,
+            {
+                replacements: { adminId: parseInt(adminId) },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (admin == null || admin.length == 0) 
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, admin)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1205,5 +1243,6 @@ module.exports = {
     listRewardSettings,
     updateRewardSettings,
     getAllAdmins,
-    updateAdminById
+    updateAdminById,
+    getAdminById
 }
