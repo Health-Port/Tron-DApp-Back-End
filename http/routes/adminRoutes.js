@@ -3,7 +3,9 @@ const authorize = require('../../middlewares/authorization')
 const adminController = require('../controllers/admin/adminController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 const dashboardController = require('../controllers/dashboard/dashboardController')
-
+const featureController = require('../controllers/feature/featureController')
+const roleController = require('../controllers/role/roleController')
+const loginHistoryController = require('../controllers/loginHistory/loginHistoryController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -44,5 +46,26 @@ router.get('/getTokensRisedByCommission', authorize.authenticateToken, dashboard
 router.get('/getTokenDistributed', authorize.authenticateToken, dashboardController.getTokenDistributed)
 router.post('/getTransactionGraphData', authorize.authenticateToken, dashboardController.getTransactionGraphData)
 router.post('/getUserGraphData', authorize.authenticateToken, dashboardController.getUserGraphData)
+
+//Admin Routes
+router.post('/admins', authorize.authenticateToken, adminController.getAllAdmins)
+router.get('/admins/:adminId', authorize.authenticateToken, adminController.getAdminById)
+router.put('/update/status/:adminId', authorize.authenticateToken, adminController.updateAdminById)
+
+//Features Routes
+router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
+router.get('/features', authorize.authenticateToken, featureController.getAllFeatures)
+
+//Role Routes
+router.post('/roles', authorize.authenticateToken, roleController.getAllRoles)
+router.post('/roles/add', authorize.authenticateToken, roleController.addNewRole)
+router.put('/roles/update/:roleId', authorize.authenticateToken, roleController.updateRoleById)
+router.put('/roles/status/:roleId', authorize.authenticateToken, roleController.updateRoleStatusById)
+router.get('/roles/active', authorize.authenticateToken, roleController.getAllActiveRoles)
+router.get('/roles/:roleId', authorize.authenticateToken, roleController.getRoleByID)
+
+
+//Login History Routes
+router.get('/history/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
 module.exports = router

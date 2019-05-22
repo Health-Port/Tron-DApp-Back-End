@@ -17,9 +17,10 @@ async function signIn(req, res) {
     try {
         const obj = {
             'email': req.body.email,
-            'password': req.body.password
+            'password': req.body.password,
+            'ip_address': req.headers['x-real-ip']
         }
-        let err, admin = {}, token = {}
+        let err, admin = {}, token = {}, permissions = {}
 
         //Checking empty email and password 
         if (!(obj.email && obj.password))
@@ -32,9 +33,58 @@ async function signIn(req, res) {
         //Finding record from db    
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { email: obj.email } }))
         if (err) return response.errReturned(res, err)
-        if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin == null || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (!admin.status)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
         if (obj.password != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
+
+
+        //**** //Saving login history */
+        if (process.env.NODE_ENV != 'dev') {
+            let loginHistory = {}
+            loginHistory = {
+                admin_id: admin.id,
+                ip_address: obj.ip_address
+            };
+            [err, loginHistory] = await utils.to(db.models.admin_sessions.create(loginHistory))
+            if (err) return response.errReturned(res, err)
+        }
+
+        //Getting permissions by role id
+        [err, permissions] = await utils.to(db.query(`
+        select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,
+            f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence, r.status 
+            from permissions p 
+            inner join features f ON p.feature_id = f.id
+            inner join roles r ON r.id = p.role_id
+            where p.role_id = :roleId`,
+            {
+                replacements: { roleId: parseInt(admin.role_id) },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!permissions || permissions.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (!permissions[0].status)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_IS_BLOCKED)
+
+        const menuItems = []
+        const children = []
+        for (let i = 0; i < permissions.length; i++) {
+            if (permissions[i].parentId == 0) {
+                menuItems.push(permissions[i])
+                const filterd = (permissions.filter(x => x.parentId == menuItems[menuItems.length - 1].featureId))
+                for (let j = 0; j < filterd.length; j++) {
+                    if (!filterd[j].isFeature) {
+                        children[j] = filterd[j]
+                    }
+                }
+                if (children.length > 0)
+                    menuItems[menuItems.length - 1].children = children
+            }
+        }
 
         //Returing successful response with data
         const data = {
@@ -43,11 +93,12 @@ async function signIn(req, res) {
             email: admin.email,
             is_admin: admin.is_admin,
             twofa_enable: admin.twofa_enable,
-            is_twofa_verified: admin.is_twofa_verified
+            is_twofa_verified: admin.is_twofa_verified,
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
-
+        data.menuItems = menuItems
+        data.permissions = permissions.filter(x => x.isFeature)
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
@@ -1030,6 +1081,142 @@ async function updateRewardSettings(req, res) {
     }
 }
 
+async function getAllAdmins(req, res) {
+    try {
+        const { searchValue, role, status } = req.body
+        let { pageNumber, pageSize } = req.body
+        const { id } = req.auth
+        let err = {}, dbData = {}, admin = {}
+        const returnableData = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+        //Paging
+        pageSize = parseInt(pageSize)
+        pageNumber = parseInt(pageNumber)
+        if (!pageNumber) pageNumber = 0
+        if (!pageSize) pageSize = 10
+        const start = parseInt(pageNumber * pageSize)
+        const end = parseInt(start + pageSize);
+
+        [err, dbData] = await utils.to(db.query(`
+        Select a.id as id, a.name, a.email, r.name as role, a.status, a.createdAt as dateCreated 
+            From admins a
+            Inner join roles r ON a.role_id = r.id
+            Where a.status = :status
+            Order by a.createdAt desc`,
+            {
+                replacements: { status: status ? status : true },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+
+        if (dbData) {
+            if (role && searchValue) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
+            } else if (role) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+            } else if (searchValue) {
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
+            }
+
+            returnableData['count'] = dbData.length
+            const slicedData = dbData.slice(start, end)
+            returnableData['rows'] = slicedData
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateAdminById(req, res) {
+    try {
+        const { adminId } = req.params
+        const { id } = req.auth
+        const { status } = req.body
+
+        let err = {}, admin = {}, obj = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Checking if admin already exists
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id: adminId } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin == null || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Updating admin status
+        [err, obj] = await utils.to(db.models.admins.update(
+            { status },
+            { where: { id: admin.id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        if (status)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ACTIVATED)
+        else
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_BLOCKED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function getAdminById(req, res) {
+    try {
+        const { adminId } = req.params
+        const { id } = req.auth
+        console.log(MAIN_ACCOUNT_PRIVATE_KEY)
+        let err = {}, admin = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        [err, admin] = await utils.to(db.query(`
+            Select a.id, a.name, a.email, r.name as role, a.status, s.createdAt as lastLogin, a.createdAt 
+                From admins a
+                Left join admin_sessions s ON a.id = s.admin_id
+                Inner join roles r ON a.role_id = r.id 
+                Where a.id = :adminId 
+                Order by s.createdAt desc
+                Limit 1`,
+            {
+                replacements: { adminId: parseInt(adminId) },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (admin == null || admin.length == 0) 
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, admin)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1054,5 +1241,8 @@ module.exports = {
     listCommissionSettings,
     updateCommissionSettings,
     listRewardSettings,
-    updateRewardSettings
+    updateRewardSettings,
+    getAllAdmins,
+    updateAdminById,
+    getAdminById
 }
