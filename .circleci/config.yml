@@ -9,9 +9,8 @@ jobs:
               - $SSH_HOST_FINGERPRINT_STAGING
       - run:
           name: SSH Deploy Staging
-          command: |
-              msg=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING 
-              ssh $SSH_USER@$SSH_HOST_STAGING bash -c '
+          command: | 
+              msg=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING ssh $SSH_USER@$SSH_HOST_STAGING bash -c '
                 cd /var/www/html/healthport
                 sudo git fetch
                 sudo git checkout staging
