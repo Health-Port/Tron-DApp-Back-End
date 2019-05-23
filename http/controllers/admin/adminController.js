@@ -1312,7 +1312,7 @@ async function addNewAdmin(req, res) {
             }));
 
         //Jwt token generating
-        [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, pass_code: passCode.pass_code }))
+        [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, passCode: passCode.pass_code }))
 
         //Email sending
         const url = `${process.env.BASE_URL_ADMIN}${process.env.VERIFICATION_ROUTE}?token=${token}`;
@@ -1331,13 +1331,46 @@ async function addNewAdmin(req, res) {
     }
 }
 
-async function updateAdminPassword(req, res) {
+async function setAdminPassword(req, res) {
     try {
         const { passCode, id } = req.auth
         const { password } = req.body
 
-        const err = {}
-        console.log(passCode, id, password, err)
+        let err = {}, admin = {}, obj = {};
+
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (admin.password)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_ALREADY_UPDATED);
+
+        [err, obj] = await utils.to(db.models.pass_codes.findOne(
+            {
+                where: { pass_code: passCode, type: 'admin' }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (obj.is_used)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED);
+
+        //Updating admin password
+        [err, obj] = await utils.to(db.models.admins.update(
+            { password },
+            { where: { id: admin.id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Updading passcode
+        [err, obj] = await utils.to(db.models.pass_codes.update(
+            { is_used: true },
+            { where: { pass_code: passCode, type: 'admin' } }
+        ))
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.PASSWORD_UPDATED)
+
     } catch (error) {
         console.log(error)
         return response.errReturned(res, error)
@@ -1374,5 +1407,5 @@ module.exports = {
     getAdminById,
     updateAdminDetailsById,
     addNewAdmin,
-    updateAdminPassword
+    setAdminPassword
 }
