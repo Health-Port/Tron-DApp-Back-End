@@ -97,29 +97,36 @@ async function getRoleByID(req, res) {
 		if (!role || role.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-		const features = []
-		let subChilds = []
-		let index
-		for (let i = 0; i < role.length; i++) {
-			if (role[i].parentId == 0) {
-				features.push(role[i])
-				features[features.length - 1].children =
-					(role.filter(x => x.parentId == features[features.length - 1].featureId))
-				const mainChilds = role.filter(x => x.parentId == features[features.length - 1].featureId)
+		let features = []
+		// let subChilds = []
+		// let index
+		// for (let i = 0; i < role.length; i++) {
+		// 	if (role[i].parentId == 0) {
+		// 		features.push(role[i])
+		// 		features[features.length - 1].children =
+		// 			(role.filter(x => x.parentId == features[features.length - 1].featureId))
+		// 		const mainChilds = role.filter(x => x.parentId == features[features.length - 1].featureId)
 
-				for (let j = 0; j < mainChilds.length; j++) {
-					subChilds = role.filter(x => x.parentId == mainChilds[j].featureId)
-					if (subChilds.length > 0) {
-						features[features.length - 1].children.forEach((element, i) => {
-							if (element.featureId == subChilds[0].parentId) {
-								index = i
-							}
-						})
-						features[features.length - 1].children[index].children = subChilds
-					}
-				}
+		// 		for (let j = 0; j < mainChilds.length; j++) {
+		// 			subChilds = role.filter(x => x.parentId == mainChilds[j].featureId)
+		// 			if (subChilds.length > 0) {
+		// 				features[features.length - 1].children.forEach((element, i) => {
+		// 					if (element.featureId == subChilds[0].parentId) {
+		// 						index = i
+		// 					}
+		// 				})
+		// 				features[features.length - 1].children[index].children = subChilds
+		// 			}
+		// 		}
+		// 	}
+		// }
+		
+		features = role.map(elem => (
+			{
+				featureId: elem.featureId,
+				parentId: elem.parentId
 			}
-		}
+		))
 
 		//Returing successful response with data
 		const data = {
@@ -144,7 +151,10 @@ async function addNewRole(req, res) {
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
 
 		if (features.length <= 1)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
+
+		if (!name)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
