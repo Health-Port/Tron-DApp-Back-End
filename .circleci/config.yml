@@ -10,7 +10,7 @@ jobs:
       - run:
           name: SSH Deploy Staging
           command: |
-              echo  ${MAIN_ACCOUNT_PRIVATE_KEY_STAGING} 
+              echo  $MAIN_ACCOUNT_PRIVATE_KEY_STAGING 
               ssh $SSH_USER@$SSH_HOST_STAGING bash -c '
                 cd /var/www/html/healthport
                 sudo git fetch
