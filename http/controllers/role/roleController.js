@@ -41,11 +41,13 @@ async function getAllRoles(req, res) {
 		if (!dbData || dbData.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		const filter = typeof status === 'boolean' ? 'filter' : ''
+
 		if (dbData) {
-			if ((status == status) && searchValue) {
+			if (filter && searchValue) {
 				dbData = dbData.filter(x => x.status == status)
 				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
-			} else if (status == status) {
+			} else if (filter) {
 				dbData = dbData.filter(x => x.status == status)
 			} else if (searchValue) {
 				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
