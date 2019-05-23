@@ -20,11 +20,7 @@ module.exports = (sequelize, Sequelize) => {
         },
         password: {
             type: Sequelize.STRING,
-            allowNull: false
-        },
-        is_admin:{
-            type: Sequelize.BOOLEAN,
-            defaultValue: true
+            allowNull: true
         },
         is_twofa_enable:{
             type: Sequelize.BOOLEAN,
