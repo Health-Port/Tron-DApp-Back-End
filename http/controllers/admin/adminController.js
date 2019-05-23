@@ -1323,13 +1323,27 @@ async function addNewAdmin(req, res) {
         }
 
         //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.EMAIL_CONFIRMATION_REQUIRED)
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT_USER)
 
     } catch (error) {
         console.log(error)
         return response.errReturned(res, error)
     }
 }
+
+async function updateAdminPassword(req, res) {
+    try {
+        const { passCode, id } = req.auth
+        const { password } = req.body
+
+        const err = {}
+        console.log(passCode, id, password, err)
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -1359,5 +1373,6 @@ module.exports = {
     updateAdminById,
     getAdminById,
     updateAdminDetailsById,
-    addNewAdmin
+    addNewAdmin,
+    updateAdminPassword
 }
