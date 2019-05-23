@@ -8,7 +8,7 @@ const db = global.healthportDb
 async function getAllRoles(req, res) {
 	try {
 		const { id } = req.auth
-		const { searchValue, filter } = req.body
+		const { searchValue, status } = req.body
 		let { pageNumber, pageSize } = req.body
 		let err = {}, dbData = {}, admin = {}
 		const returnableData = {};
@@ -42,11 +42,11 @@ async function getAllRoles(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		if (dbData) {
-			if (filter && searchValue) {
-				dbData = dbData.filter(x => x.status == filter)
+			if ((status == status) && searchValue) {
+				dbData = dbData.filter(x => x.status == status)
 				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
-			} else if (filter) {
-				dbData = dbData.filter(x => x.status == filter)
+			} else if (status == status) {
+				dbData = dbData.filter(x => x.status == status)
 			} else if (searchValue) {
 				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
 			}

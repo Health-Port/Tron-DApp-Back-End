@@ -9,7 +9,7 @@
         "ecmaVersion": 2018
     },
     "rules": {
-        "linebreak-style": ["error", "unix"],
+        "linebreak-style": ["error", "windows"],
         "quotes": ["error", "single"],
         "semi": ["error", "never"],
         "no-const-assign": ["error"],

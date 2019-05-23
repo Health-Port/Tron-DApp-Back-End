@@ -1266,6 +1266,70 @@ async function updateAdminDetailsById(req, res) {
     }
 }
 
+async function addNewAdmin(req, res) {
+    try {
+        const { id } = req.auth
+        const { name, email, roleId } = req.body
+
+        let err = {}, admin = {}, role = {}, passCode = {}, token = {}, mail = {}
+
+        //Checking empty field
+        if (!(name && roleId && email))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+        //Reguler expression testing for email
+        if (!regex.emailRegex.test(email))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Checking if role exists
+        [err, role] = await utils.to(db.models.roles.findOne({ where: { id: roleId } }))
+        if (err) return response.errReturned(res, err)
+        if (!role || role == null || role.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
+
+        //Checking if email exists
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { email } }))
+        if (err) return response.errReturned(res, err)
+        if (admin)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_ALREADY_EXIST);
+
+        //Saving admin record in db 
+        [err, admin] = await utils.to(db.models.admins.create({ name, email, role_id: roleId }))
+        if (err) return response.errReturned(res, err);
+
+        //Saving passcode in db
+        [err, passCode] = await utils.to(db.models.pass_codes.create(
+            {
+                user_id: admin.id,
+                pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
+                type: 'admin'
+            }));
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, pass_code: passCode.pass_code }))
+
+        //Email sending
+        const url = `${process.env.BASE_URL_ADMIN}${process.env.VERIFICATION_ROUTE}?token=${token}`;
+        [err, mail] = await utils.to(emailTemplates.signUpTemplate(token, email, url, name))
+        if (!mail) {
+            console.log(err)
+            return response.errReturned(res, err)
+        }
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.EMAIL_CONFIRMATION_REQUIRED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1294,5 +1358,6 @@ module.exports = {
     getAllAdmins,
     updateAdminById,
     getAdminById,
-    updateAdminDetailsById
+    updateAdminDetailsById,
+    addNewAdmin
 }

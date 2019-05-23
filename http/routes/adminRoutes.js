@@ -52,6 +52,7 @@ router.post('/admins', authorize.authenticateToken, adminController.getAllAdmins
 router.get('/admins/:adminId', authorize.authenticateToken, adminController.getAdminById)
 router.put('/update/status/:adminId', authorize.authenticateToken, adminController.updateAdminById)
 router.put('/update/:adminId', authorize.authenticateToken, adminController.updateAdminDetailsById)
+router.post('/admins/add', authorize.authenticateToken, adminController.addNewAdmin)
 
 //Features Routes
 router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
