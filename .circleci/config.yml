@@ -12,13 +12,11 @@ jobs:
           name: SSH Deploy Staging
           command: |
               ssh $SSH_USER@$SSH_HOST_STAGING bash -c '
-                echo 'export MAIN_ACCOUNT_PRIVATE_KEY_STAGING="$MAIN_ACCOUNT_PRIVATE_KEY_STAGING"' >> ~/.bashrc
-                source ~/.bashrc
                 cd /var/www/html/healthport
                 sudo git fetch
                 sudo git checkout staging
                 sudo git pull
-                sudo MAIN_ACCOUNT_PRIVATE_KEY=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING pm2 restart health --update-env'
+                sudo MAIN_ACCOUNT_PRIVATE_KEY=${MAIN_ACCOUNT_PRIVATE_KEY_STAGING} pm2 restart health --update-env'
   deploy_master:
     machine:
       enabled: true
