@@ -11,6 +11,11 @@ jobs:
       - run:
           name: SSH Deploy Staging
           command: |
+              echo 'export MAIN_ACCOUNT_PRIVATE_KEY_STAGING=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING' >> $BASH_ENV
+              source $BASH_ENV
+      - run:
+          name: SSH Deploy Staging
+          command: |
               ssh $SSH_USER@$SSH_HOST_STAGING bash -c '
                 cd /var/www/html/healthport
                 sudo git fetch
