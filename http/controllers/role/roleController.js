@@ -141,7 +141,10 @@ async function addNewRole(req, res) {
 		const { id } = req.auth
 		const { name, description, features, status } = req.body
 
-		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = [];
+		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
+
+		if (features.length <= 1)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -171,7 +174,8 @@ async function addNewRole(req, res) {
 		//Saving permssion against newly created role
 		[err, permissions] = await utils.to(db.models.permissions.bulkCreate(mappedFeatures))
 		if (err) return response.errReturned(res, err)
-		if (!permissions) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (!permissions)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
