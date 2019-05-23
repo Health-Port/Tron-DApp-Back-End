@@ -98,11 +98,26 @@ async function getRoleByID(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		const features = []
+		let subChilds = []
+		let index
 		for (let i = 0; i < role.length; i++) {
 			if (role[i].parentId == 0) {
 				features.push(role[i])
 				features[features.length - 1].children =
 					(role.filter(x => x.parentId == features[features.length - 1].featureId))
+				const mainChilds = role.filter(x => x.parentId == features[features.length - 1].featureId)
+
+				for (let j = 0; j < mainChilds.length; j++) {
+					subChilds = role.filter(x => x.parentId == mainChilds[j].featureId)
+					if (subChilds.length > 0) {
+						features[features.length - 1].children.forEach((element, i) => {
+							if (element.featureId == subChilds[0].parentId) {
+								index = i
+							}
+						})
+						features[features.length - 1].children[index].children = subChilds
+					}
+				}
 			}
 		}
 

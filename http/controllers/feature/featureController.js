@@ -42,11 +42,27 @@ async function getAllFeatures(req, res) {
 
 		//Making custom json
 		const featuresArray = []
+		let subChilds = []
+		let index
 		for (let i = 0; i < features.length; i++) {
 			if (features[i].parentId == 0) {
 				featuresArray.push(features[i])
-				featuresArray[featuresArray.length - 1].children = (features.filter(x => x.parentId ==
-					featuresArray[featuresArray.length - 1].id))
+				featuresArray[featuresArray.length - 1].children =
+					(features.filter(x => x.parentId == featuresArray[featuresArray.length - 1].id))
+				const mainChilds = features.filter(x => x.parentId ==
+					featuresArray[featuresArray.length - 1].id)
+
+				for (let j = 0; j < mainChilds.length; j++) {
+					subChilds = features.filter(x => x.parentId == mainChilds[j].id)
+					if (subChilds.length > 0) {
+						featuresArray[featuresArray.length - 1].children.forEach((element, i) => {
+							if (element.id == subChilds[0].parentId) {
+								index = i
+							}
+						})
+						featuresArray[featuresArray.length - 1].children[index].children = subChilds
+					}
+				}
 			}
 		}
 
