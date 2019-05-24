@@ -153,10 +153,9 @@ async function addNewRole(req, res) {
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
-		if (!features[0].hasOwnProperty('id')) {
+		if (!features[0].hasOwnProperty('id')) 
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
-		}
-
+		
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED);
 
@@ -237,7 +236,16 @@ async function updateRoleById(req, res) {
 		const { id } = req.auth
 		const { name, description, features, status } = req.body
 
-		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = [];
+		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = []
+
+		if (!name)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED)
+
+			if (features.length <= 1)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
+
+		if (!features[0].hasOwnProperty('id')) 
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
