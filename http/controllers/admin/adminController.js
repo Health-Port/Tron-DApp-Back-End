@@ -1179,7 +1179,7 @@ async function updateAdminById(req, res) {
         ))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
-            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
         if (status)
@@ -1268,7 +1268,7 @@ async function updateAdminDetailsById(req, res) {
         ))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
-            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_UPDATED_SUCCESSFULLY)
@@ -1373,7 +1373,7 @@ async function setAdminPassword(req, res) {
         ))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
-            return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
 
         //Updading passcode
         [err, obj] = await utils.to(db.models.pass_codes.update(
