@@ -69,6 +69,6 @@ router.get('/roles/:roleId', authorize.authenticateToken, roleController.getRole
 
 
 //Login History Routes
-router.get('/history/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
+router.post('/history/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
 module.exports = router

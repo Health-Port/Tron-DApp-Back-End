@@ -9,6 +9,7 @@ async function getLoginHistorybyAdminID(req, res) {
 	try {
 		const { adminId } = req.params
 		const { id } = req.auth
+		let { pageSize, pageNumber } = req.body
 
 		let err = {}, history = {}, admin = {};
 
@@ -16,17 +17,27 @@ async function getLoginHistorybyAdminID(req, res) {
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
 		if (err) return response.errReturned(res, err)
 		if (!admin || admin.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
-		[err, history] = await utils.to(db.models.admin_sessions.findAll({
+		//Paging
+		pageSize = parseInt(pageSize)
+		pageNumber = parseInt(pageNumber)
+		if (!pageNumber) pageNumber = 0
+		if (pageNumber) pageNumber = pageNumber - 1
+		if (!pageSize) pageSize = 10
+		const start = parseInt(pageNumber * pageSize);
+
+		[err, history] = await utils.to(db.models.admin_sessions.findAndCountAll({
 			where: { admin_id: parseInt(adminId) },
 			order: [['createdAt', 'DESC']],
+			limit: pageSize,
+			offset: start
 		}))
 		if (err) return response.errReturned(res, err)
 		if (!history || history.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-		const data = history.map(elem => (
+		const data = history.rows.map(elem => (
 			{
 				id: elem.id,
 				adminId: elem.admin_id,
@@ -37,7 +48,7 @@ async function getLoginHistorybyAdminID(req, res) {
 		))
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { count: history.count, data })
 
 	} catch (error) {
 		console.log(error)
