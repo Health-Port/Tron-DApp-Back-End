@@ -1328,7 +1328,7 @@ async function addNewAdmin(req, res) {
         [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, passCode: passCode.pass_code }))
 
         //Email sending
-        const url = `${process.env.BASE_URL_ADMIN}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
+        const url = `${process.env.BASE_URL_ADMIN}${process.env.VERIFICATION_ROUTE}?token=${token}`;
         [err, mail] = await utils.to(emailTemplates.signUpTemplate(token, email, url, name))
         if (!mail) {
             console.log(err)
