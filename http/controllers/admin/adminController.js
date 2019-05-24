@@ -1086,6 +1086,7 @@ async function getAllAdmins(req, res) {
         const { searchValue, role, status } = req.body
         let { pageNumber, pageSize } = req.body
         const { id } = req.auth
+        
         let err = {}, dbData = {}, admin = {}
         const returnableData = {};
 
@@ -1136,8 +1137,6 @@ async function getAllAdmins(req, res) {
             } else if (filter) {
                 dbData = dbData.filter(x => x.status == status)
             }
-
-
 
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
@@ -1329,7 +1328,7 @@ async function addNewAdmin(req, res) {
         [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, passCode: passCode.pass_code }))
 
         //Email sending
-        const url = `${process.env.BASE_URL_ADMIN}${process.env.VERIFICATION_ROUTE}?token=${token}`;
+        const url = `${process.env.BASE_URL_ADMIN}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
         [err, mail] = await utils.to(emailTemplates.signUpTemplate(token, email, url, name))
         if (!mail) {
             console.log(err)
