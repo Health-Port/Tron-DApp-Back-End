@@ -14,6 +14,7 @@ const ResponseMessagesEnum = {
     DOCUMENT_RETRIEVED: 'Document retrieved successfully.',
     EMAIL_CONFIRMATION_REQUIRED: 'Please verify your account to continue further.',
     FEATURE_IS_REQUIRED: 'Atleast one feature is required to add new role.',
+    ID_IS_MISSING: 'Id is missing in feature array.',
     INVALID_EMAIL_ADDRESS: 'Invalid email address.',
     INVALID_TOKEN: 'Session expired, please signin again.',
     INVALID_TO_ADDRESS: 'Invalid address.',
