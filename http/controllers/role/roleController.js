@@ -120,7 +120,7 @@ async function getRoleByID(req, res) {
 		// 		}
 		// 	}
 		// }
-		
+
 		features = role.map(elem => (
 			{
 				featureId: elem.featureId,
@@ -152,6 +152,10 @@ async function addNewRole(req, res) {
 
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
+
+		if (!features[0].hasOwnProperty('id')) {
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
+		}
 
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED);
