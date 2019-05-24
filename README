@@ -1,0 +1,27 @@
+# Healthport API's
+
+API for healthport plateform
+
+## Installation
+Clone and run this repository you'll need, Git and Node.js installed on your computer. From your command line:
+```bash
+
+# Fork main repository and clone your fokked repository
+> git clone  https://github.com/Health-Port/Tron-DApp-Back-End.git
+
+# Go into the repository
+> cd healthport
+
+# Install dependencies
+> npm install
+
+# Create environment file
+> Create an environment variable file called `.env` at the root directory. You can see all variables link .env.example
+
+
+> Create a database with name you set in `.env`
+
+## Run the API
+
+
+You should see a `Db Connected` message in the log
