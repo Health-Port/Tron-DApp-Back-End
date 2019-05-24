@@ -22,6 +22,6 @@ Clone and run this repository you'll need, Git and Node.js installed on your com
 > Create a database with name you set in `.env`
 
 ## Run the API
-
+npm start
 
 You should see a `Db Connected` message in the log
