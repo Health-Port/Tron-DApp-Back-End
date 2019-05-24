@@ -1086,6 +1086,7 @@ async function getAllAdmins(req, res) {
         const { searchValue, role, status } = req.body
         let { pageNumber, pageSize } = req.body
         const { id } = req.auth
+        
         let err = {}, dbData = {}, admin = {}
         const returnableData = {};
 
@@ -1136,8 +1137,6 @@ async function getAllAdmins(req, res) {
             } else if (filter) {
                 dbData = dbData.filter(x => x.status == status)
             }
-
-
 
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
