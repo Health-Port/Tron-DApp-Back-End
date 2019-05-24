@@ -1109,8 +1109,7 @@ async function getAllAdmins(req, res) {
             Inner join roles r ON a.role_id = r.id
             Order by a.createdAt desc`,
             {
-                replacements: { status: status ? status : true },
-                type: db.QueryTypes.SELECT,
+                type: db.QueryTypes.SELECT
             }))
         if (err) return response.errReturned(res, err)
 
