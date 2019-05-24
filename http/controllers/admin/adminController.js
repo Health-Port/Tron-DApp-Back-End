@@ -1107,23 +1107,37 @@ async function getAllAdmins(req, res) {
         Select a.id as id, a.name, a.email, r.name as role, a.status, a.createdAt as dateCreated 
             From admins a
             Inner join roles r ON a.role_id = r.id
-            Where a.status = :status
             Order by a.createdAt desc`,
             {
-                replacements: { status: status ? status : true },
-                type: db.QueryTypes.SELECT,
+                type: db.QueryTypes.SELECT
             }))
         if (err) return response.errReturned(res, err)
 
+        const filter = typeof status === 'boolean' ? 'filter' : ''
+
         if (dbData) {
-            if (role && searchValue) {
+            if (role && searchValue && filter) {
+                dbData = dbData.filter(x => x.status == status)
                 dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
+            } else if (role && searchValue) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
+            } else if (role && filter) {
+                dbData = dbData.filter(x => x.status == status)
+                dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
+            } else if (searchValue && filter) {
+                dbData = dbData.filter(x => x.status == status)
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
             } else if (role) {
                 dbData = dbData.filter(x => x.role.toLowerCase() == role.toLowerCase())
             } else if (searchValue) {
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()) || x.email.toLowerCase().includes(searchValue.toLowerCase()))
+            } else if (filter) {
+                dbData = dbData.filter(x => x.status == status)
             }
+
+
 
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
