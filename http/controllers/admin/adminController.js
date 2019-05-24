@@ -1086,7 +1086,7 @@ async function getAllAdmins(req, res) {
         const { searchValue, role, status } = req.body
         let { pageNumber, pageSize } = req.body
         const { id } = req.auth
-        
+
         let err = {}, dbData = {}, admin = {}
         const returnableData = {};
 
@@ -1350,6 +1350,9 @@ async function setAdminPassword(req, res) {
         const { password } = req.body
 
         let err = {}, admin = {}, obj = {};
+
+        if (!password)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
         if (err) return response.errReturned(res, err)
