@@ -1238,9 +1238,9 @@ async function updateAdminDetailsById(req, res) {
         const { name, roleId, status } = req.body
 
         let err = {}, admin = {}, obj = {}, role = {}
-
+        const filter = typeof status === 'boolean' ? 'filter' : ''
         //Checking empty field
-        if (!(name && roleId, status))
+        if (!(name && roleId && filter))
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
         //Verifying user authenticity
@@ -1349,7 +1349,7 @@ async function setAdminPassword(req, res) {
         const { passCode, id } = req.auth
         const { password } = req.body
 
-        let err = {}, admin = {}, obj = {};
+        let err = {}, admin = {}, obj = {}
 
         if (!password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
