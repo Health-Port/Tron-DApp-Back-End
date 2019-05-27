@@ -1,5 +1,6 @@
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
+const roleEnum = require('../../../enum/roleEnum')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
 
@@ -33,6 +34,7 @@ async function getAllRoles(req, res) {
 			Select id, name, description, status, 
 				createdAt as dateCreated 
 				from roles
+				where id != 1
 				order by createdAt DESC`,
 			{
 				type: db.QueryTypes.SELECT,
@@ -98,29 +100,6 @@ async function getRoleByID(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		let features = []
-		// let subChilds = []
-		// let index
-		// for (let i = 0; i < role.length; i++) {
-		// 	if (role[i].parentId == 0) {
-		// 		features.push(role[i])
-		// 		features[features.length - 1].children =
-		// 			(role.filter(x => x.parentId == features[features.length - 1].featureId))
-		// 		const mainChilds = role.filter(x => x.parentId == features[features.length - 1].featureId)
-
-		// 		for (let j = 0; j < mainChilds.length; j++) {
-		// 			subChilds = role.filter(x => x.parentId == mainChilds[j].featureId)
-		// 			if (subChilds.length > 0) {
-		// 				features[features.length - 1].children.forEach((element, i) => {
-		// 					if (element.featureId == subChilds[0].parentId) {
-		// 						index = i
-		// 					}
-		// 				})
-		// 				features[features.length - 1].children[index].children = subChilds
-		// 			}
-		// 		}
-		// 	}
-		// }
-
 		features = role.map(elem => (
 			{
 				featureId: elem.featureId,
@@ -153,9 +132,9 @@ async function addNewRole(req, res) {
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
-		if (!features[0].hasOwnProperty('id')) 
+		if (!features[0].hasOwnProperty('id'))
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
-		
+
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED);
 
@@ -221,6 +200,8 @@ async function getAllActiveRoles(req, res) {
 		if (roles == null || roles.count == 0 || roles.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		//excluding super admin from role list
+		roles = roles.filter(x => x.name != roleEnum.SUPERADMIN)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
 
@@ -241,10 +222,10 @@ async function updateRoleById(req, res) {
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED)
 
-			if (features.length <= 1)
+		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
-		if (!features[0].hasOwnProperty('id')) 
+		if (!features[0].hasOwnProperty('id'))
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING);
 
 		//Verifying user authenticity
