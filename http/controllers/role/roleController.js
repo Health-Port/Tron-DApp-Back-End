@@ -133,7 +133,7 @@ async function addNewRole(req, res) {
 			const obj = { 'id': unique[i] }
 			features.push(obj)
 		}
-		
+
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
@@ -326,11 +326,42 @@ async function updateRoleStatusById(req, res) {
 	}
 }
 
+async function getAllRolesList(req, res) {
+	try {
+		const { id } = req.auth
+
+		let err = {}, admin = {}, roles = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		[err, roles] = await utils.to(db.models.roles.findAll(
+			{
+				attributes: ['id', 'name'],
+				order: [['name', 'ASC']]
+			}))
+		if (err) return response.errReturned(res, err)
+		if (roles == null || roles.count == 0 || roles.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//excluding super admin from role list
+		roles = roles.filter(x => x.id != 1)
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 module.exports = {
 	getAllRoles,
 	getRoleByID,
 	addNewRole,
 	getAllActiveRoles,
 	updateRoleById,
-	updateRoleStatusById
+	updateRoleStatusById,
+	getAllRolesList
 }
