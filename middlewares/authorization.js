@@ -45,7 +45,7 @@ async function authenticateRole(req, res, next) {
             if (!(filterArray.length > 0))
                 return response.sendResponse(
                     res, 
-                    resCode.UNAUTHORIZED, 
+                    resCode.BAD_REQUEST, 
                     `Access Denied for ${req.route.path} api.`)
         }
         next()

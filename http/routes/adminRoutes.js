@@ -66,8 +66,8 @@ router.put('/roles/update/:roleId', authorize.authenticateRole, authorize.authen
 router.put('/roles/status/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.updateRoleStatusById)
 //Excluded from role authencation bec its part of list view and does not exists as feature.
 router.get('/roles/active', authorize.authenticateToken, roleController.getAllActiveRoles)
+router.get('/roles/list', authorize.authenticateToken, roleController.getAllRolesList)
 router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.getRoleByID)
-
 
 //Login History Routes
 router.post('/history/:adminId', authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
