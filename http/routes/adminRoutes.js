@@ -64,7 +64,8 @@ router.post('/roles', authorize.authenticateRole, authorize.authenticateToken, r
 router.post('/roles/add', authorize.authenticateRole, authorize.authenticateToken, roleController.addNewRole)
 router.put('/roles/update/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.updateRoleById)
 router.put('/roles/status/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.updateRoleStatusById)
-router.get('/roles/active', authorize.authenticateRole, authorize.authenticateToken, roleController.getAllActiveRoles)
+//Excluded from role authencation bec its part of list view and does not exists as feature.
+router.get('/roles/active', authorize.authenticateToken, roleController.getAllActiveRoles)
 router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.getRoleByID)
 
 
