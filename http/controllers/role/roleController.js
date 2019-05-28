@@ -2,6 +2,7 @@ const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
+const roleEnum = require('../../../enum/roleEnum')
 
 const db = global.healthportDb
 
@@ -32,7 +33,7 @@ async function getAllRoles(req, res) {
 			Select id, name, description, status, 
 				createdAt as dateCreated 
 				from roles
-				where id != 1
+				where name != ${roleEnum.SUPERADMIN}
 				order by createdAt DESC`,
 			{
 				type: db.QueryTypes.SELECT,
@@ -251,6 +252,12 @@ async function updateRoleById(req, res) {
 		if (!role || role == null || role.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
 
+		//Checking if role already exists
+		[err, role] = await utils.to(db.models.roles.findOne({ where: { name } }))
+		if (err) return response.errReturned(res, err)
+		if (role != null)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_ALREADY_EXIST);
+
 		//Updating role
 		[err, obj] = await utils.to(db.models.roles.update(
 			{ name, description, status },
@@ -348,7 +355,7 @@ async function getAllRolesList(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//excluding super admin from role list
-		roles = roles.filter(x => x.id != 1)
+		roles = roles.filter(x => x.id != roleEnum.SUPERADMIN)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
 	} catch (error) {
