@@ -91,7 +91,7 @@ async function getRoleByID(req, res) {
             Inner join roles r ON r.id = p.role_id
             Where p.role_id = :roleId`,
 			{
-				replacements: { roleId: parseInt(roleId)},
+				replacements: { roleId: parseInt(roleId) },
 				type: db.QueryTypes.SELECT,
 			}))
 		if (err) return response.errReturned(res, err)
@@ -207,7 +207,7 @@ async function getAllActiveRoles(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//excluding super admin from role list
-		roles = roles.filter(x => x.id != 1)
+		roles = roles.filter(x => x.id != roleEnum.SUPERADMIN)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
 
@@ -234,6 +234,9 @@ async function updateRoleById(req, res) {
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED)
 
+		if (name.toLowerCase() == roleEnum.SUPERADMIN.toLowerCase())
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_NOT_ALLOWED)
+
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
@@ -251,12 +254,6 @@ async function updateRoleById(req, res) {
 		if (err) return response.errReturned(res, err)
 		if (!role || role == null || role.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
-
-		//Checking if role already exists
-		[err, role] = await utils.to(db.models.roles.findOne({ where: { name } }))
-		if (err) return response.errReturned(res, err)
-		if (role != null)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_ALREADY_EXIST);
 
 		//Updating role
 		[err, obj] = await utils.to(db.models.roles.update(

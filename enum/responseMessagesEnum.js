@@ -41,6 +41,7 @@ const ResponseMessagesEnum = {
     REQUIRED_FIELDS_EMPTY: 'Required fields cannot be empty.',
     ROLE_ALREADY_EXIST: 'Role already exist.',
     ROLE_NAEME_REQUIRED: 'Role name is required.',
+    ROLE_NAEME_NOT_ALLOWED: 'Role name is not allowed.',
     ROLE_IS_BLOCKED: 'Role is blocked.',
     ROLE_NOT_FOUND: 'Role not found.',
     ROLE_UPDATED: 'Role updated successfully.',
