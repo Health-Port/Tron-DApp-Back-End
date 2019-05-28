@@ -57,7 +57,7 @@ router.post('/admins/set/password', authorize.authenticateToken, adminController
 
 //Features Routes
 router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
-router.get('/features', authorize.authenticateRole, authorize.authenticateToken, featureController.getAllFeatures)
+router.get('/features', authorize.authenticateToken, featureController.getAllFeatures)
 
 //Role Routes
 router.post('/roles', authorize.authenticateRole, authorize.authenticateToken, roleController.getAllRoles)
