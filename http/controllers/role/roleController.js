@@ -127,6 +127,13 @@ async function addNewRole(req, res) {
 
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
 
+		//adding parent entry
+		const unique = [...new Set(features.map(item => item.parentId))]
+		for (let i = 0; i < unique.length; i++) {
+			const obj = { 'id': unique[i] }
+			features.push(obj)
+		}
+		
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
