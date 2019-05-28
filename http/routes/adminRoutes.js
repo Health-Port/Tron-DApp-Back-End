@@ -19,7 +19,7 @@ router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken
 router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication)
 
 router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
-router.post('/getUsers', authorize.authenticateToken, adminController.getUsers)
+router.post('/getUsers', authorize.authenticateRole, authorize.authenticateToken, adminController.getUsers)
 router.post('/getUserById', authorize.authenticateToken, adminController.getUserById)
 router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
 router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
@@ -53,10 +53,10 @@ router.get('/admins/:adminId', authorize.authenticateRole, authorize.authenticat
 router.put('/update/status/:adminId', authorize.authenticateRole, authorize.authenticateToken, adminController.updateAdminById)
 router.put('/update/:adminId', authorize.authenticateRole, authorize.authenticateToken, adminController.updateAdminDetailsById)
 router.post('/admins/add', authorize.authenticateRole, authorize.authenticateToken, adminController.addNewAdmin)
-router.post('/admins/set/password', authorize.authenticateRole, authorize.authenticateToken, adminController.setAdminPassword)
+router.post('/admins/set/password', authorize.authenticateToken, adminController.setAdminPassword)
 
 //Features Routes
-router.post('/features/add', authorize.authenticateRole, authorize.authenticateToken, featureController.addFeature)
+router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
 router.get('/features', authorize.authenticateRole, authorize.authenticateToken, featureController.getAllFeatures)
 
 //Role Routes
