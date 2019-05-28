@@ -55,7 +55,8 @@ async function signIn(req, res) {
         //Getting permissions by role id
         [err, permissions] = await utils.to(db.query(`
         select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,
-            f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence, r.status 
+            f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence, r.status,
+            f.route as route 
             from permissions p 
             inner join features f ON p.feature_id = f.id
             inner join roles r ON r.id = p.role_id
@@ -94,6 +95,8 @@ async function signIn(req, res) {
             is_admin: admin.is_admin,
             twofa_enable: admin.twofa_enable,
             is_twofa_verified: admin.is_twofa_verified,
+            roleId: permissions[0].roleId,
+            permissions: permissions.map(a => a.route)
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))

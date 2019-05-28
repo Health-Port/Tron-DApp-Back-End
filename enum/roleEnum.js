@@ -1,7 +1,6 @@
 const RoleEnum = {
     PROVIDER: 'Provider',
-    PATIENT: 'Patient',
-    SUPERADMIN: 'Super Admin'
+    PATIENT: 'Patient'
 }
 
 module.exports = RoleEnum

@@ -33,42 +33,42 @@ router.post('/updateSignupLimitPerDay', authorize.authenticateToken, adminContro
 router.post('/updateCommissionSettings', authorize.authenticateToken, adminController.updateCommissionSettings)
 router.post('/updateRewardSettings', authorize.authenticateToken, adminController.updateRewardSettings)
 
-router.get('/listSPRewardSettings', authorize.authenticateToken, adminController.listSPRewardSettings)
-router.get('/listAirdropSettings', authorize.authenticateToken, adminController.listAirdropSettings)
-router.get('/listSignupLimitPerDay', authorize.authenticateToken, adminController.listSignupLimitPerDay)
-router.get('/listCommissionSettings', authorize.authenticateToken, adminController.listCommissionSettings)
-router.get('/listRewardSettings', authorize.authenticateToken, adminController.listRewardSettings)
+router.get('/listSPRewardSettings', authorize.authenticateRole,authorize.authenticateToken, adminController.listSPRewardSettings)
+router.get('/listAirdropSettings', authorize.authenticateRole,authorize.authenticateToken, adminController.listAirdropSettings)
+router.get('/listSignupLimitPerDay', authorize.authenticateRole,authorize.authenticateToken, adminController.listSignupLimitPerDay)
+router.get('/listCommissionSettings', authorize.authenticateRole,authorize.authenticateToken, adminController.listCommissionSettings)
+router.get('/listRewardSettings', authorize.authenticateRole,authorize.authenticateToken, adminController.listRewardSettings)
 
 //Dashboard Routes
-router.get('/getTrxEHRBalance', authorize.authenticateToken, dashboardController.getTrxEHRBalance)
-router.get('/getTotalUsersCount', authorize.authenticateToken, dashboardController.getTotalUsersCount)
-router.get('/getTokensRisedByCommission', authorize.authenticateToken, dashboardController.getTokensRisedByCommission)
-router.get('/getTokenDistributed', authorize.authenticateToken, dashboardController.getTokenDistributed)
-router.post('/getTransactionGraphData', authorize.authenticateToken, dashboardController.getTransactionGraphData)
-router.post('/getUserGraphData', authorize.authenticateToken, dashboardController.getUserGraphData)
+router.get('/getTrxEHRBalance', authorize.authenticateRole, authorize.authenticateToken, dashboardController.getTrxEHRBalance)
+router.get('/getTotalUsersCount', authorize.authenticateRole, authorize.authenticateToken, dashboardController.getTotalUsersCount)
+router.get('/getTokensRisedByCommission', authorize.authenticateRole, authorize.authenticateToken, dashboardController.getTokensRisedByCommission)
+router.get('/getTokenDistributed', authorize.authenticateRole, authorize.authenticateToken, dashboardController.getTokenDistributed)
+router.post('/getTransactionGraphData', authorize.authenticateRole, authorize.authenticateToken, dashboardController.getTransactionGraphData)
+router.post('/getUserGraphData', authorize.authenticateRole, authorize.authenticateToken, dashboardController.getUserGraphData)
 
 //Admin Routes
-router.post('/admins', authorize.authenticateToken, adminController.getAllAdmins)
-router.get('/admins/:adminId', authorize.authenticateToken, adminController.getAdminById)
-router.put('/update/status/:adminId', authorize.authenticateToken, adminController.updateAdminById)
-router.put('/update/:adminId', authorize.authenticateToken, adminController.updateAdminDetailsById)
-router.post('/admins/add', authorize.authenticateToken, adminController.addNewAdmin)
-router.post('/admins/set/password', authorize.authenticateToken, adminController.setAdminPassword)
+router.post('/admins', authorize.authenticateRole, authorize.authenticateToken, adminController.getAllAdmins)
+router.get('/admins/:adminId', authorize.authenticateRole, authorize.authenticateToken, adminController.getAdminById)
+router.put('/update/status/:adminId', authorize.authenticateRole, authorize.authenticateToken, adminController.updateAdminById)
+router.put('/update/:adminId', authorize.authenticateRole, authorize.authenticateToken, adminController.updateAdminDetailsById)
+router.post('/admins/add', authorize.authenticateRole, authorize.authenticateToken, adminController.addNewAdmin)
+router.post('/admins/set/password', authorize.authenticateRole, authorize.authenticateToken, adminController.setAdminPassword)
 
 //Features Routes
-router.post('/features/add', authorize.authenticateToken, featureController.addFeature)
-router.get('/features', authorize.authenticateToken, featureController.getAllFeatures)
+router.post('/features/add', authorize.authenticateRole, authorize.authenticateToken, featureController.addFeature)
+router.get('/features', authorize.authenticateRole, authorize.authenticateToken, featureController.getAllFeatures)
 
 //Role Routes
-router.post('/roles', authorize.authenticateToken, roleController.getAllRoles)
-router.post('/roles/add', authorize.authenticateToken, roleController.addNewRole)
-router.put('/roles/update/:roleId', authorize.authenticateToken, roleController.updateRoleById)
-router.put('/roles/status/:roleId', authorize.authenticateToken, roleController.updateRoleStatusById)
-router.get('/roles/active', authorize.authenticateToken, roleController.getAllActiveRoles)
-router.get('/roles/:roleId', authorize.authenticateToken, roleController.getRoleByID)
+router.post('/roles', authorize.authenticateRole, authorize.authenticateToken, roleController.getAllRoles)
+router.post('/roles/add', authorize.authenticateRole, authorize.authenticateToken, roleController.addNewRole)
+router.put('/roles/update/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.updateRoleById)
+router.put('/roles/status/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.updateRoleStatusById)
+router.get('/roles/active', authorize.authenticateRole, authorize.authenticateToken, roleController.getAllActiveRoles)
+router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateToken, roleController.getRoleByID)
 
 
 //Login History Routes
-router.post('/history/:adminId', authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
+router.post('/history/:adminId', authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
 module.exports = router
