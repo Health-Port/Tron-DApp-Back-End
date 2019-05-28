@@ -89,9 +89,9 @@ async function getRoleByID(req, res) {
             From permissions p 
             Inner join features f ON p.feature_id = f.id
             Inner join roles r ON r.id = p.role_id
-            Where p.role_id = :roleId and r.status = :status`,
+            Where p.role_id = :roleId`,
 			{
-				replacements: { roleId: parseInt(roleId), status: true },
+				replacements: { roleId: parseInt(roleId)},
 				type: db.QueryTypes.SELECT,
 			}))
 		if (err) return response.errReturned(res, err)
