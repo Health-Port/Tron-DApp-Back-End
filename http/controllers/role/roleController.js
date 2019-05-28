@@ -1,6 +1,5 @@
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
-const roleEnum = require('../../../enum/roleEnum')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
 
@@ -24,7 +23,6 @@ async function getAllRoles(req, res) {
 		pageSize = parseInt(pageSize)
 		pageNumber = parseInt(pageNumber)
 		if (!pageNumber) pageNumber = 0
-		if (pageNumber) pageNumber = pageNumber - 1
 		if (!pageSize) pageSize = 10
 		const start = parseInt(pageNumber * pageSize)
 		const end = parseInt(start + pageSize);
@@ -201,7 +199,7 @@ async function getAllActiveRoles(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//excluding super admin from role list
-		roles = roles.filter(x => x.name != roleEnum.SUPERADMIN)
+		roles = roles.filter(x => x.id != 1)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
 
@@ -217,6 +215,12 @@ async function updateRoleById(req, res) {
 		const { id } = req.auth
 		const { name, description, features, status } = req.body
 
+		//adding parent entry
+		const unique = [...new Set(features.map(item => item.parentId))]
+		for (let i = 0; i < unique.length; i++) {
+			const obj = { 'id': unique[i] }
+			features.push(obj)
+		}
 		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = []
 
 		if (!name)

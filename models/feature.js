@@ -5,20 +5,23 @@ module.exports = (sequelize, Sequelize) => {
             autoIncrement: true,
             primaryKey: true,
             unique: true,
-		},
-		name: {
+        },
+        name: {
             type: Sequelize.STRING,
             allowNull: false
-		},
+        },
         parent_id: {
             type: Sequelize.INTEGER,
             allowNull: true
-		},
-		is_feature: {
+        },
+        is_feature: {
             type: Sequelize.BOOLEAN
         },
         sequence: {
             type: Sequelize.INTEGER
+        },
+        route: {
+            type: Sequelize.STRING,
         }
     })
     return features
