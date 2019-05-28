@@ -207,7 +207,7 @@ async function getAllActiveRoles(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//excluding super admin from role list
-		roles = roles.filter(x => x.id != roleEnum.SUPERADMIN)
+		roles = roles.filter(x => x.name != roleEnum.SUPERADMIN)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
 
@@ -352,7 +352,7 @@ async function getAllRolesList(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//excluding super admin from role list
-		roles = roles.filter(x => x.id != roleEnum.SUPERADMIN)
+		roles = roles.filter(x => x.name != roleEnum.SUPERADMIN)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, roles)
 	} catch (error) {
