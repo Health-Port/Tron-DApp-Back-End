@@ -33,7 +33,7 @@ async function getAllRoles(req, res) {
 			Select id, name, description, status, 
 				createdAt as dateCreated 
 				from roles
-				where name != ${roleEnum.SUPERADMIN}
+				where name != 'Super Admin'
 				order by createdAt DESC`,
 			{
 				type: db.QueryTypes.SELECT,
