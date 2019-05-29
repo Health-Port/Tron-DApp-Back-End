@@ -128,11 +128,10 @@ async function addNewRole(req, res) {
 
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
 
-		if (!features[0].hasOwnProperty('id'))
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
-
-		if (!features[0].hasOwnProperty('parentId'))
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PARENT_ID_MISSING)
+		features.forEach(element => {
+			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId')))
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
+		})
 
 		//adding parent entry
 		const unique = [...new Set(features.map(item => item.parentId))]
@@ -226,6 +225,11 @@ async function updateRoleById(req, res) {
 		const { id } = req.auth
 		const { name, description, features, status } = req.body
 
+		features.forEach(element => {
+			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId')))
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
+		})
+
 		//adding parent entry
 		const unique = [...new Set(features.map(item => item.parentId))]
 		for (let i = 0; i < unique.length; i++) {
@@ -241,10 +245,7 @@ async function updateRoleById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_NOT_ALLOWED)
 
 		if (features.length <= 1)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
-
-		if (!features[0].hasOwnProperty('id'))
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
