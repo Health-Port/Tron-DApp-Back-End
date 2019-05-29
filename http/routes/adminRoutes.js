@@ -20,7 +20,7 @@ router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFa
 
 router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
 router.post('/getUsers', authorize.authenticateRole, authorize.authenticateToken, adminController.getUsers)
-router.post('/getUserById', authorize.authenticateToken, adminController.getUserById)
+router.post('/getUserById', authorize.authenticateRole, authorize.authenticateToken, adminController.getUserById)
 router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
 router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
 router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)
