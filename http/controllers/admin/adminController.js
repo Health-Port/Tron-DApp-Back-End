@@ -1111,6 +1111,7 @@ async function getAllAdmins(req, res) {
         Select a.id as id, a.name, a.email, r.name as role, a.status, a.createdAt as dateCreated 
             From admins a
             Inner join roles r ON a.role_id = r.id
+            Where r.name != 'Super Admin'
             Order by a.createdAt desc`,
             {
                 type: db.QueryTypes.SELECT
