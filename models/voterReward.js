@@ -24,6 +24,10 @@ module.exports = (sequelize, Sequelize) => {
         cycle_no: {
             type: Sequelize.INTEGER,
             allowNull: false
+        },
+        total_reward: {
+            type: Sequelize.INTEGER,
+            allowNull: false
         }
     })
     return voter_rewards

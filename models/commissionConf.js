@@ -8,6 +8,9 @@ module.exports = (sequelize, Sequelize) => {
         commission_amount: {
             type: Sequelize.INTEGER,
             default: 0
+        },
+        commission_type: {
+            type: Sequelize.STRING,
         }
     })
     return commission_conf

@@ -1,4 +1,5 @@
 const utils = require('../../../etc/utils');
+const tronUtils = require('../../../etc/tronUtils');
 const response = require('../../../etc/response');
 const resCode = require('../../../enum/responseCodesEnum');
 const resMessage = require('../../../enum/responseMessagesEnum');
@@ -23,30 +24,35 @@ async function saveAllergyListByUser(req, res) {
                 id: user_id
             }
         }));
-        if (user == null) 
+        if (user == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
-        
+
         //Appending user_id to each object
         for (var i = 0; i < allergy_form.length; i++) {
             allergy_form[i]['user_id'] = user_id;
             allergy_form[i]['no_known_allergies'] = no_known_allergies
         }
+
+        //Checking user's balance before uploading document.
+        let balance = await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key));
+        [err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
+            where: { commission_type: 'Upload' }
+        }));
+        if (err) return response.errReturned(res, err);
+        if (balance < commissionObj.commission_amount)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+
         [err, rewardDisperserResult] = await utils.to(rewardDisperser(rewardEnum.ALLERGYDOCUMENTREWARD, user_id, user.tron_wallet_public_key));
-        if(err){
+        if (err) {
             return response.sendResponse(
                 res,
                 resCode.BAD_REQUEST,
                 resMessage.BANDWIDTH_IS_LOW
             );
         }
-        
+
         [err, allergies] = await utils.to(db.models.allergies.bulkCreate(allergy_form));
 
-        // Saving allergy form at bloack chain for (let i = 0; i < allergies.length;
-        // i++) {     let txId = await tronUtils.saveAllergyForm(
-        // utils.decrypt(user.tron_wallet_public_key),         allergies[i].substance,
-        // allergies[i].category,         allergies[i].severity,
-        // allergies[i].reactions); } Returing successful response with data
         return response.sendResponse(
             res,
             resCode.SUCCESS,
@@ -73,30 +79,30 @@ async function getAllergyListByUser(req, res) {
                 user_id: user_id
             }
         }));
-        if (allergies == null) 
+        if (allergies == null)
             return response.sendResponse(
                 res,
                 resCode.NOT_FOUND,
                 resMessage.NO_RECORD_FOUND
             );
-        
+
         //Finding record from db
         [err, user] = await utils.to(db.models.users.findOne({
             where: {
                 id: user_id
             }
         }));
-        if (user == null) 
+        if (user == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
-        
+
         // Getting allergies data from blockchain let allergyList = await
         // tronUtils.getAllergyForm(utils.decrypt(user.tron_wallet_public_key));
 
         [err, result] = await utils.to(
-            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee')
+            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         )
         if (err) {
-            if(err == 'Bandwidth is low'){
+            if (err == 'Bandwidth is low') {
                 return response.sendResponse(
                     res,
                     resCode.BAD_REQUEST,
@@ -110,10 +116,10 @@ async function getAllergyListByUser(req, res) {
                     resMessage.INSUFFICIENT_BALANCE
                 );
             }
-            
+
         }
-            
-        
+
+
         //Returing successful response with data
         return response.sendResponse(
             res,

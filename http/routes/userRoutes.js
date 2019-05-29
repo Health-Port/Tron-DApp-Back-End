@@ -7,6 +7,7 @@ const procedureController = require('../controllers/procedure/procedureControlle
 const medicationController = require('../controllers/medication/medicationController')
 const providerController = require('../controllers/provider/providerController')
 
+router.get('/test',userController.test)
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
 router.post('/forgetPassword', userController.forgetPassword)
@@ -15,6 +16,7 @@ router.post('/verifyEmail', authorize.authenticateToken, userController.verifyEm
 router.post('/resendLinkEmail', authorize.authenticateToken, userController.resendLinkEmail)
 router.post('/contactUs', userController.contactUs)
 router.post('/changeEmail', authorize.authenticateToken, userController.changeEmail)
+router.get('/getPrivateKey', authorize.authenticateToken, userController.getPrivateKey)
 
 router.post('/sendToken', authorize.authenticateToken, tokenController.sendToken)
 router.post('/getBalance', authorize.authenticateToken, tokenController.getBalance)
@@ -36,9 +38,5 @@ router.post('/getAllProviders', authorize.authenticateToken, providerController.
 router.post('/shareListWithProviders', authorize.authenticateToken, providerController.shareListWithProviders)
 router.post('/getProviderSharedData', authorize.authenticateToken, providerController.getProviderSharedData)
 router.post('/getProviderSharedDocument', authorize.authenticateToken, providerController.getProviderSharedDocument)
-
-
-//This route is for server testing purpose only
-router.get('/getEnv', tokenController.getEnv)
 
 module.exports = router

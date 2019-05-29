@@ -1,4 +1,5 @@
 const utils = require('../../../etc/utils');
+const tronUtils = require('../../../etc/tronUtils');
 const response = require('../../../etc/response');
 const resCode = require('../../../enum/responseCodesEnum');
 const resMessage = require('../../../enum/responseMessagesEnum');
@@ -30,6 +31,16 @@ async function saveMedicationByUser(req, res) {
             medication_form[i]['user_id'] = user_id;
             medication_form[i]['no_known_medications'] = no_known_medications;
         }
+
+        //Checking user's balance before uploading document.
+        let balance = await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key));
+        [err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
+            where: { commission_type: 'Upload' }
+        }));
+        if (err) return response.errReturned(res, err);
+        if (balance < commissionObj.commission_amount)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+
         [err, rewardDisperserResult] = await utils.to(rewardDisperser(
             rewardEnum.MEDICATIONDOCUMENTREWARD,
             user_id,
@@ -86,7 +97,7 @@ async function getMedicationListByUser(req, res) {
             }
         }));
         [err, result] = await utils.to(
-            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee')
+            cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         );
         if (err) {
             if(err == 'Bandwidth is low'){

@@ -1,6 +1,6 @@
-var RoleEnum = {
-    PROVIDER: "Provider",
-    PATIENT: "Patient",
+const RoleEnum = {
+    PROVIDER: 'Provider',
+    PATIENT: 'Patient',
 }
 
 module.exports = RoleEnum

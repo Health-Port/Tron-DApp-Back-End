@@ -187,13 +187,21 @@ async function getReferralsByUser(req, res) {
             limit: pageSize,
             offset: start
         }));
-        [err, rewardObj] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: rewardEnum.REFERRALREWARD } }));
+
+        //[err, rewardObj] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: rewardEnum.REFERRALREWARD } }));
+        [err, rewardObj] = await utils.to(db.models.transections.findAll(
+            {
+                where: { type: 'Referral Reward', user_id: user_id },
+                order: [['createdAt', 'DESC']],
+            }))
+        if (err) return response.errReturned(res, err)
+
         let data = [];
         for (let i = 0; i < users.rows.length; i++) {
             data[i] = {
                 'email': users.rows[i].email,
                 'channel': users.rows[i].refer_destination,
-                'referal_reward': parseInt(rewardObj.reward_amount)
+                'referal_reward': rewardObj[i] ? parseFloat(rewardObj[i].number_of_token) : 0
             }
         }
 
@@ -206,159 +214,10 @@ async function getReferralsByUser(req, res) {
     }
 }
 
-var rp = require('request-promise');
-var _ = require('lodash');
-var options = {
-    uri: '',
-    headers: {
-        'User-Agent': 'Request-Promise'
-    },
-    json: true // Automatically parses the JSON string in the response
-};
-const apiUrlForVotersList = `${process.env.TRON_SCAN_URL}api/vote`;
-//This route is for server testing purpose only
-async function getEnv(req, res) {
-    let err, rewardData, rewardObj, dbcycle, pageSize = 50, start = 0;
-    try {
-        //DB Queries
-        [err, rewardObj] = await utils.to(db.models.reward_conf.findAll({
-            where: {
-                reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD
-            }
-        }));
-        if (!rewardObj || rewardObj.length == 0) {
-            return;
-        }
-        //Getting Transactions which are on TRON Network
-        options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
-        var response = await rp(options);
-        let totalNumberOfVotes = response.totalVotes;
-
-        let totalPages = Math.ceil(response.total / pageSize);
-        let data = response.data;
-        for (let i = 1; i < totalPages; i++) {
-            start = parseInt(i * pageSize);
-            options.uri = `${apiUrlForVotersList}?limit=${pageSize}&start=${start}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
-            let response = await rp(options);
-            data = data.concat(response.data);
-        }
-
-        response.data = data;
-
-        //Getting reward data from db
-        [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
-
-        for (let i = 0; i < response.data.length; i++) {
-            let cycleNo = getCycleNoByTime(response.data[i].timestamp);
-            let matchedData = rewardData.filter(x => x.voter_address == response.data[i].voterAddress);
-            if (response.data[i].voterAddress != response.data[i].candidateAddress) {
-                if (matchedData.length > 0) {
-                    let sum = _.sumBy(matchedData, function (o) { return o.votes; });
-                    if (!(sum == response.data[i].votes)) {
-                        if (sum < response.data[i].votes) {
-                            [err, newEntry] = await utils.to(db.models.voter_rewards.create({
-                                candidate_address: response.data[i].candidateAddress,
-                                voter_address: response.data[i].voterAddress,
-                                votes: response.data[i].votes - sum,
-                                time_stamp: response.data[i].timestamp,
-                                cycle_no: cycleNo
-                            }));
-                        } else {
-                            [err, deleteData] = await utils.to(db.models.voter_rewards.destroy({
-                                where: { voter_address: response.data[i].voterAddress }
-                            }));
-                            [err, newData] = await utils.to(db.models.voter_rewards.create({
-                                candidate_address: response.data[i].candidateAddress,
-                                voter_address: response.data[i].voterAddress,
-                                votes: response.data[i].votes,
-                                time_stamp: response.data[i].timestamp,
-                                cycle_no: cycleNo
-                            }));
-                        }
-                    }
-                } else {
-                    [err, added] = await utils.to(db.models.voter_rewards.create({
-                        candidate_address: response.data[i].candidateAddress,
-                        voter_address: response.data[i].voterAddress,
-                        votes: response.data[i].votes,
-                        time_stamp: response.data[i].timestamp,
-                        cycle_no: cycleNo
-                    }));
-                }
-            }
-        };
-        [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
-
-        //Filtering data to give reward only for those who are currently voters.
-        let unMachedData = rewardData.filter(({ voter_address }) => !response.data.some(o => o.voterAddress == voter_address));
-        if (unMachedData.length > 0) {
-            for (let i = 0; i < unMachedData.length; i++) {
-                [err, delData] = await utils.to(db.models.voter_rewards.destroy({
-                    where: { id: unMachedData[i].id }
-                }));
-            }
-            [err, rewardData] = await utils.to(db.models.voter_rewards.findAll({}));
-        }
-
-        [err, dbcycle] = await utils.to(db.query('select cycle_no, sum(votes) as totalCycleVotes from voter_rewards group by cycle_no', {
-            type: db.QueryTypes.SELECT,
-        }));
-
-        let cycleNoArray = rearrangeCycleArray(dbcycle);
-        let currentCycle = getCycleNoByTime(new Date());
-        let totalNumberOfRewardTokensdispersed = 0;
-        for (let i = 0; i < rewardData.length; i++) {
-            if (currentCycle == rewardData[i].cycle_no) {
-                totalNumberOfVotes = cycleNoArray[currentCycle];
-                let votePercentageOfAUser = ((rewardData[i].votes / (totalNumberOfVotes)) * 100);
-                //let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (rewardObj[0].max_amount)/4) / 100);
-                let numberOfRewardAmount = Math.ceil((votePercentageOfAUser * (1000) / 4) / 100);
-                totalNumberOfRewardTokensdispersed += numberOfRewardAmount;
-                if (totalNumberOfRewardTokensdispersed < (1000 / 4) + 5) {
-                    await sendEHRTokensToAirVoterUsers(rewardData[i].voter_address, numberOfRewardAmount);
-                }
-                else {
-                    console.log(`${new Date()} Quota Complete`);
-                    break;
-                }
-            }
-        }
-    }
-    catch (exp) {
-        console.log(exp);
-    }
-
-    //let transection = await tronUtils.createSmartContract();
-    //return response.sendResponse(res, resCode.SUCCESS, transection);
-}
-function getCycleNoByTime(datetime) {
-    var hours = new Date(datetime).getUTCHours();
-    if (hours >= 0 && hours < 6) return 1;
-    if (hours >= 6 && hours < 12) return 2;
-    if (hours >= 12 && hours < 18) return 3;
-    if (hours >= 18 && hours < 24) return 4;
-}
-function rearrangeCycleArray(dbcycle) {
-    dt = []
-    for (let i = 0; i <= 4; i++) {
-        if (dbcycle[i]) {
-            if (dbcycle[i].cycle_no == 1)
-                dt[1] = dbcycle[i].totalCycleVotes;
-            if (dbcycle[i].cycle_no == 2)
-                dt[2] = dbcycle[i].totalCycleVotes;
-            if (dbcycle[i].cycle_no == 3)
-                dt[3] = dbcycle[i].totalCycleVotes;
-            if (dbcycle[i].cycle_no == 4)
-                dt[4] = dbcycle[i].totalCycleVotes;
-        }
-    }
-    return dt;
-}
 module.exports = {
     sendToken,
     getBalance,
     getReferralsByUser,
     getFormSubmissionDates,
     getTransectionsByAddress,
-    getEnv
 }
