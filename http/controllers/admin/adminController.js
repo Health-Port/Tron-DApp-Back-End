@@ -1210,7 +1210,7 @@ async function getAdminById(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
         [err, admin] = await utils.to(db.query(`
-            Select a.id, a.name, a.email, r.name as role, a.status, s.createdAt as lastLogin, a.createdAt 
+            Select a.id, a.name, a.email, r.name as role, r.id as roleId, a.status, s.createdAt as lastLogin, a.createdAt 
                 From admins a
                 Left join admin_sessions s ON a.id = s.admin_id
                 Inner join roles r ON a.role_id = r.id 
