@@ -45,17 +45,21 @@ var task = cron.schedule('0 12 * * *', async () => {
             data = data.concat(response.data);
         }
         response.data = data;
-
+        let flag = false;
         let rewardPerVote = rewardObj[0].reward_per_vote
         if (!(response.totalVotes * rewardPerVote <= rewardObj[0].max_amount)) {
-            rewardPerVote = Math.floor(rewardObj[0].max_amount / response.totalVotes)
+            flag = true
         }
-        rewardPerVote = rewardPerVote == 0 ? 1 : rewardPerVote
-
         for (let i = 0; i < response.data.length; i++) {
             if (response.data[i].voterAddress != response.data[i].candidateAddress) {
                 if (response.data[i].voterAddress != process.env.MAIN_ACCOUNT_ADDRESS_KEY) {
-                    await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardPerVote);
+                    if (flag) {
+                        let percentage = response.data[i].votes / response.totalVotes
+                        let reward = Math.ceil(percentage * rewardObj[0].max_amount)
+                        await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, reward);
+                    } else {
+                        await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardPerVote);
+                    }
                 }
             }
         }
