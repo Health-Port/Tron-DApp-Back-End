@@ -128,6 +128,12 @@ async function addNewRole(req, res) {
 
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
 
+		if (!features[0].hasOwnProperty('id'))
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
+
+		if (!features[0].hasOwnProperty('parentId'))
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PARENT_ID_MISSING)
+
 		//adding parent entry
 		const unique = [...new Set(features.map(item => item.parentId))]
 		for (let i = 0; i < unique.length; i++) {
@@ -137,9 +143,6 @@ async function addNewRole(req, res) {
 
 		if (features.length <= 1)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
-
-		if (!features[0].hasOwnProperty('id'))
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
 
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED);
