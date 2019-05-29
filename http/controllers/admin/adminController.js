@@ -1333,7 +1333,7 @@ async function addNewAdmin(req, res) {
 
         //Email sending
         const url = `${process.env.BASE_URL_ADMIN}${process.env.VERIFICATION_ROUTE}?token=${token}`;
-        [err, mail] = await utils.to(emailTemplates.signUpTemplate(token, email, url, name))
+        [err, mail] = await utils.to(emailTemplates.addNewAdminTemplate(token, email, url, name))
         if (!mail) {
             console.log(err)
             return response.errReturned(res, err)

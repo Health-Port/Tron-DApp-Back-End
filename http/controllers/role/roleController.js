@@ -256,14 +256,14 @@ async function updateRoleById(req, res) {
 		[err, role] = await utils.to(db.models.roles.findOne({ where: { id: roleId } }))
 		if (err) return response.errReturned(res, err)
 		if (!role || role == null || role.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND)
 
 		if (name != role.name) {
 			//Checking if role name already exists
 			[err, role] = await utils.to(db.models.roles.findOne({ where: { name } }))
 			if (err) return response.errReturned(res, err)
 			if (role != null)
-				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_ALREADY_EXIST);
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_ALREADY_EXIST)
 		}
 
 		//Updating role
