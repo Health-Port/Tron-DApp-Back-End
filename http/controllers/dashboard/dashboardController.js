@@ -194,8 +194,8 @@ async function getUserGraphData(req, res) {
 				type: db.QueryTypes.SELECT,
 			}))
 		if (err) return response.errReturned(res, err)
-		if (!data || data == null || data.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+		//if (!data || data == null || data.length == 0)
+			//return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//Date workin
 		const dates = []
