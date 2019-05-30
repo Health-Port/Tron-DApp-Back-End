@@ -101,6 +101,7 @@ async function getRoleByID(req, res) {
 		let features = []
 		features = role.map(elem => (
 			{
+				isFeature: elem.isFeature,
 				featureId: elem.featureId,
 				parentId: elem.parentId
 			}
