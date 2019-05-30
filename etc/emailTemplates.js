@@ -42,10 +42,10 @@ async function addNewAdminTemplate(token, email, url, name) {
     let subject = `Welcome to ${process.env.PROJECT_NAME} - Admin Setup`;
     let body = `
     Dear ${name},<br/><br/>
-                        You health port admin account has been created with the following details:<br/><br/>
+                        Your health port admin account has been created with the following details:<br/><br/>
                         Full Name: ${name}<br/>
                         Email: ${email}<br/><br/>
-                        Please follow <a href="${urlLink}" target="_blank">link</a> below to setup your account password<br/><br/>
+                        Please click <a href="${urlLink}" target="_blank">here</a> to setup your account's password.<br/><br/>
                         Regards,<br/>
                         Team ${process.env.PROJECT_NAME}
                         `;
