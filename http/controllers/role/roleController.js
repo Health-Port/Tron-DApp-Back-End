@@ -131,7 +131,7 @@ async function addNewRole(req, res) {
 
 		features.forEach(element => {
 			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId')))
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
 		})
 
 		//adding parent entry
@@ -226,10 +226,16 @@ async function updateRoleById(req, res) {
 		const { id } = req.auth
 		const { name, description, features, status } = req.body
 
+		let flag = false
 		features.forEach(element => {
-			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId')))
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
+			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId'))) {
+				flag = true
+			} else if (!(element.id && element.parentId)) {
+				flag = true
+			}
 		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
 
 		//adding parent entry
 		const unique = [...new Set(features.map(item => item.parentId))]
