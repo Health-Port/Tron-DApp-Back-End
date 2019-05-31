@@ -10,7 +10,7 @@ const resCode = require('../../../enum/responseCodesEnum')
 const tokenGenerator = require('../../../etc/generateToken')
 const emailTemplates = require('../../../etc/emailTemplates')
 const resMessage = require('../../../enum/responseMessagesEnum')
-
+const _ = require('lodash')
 const db = global.healthportDb
 
 async function signIn(req, res) {
@@ -100,7 +100,7 @@ async function signIn(req, res) {
         };
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
-        data.menuItems = menuItems
+        data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
         data.permissions = permissions.filter(x => x.parentId)
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
