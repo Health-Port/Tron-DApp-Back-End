@@ -5,7 +5,7 @@ const resMessage = require('../../../enum/responseMessagesEnum')
 const roleEnum = require('../../../enum/roleEnum')
 
 const db = global.healthportDb
-const globalArray = []
+let globalArray = []
 
 async function getAllRoles(req, res) {
 	try {
@@ -189,8 +189,8 @@ async function addNewRole(req, res) {
 				feature_id: elem,
 				role_id: role.id
 			}
-		));
-
+		))
+		globalArray = [];
 		//Saving permssion against newly created role
 		[err, permissions] = await utils.to(db.models.permissions.bulkCreate(mappedFeatures))
 		if (err) return response.errReturned(res, err)
@@ -324,8 +324,8 @@ async function updateRoleById(req, res) {
 				feature_id: elem,
 				role_id: role.id
 			}
-		));
-
+		))
+		globalArray = [];
 		//Saving permssion against newly created role
 		[err, permissions] = await utils.to(db.models.permissions.bulkCreate(mappedFeatures))
 		if (err) return response.errReturned(res, err)
