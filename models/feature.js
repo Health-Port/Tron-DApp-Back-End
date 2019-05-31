@@ -22,6 +22,9 @@ module.exports = (sequelize, Sequelize) => {
         },
         route: {
             type: Sequelize.STRING,
+        },
+        isSubTab: {
+            type: Sequelize.BOOLEAN,
         }
     })
     return features

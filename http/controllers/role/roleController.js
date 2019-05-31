@@ -154,7 +154,6 @@ async function addNewRole(req, res) {
 		for (let i = 0; i < features.length; i++) {
 			recursive(features[i].id, allFeatures)
 		}
-		console.log(globalArray)
 		//adding parent entry
 		// const unique = [...new Set(features.map(item => item.parentId))]
 		// for (let i = 0; i < unique.length; i++) {
@@ -272,7 +271,6 @@ async function updateRoleById(req, res) {
 		for (let i = 0; i < features.length; i++) {
 			recursive(features[i].id, allFeatures)
 		}
-		console.log(globalArray)
 		// //adding parent entry
 		// const unique = [...new Set(features.map(item => item.parentId))]
 		// for (let i = 0; i < unique.length; i++) {

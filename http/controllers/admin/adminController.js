@@ -56,7 +56,7 @@ async function signIn(req, res) {
         [err, permissions] = await utils.to(db.query(`
         select r.name roleName, f.name as featureName, r.id as roleId, f.id as featureId,
             f.parent_id as parentId, f.is_feature as isFeature, f.sequence as sequence, r.status,
-            f.route as route 
+            f.route as route, f.isSubTab as isSubTab 
             from permissions p 
             inner join features f ON p.feature_id = f.id
             inner join roles r ON r.id = p.role_id
@@ -72,13 +72,13 @@ async function signIn(req, res) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_IS_BLOCKED)
 
         const menuItems = []
-        const children = []
         for (let i = 0; i < permissions.length; i++) {
+            const children = []
             if (permissions[i].parentId == 0) {
                 menuItems.push(permissions[i])
                 const filterd = (permissions.filter(x => x.parentId == menuItems[menuItems.length - 1].featureId))
                 for (let j = 0; j < filterd.length; j++) {
-                    if (!filterd[j].isFeature) {
+                    if (filterd[j].isSubTab) {
                         children[j] = filterd[j]
                     }
                 }
