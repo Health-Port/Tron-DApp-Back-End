@@ -46,7 +46,7 @@ async function authenticateRole(req, res, next) {
                 return response.sendResponse(
                     res, 
                     resCode.BAD_REQUEST, 
-                    `Access Denied for ${req.route.path} api.`)
+                    'Access Denied.')
         }
         next()
     } catch (error) {

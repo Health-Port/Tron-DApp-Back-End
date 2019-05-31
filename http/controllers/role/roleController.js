@@ -5,6 +5,7 @@ const resMessage = require('../../../enum/responseMessagesEnum')
 const roleEnum = require('../../../enum/roleEnum')
 
 const db = global.healthportDb
+const globalArray = []
 
 async function getAllRoles(req, res) {
 	try {
@@ -129,20 +130,39 @@ async function addNewRole(req, res) {
 
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
 
+		let flag = false
 		features.forEach(element => {
-			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId')))
-				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
+			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId'))) {
+				flag = true
+			} else if (!(element.id && element.parentId)) {
+				flag = true
+			}
 		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
 
-		//adding parent entry
-		const unique = [...new Set(features.map(item => item.parentId))]
-		for (let i = 0; i < unique.length; i++) {
-			const obj = { 'id': unique[i] }
-			features.push(obj)
+		let allFeatures = {};
+		//Quering db to get list of featuress
+		[err, allFeatures] = await utils.to(db.query(`
+				Select id, name, parent_id as parentId, is_feature as isFeature, 
+					sequence, createdAt 
+					from features`,
+			{
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		for (let i = 0; i < features.length; i++) {
+			recursive(features[i].id, allFeatures)
 		}
-
-		if (features.length <= 1)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
+		console.log(globalArray)
+		//adding parent entry
+		// const unique = [...new Set(features.map(item => item.parentId))]
+		// for (let i = 0; i < unique.length; i++) {
+		// 	const obj = { 'id': unique[i] }
+		// 	features.push(obj)
+		// }
+		// if (features.length <= 1)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED);
@@ -165,9 +185,9 @@ async function addNewRole(req, res) {
 		if (!role) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Mapping properties name required for permission table
-		mappedFeatures = features.map(elem => (
+		mappedFeatures = globalArray.map(elem => (
 			{
-				feature_id: elem.id,
+				feature_id: elem,
 				role_id: role.id
 			}
 		));
@@ -179,7 +199,7 @@ async function addNewRole(req, res) {
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.ROLE_ADDED)
 
 	} catch (error) {
 		console.log(error)
@@ -226,6 +246,8 @@ async function updateRoleById(req, res) {
 		const { id } = req.auth
 		const { name, description, features, status } = req.body
 
+		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = []
+
 		let flag = false
 		features.forEach(element => {
 			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId'))) {
@@ -237,22 +259,34 @@ async function updateRoleById(req, res) {
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
 
-		//adding parent entry
-		const unique = [...new Set(features.map(item => item.parentId))]
-		for (let i = 0; i < unique.length; i++) {
-			const obj = { 'id': unique[i] }
-			features.push(obj)
+		let allFeatures = {};
+		//Quering db to get list of featuress
+		[err, allFeatures] = await utils.to(db.query(`
+				Select id, name, parent_id as parentId, is_feature as isFeature, 
+					sequence, createdAt 
+					from features`,
+			{
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		for (let i = 0; i < features.length; i++) {
+			recursive(features[i].id, allFeatures)
 		}
-		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = []
+		console.log(globalArray)
+		// //adding parent entry
+		// const unique = [...new Set(features.map(item => item.parentId))]
+		// for (let i = 0; i < unique.length; i++) {
+		// 	const obj = { 'id': unique[i] }
+		// 	features.push(obj)
+		// }
+		//if (features.length <= 1)
+		//return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED);
 
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED)
 
 		if (name.toLowerCase() == roleEnum.SUPERADMIN.toLowerCase())
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_NOT_ALLOWED)
-
-		if (features.length <= 1)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_NOT_ALLOWED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -287,9 +321,9 @@ async function updateRoleById(req, res) {
 		if (err) return response.errReturned(res, err)
 
 		//Mapping properties name required for permission table
-		mappedFeatures = features.map(elem => (
+		mappedFeatures = globalArray.map(elem => (
 			{
-				feature_id: elem.id,
+				feature_id: elem,
 				role_id: role.id
 			}
 		));
@@ -305,6 +339,16 @@ async function updateRoleById(req, res) {
 	} catch (error) {
 		console.log(error)
 		return response.errReturned(res, error)
+	}
+}
+
+function recursive(id, allFeatures) {
+	if (id != 0) {
+		const v = allFeatures.filter(x => x.id == id)
+		if (!globalArray.includes(v[0].id)) {
+			globalArray.push(v[0].id)
+			recursive(v[0].parentId, allFeatures)
+		}
 	}
 }
 

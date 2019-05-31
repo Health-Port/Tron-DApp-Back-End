@@ -101,7 +101,7 @@ async function signIn(req, res) {
 
         [err, token] = await utils.to(tokenGenerator.createToken(data))
         data.menuItems = menuItems
-        data.permissions = permissions.filter(x => x.isFeature)
+        data.permissions = permissions.filter(x => x.parentId)
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {

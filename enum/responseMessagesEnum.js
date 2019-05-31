@@ -47,6 +47,7 @@ const ResponseMessagesEnum = {
     ROLE_IS_BLOCKED: 'Role is blocked.',
     ROLE_NOT_FOUND: 'Role not found.',
     ROLE_UPDATED: 'Role updated successfully.',
+    ROLE_ADDED: 'Role added successfully.',
     ROLE_BLOCKED: 'Role is blocked successfully.',
     ROLE_ACTIVATED: 'Role is activated successfully.',
     SUCCESSFULLY_LOGGEDIN: 'User login successfully.',
