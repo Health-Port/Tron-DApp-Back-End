@@ -154,14 +154,6 @@ async function addNewRole(req, res) {
 		for (let i = 0; i < features.length; i++) {
 			recursive(features[i].id, allFeatures)
 		}
-		//adding parent entry
-		// const unique = [...new Set(features.map(item => item.parentId))]
-		// for (let i = 0; i < unique.length; i++) {
-		// 	const obj = { 'id': unique[i] }
-		// 	features.push(obj)
-		// }
-		// if (features.length <= 1)
-		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
 
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED);
@@ -271,14 +263,6 @@ async function updateRoleById(req, res) {
 		for (let i = 0; i < features.length; i++) {
 			recursive(features[i].id, allFeatures)
 		}
-		// adding parent entry
-		// const unique = [...new Set(features.map(item => item.parentId))]
-		// for (let i = 0; i < unique.length; i++) {
-		// 	const obj = { 'id': unique[i] }
-		// 	features.push(obj)
-		// }
-		//if (features.length <= 1)
-		//return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED);
 
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED)

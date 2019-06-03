@@ -35,11 +35,12 @@ async function signIn(req, res) {
         if (err) return response.errReturned(res, err)
         if (admin == null || admin.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (!admin.password || admin.password == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.CHECK_YOUR_EMAIL)
         if (!admin.status)
             return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
         if (obj.password != admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
-
 
         //**** //Saving login history */
         if (process.env.NODE_ENV != 'dev') {
