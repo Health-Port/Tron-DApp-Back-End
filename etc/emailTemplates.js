@@ -123,6 +123,33 @@ async function sendPrivateKey(user) {
     else return Promise.reject(error);
 }
 
+async function sendPrivateKey(user) {
+    var subject = `${process.env.PROJECT_NAME} Account Info`;
+    var body = `
+                            Dear ${user.name},<br/><br/>
+                            Here is your account information for healthport portal:<br/>
+                            Email: ${user.email}
+                            <br/>
+                            Role: ${user.role}
+                            <br/>
+                            Public Key: '${user.tron_wallet_public_key}'
+                            <br/>
+                            Private Key: '${user.tron_wallet_private_key}'
+                            <br/>
+                            Date Created: ${user.createdAt}
+                            <br/><br/>
+                            If you have not performed this action, please contact support.
+                            <br/><br/>
+                            Thanks,<br/>
+                            Team ${process.env.PROJECT_NAME}
+                            `;
+  
+    let error, result;
+    [error, result] = await utilites.to(mailer.sendEmail(user.email, subject, body));
+    if(result) return Promise.resolve(true);
+    else return Promise.reject(error);
+}
+
 module.exports = {
     forgetPasswordTemplate,
     signUpTemplate,
