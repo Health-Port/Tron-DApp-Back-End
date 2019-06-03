@@ -14,7 +14,7 @@ async function getAllProviders(req, res) {
         let type = req.body.type;
         let user_id = req.body.userId;
 
-        let err, providers, finalData = [], data = {}, obj = {};
+        let err, providers, finalData = [], data = {}, obj = {}, objData = {};
 
         //Getting all providers from db
         [err, providers] = await utils.to(db.models.users.findAll({ where: { role: roleEnum.PROVIDER } }));
@@ -23,23 +23,64 @@ async function getAllProviders(req, res) {
             data[i] = {
                 'share_with_id': providers[i].id,
                 'share_with_name': providers[i].name,
-                'email': providers[i].email
+                'email': providers[i].email,
+                'share_with_name_email': `${providers[i].name} , ${providers[i].email}`
             }
         }
         data = _.orderBy(data, ['share_with_name'], ['asc']);
 
         if (type != 'all') {
-            [err, obj] = await utils.to(db.models.patient_provider_records.findAll({ where: { type: type, user_id: user_id } }));
+            // [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
+            //     { where: { type: type, user_id: user_id } 
+            // }));
+            [err, obj] = await utils.to(db.query(`
+            select p.share_with_id as id, p.share_with_name as name, u.email as email 
+                from patient_provider_records p
+                inner join users u ON u.id = p.share_with_id
+                where p.user_Id = :userId and p.type = :type`,
+			{
+				replacements: { type: type, userId: user_id },
+				type: db.QueryTypes.SELECT,
+            }));
+            for (let i = 0; i < obj.length; i++) {
+                objData[i] = {
+                    'share_with_id': obj[i].id,
+                    'share_with_name': obj[i].name,
+                    'email': obj[i].email,
+                    'share_with_name_email': `${obj[i].name} , ${obj[i].email}`
+                }
+            }
+            objData = _.orderBy(objData, ['share_with_name'], ['asc']);
         } else {
-            [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
-                {
-                    where: { user_id: user_id },
-                    group: ['share_with_id'],
-                    having: Sequelize.literal('COUNT(share_with_id) = 3')
-                }));
+            // [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
+            //     {
+            //         where: { user_id: user_id },
+            //         group: ['share_with_id'],
+            //         having: Sequelize.literal('COUNT(share_with_id) = 3')
+            //     }));
+            [err, obj] = await utils.to(db.query(`
+            select p.share_with_id as id, p.share_with_name as name, u.email as email 
+                from patient_provider_records p
+                inner join users u ON u.id = p.share_with_id
+                where p.user_Id = :userId
+                group by p.share_with_id
+                having COUNT(p.share_with_id) = 3`,
+			{
+				replacements: { type: type, userId: user_id },
+				type: db.QueryTypes.SELECT,
+            }));
+            for (let i = 0; i < obj.length; i++) {
+                objData[i] = {
+                    'share_with_id': obj[i].id,
+                    'share_with_name': obj[i].name,
+                    'email': obj[i].email,
+                    'share_with_name_email': `${obj[i].name} , ${obj[i].email}`
+                }
+            }
+            objData = _.orderBy(objData, ['share_with_name'], ['asc']);
         }
 
-        finalData.push(obj);
+        finalData.push(objData);
         finalData.push(data);
 
         //Returing successful response with data

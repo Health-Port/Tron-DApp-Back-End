@@ -13,10 +13,10 @@ async function forgetPasswordTemplate(token, email, url) {
                             Thanks,<br/>
                             Team ${process.env.PROJECT_NAME}
                             `;
-  
+
     let error, result;
     [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
-    if(result) return Promise.resolve(true);
+    if (result) return Promise.resolve(true);
     else return Promise.reject(error);
 }
 
@@ -30,10 +30,29 @@ async function signUpTemplate(token, email, url, name) {
                             Sincerely,<br/>
                             ${process.env.PROJECT_NAME}
                             `;
-    
+
     let error, result;
     [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
-    if(result) return Promise.resolve(true);
+    if (result) return Promise.resolve(true);
+    else return Promise.reject(error);
+}
+
+async function addNewAdminTemplate(token, email, url, name) {
+    let urlLink = url;
+    let subject = `Welcome to ${process.env.PROJECT_NAME} - Admin Setup`;
+    let body = `
+    Dear ${name},<br/><br/>
+                        Your health port admin account has been created with the following details:<br/><br/>
+                        Full Name: ${name}<br/>
+                        Email: ${email}<br/><br/>
+                        Please click <a href="${urlLink}" target="_blank">here</a> to setup your account's password.<br/><br/>
+                        Regards,<br/>
+                        Team ${process.env.PROJECT_NAME}
+                        `;
+
+    let error, result;
+    [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
+    if (result) return Promise.resolve(true);
     else return Promise.reject(error);
 }
 
@@ -53,10 +72,10 @@ async function contactUsTemplate(message, email, name) {
     Thanks<br/>
     Team ${process.env.PROJECT_NAME}
     `;
-    
+
     let error, result;
     [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
-    if(result) return Promise.resolve(true);
+    if (result) return Promise.resolve(true);
     else return Promise.reject(error);
 }
 
@@ -70,10 +89,37 @@ async function passwordSuccessfullyChanged(email) {
                             Thanks,<br/>
                             Team ${process.env.PROJECT_NAME}
                             `;
-  
+
     let error, result;
     [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
-    if(result) return Promise.resolve(true);
+    if (result) return Promise.resolve(true);
+    else return Promise.reject(error);
+}
+
+async function sendPrivateKey(user) {
+    var subject = `${process.env.PROJECT_NAME} Account Info`;
+    var body = `
+                            Dear ${user.name},<br/><br/>
+                            Here is your account information for healthport portal:<br/>
+                            Email: ${user.email}
+                            <br/>
+                            Role: ${user.role}
+                            <br/>
+                            Public Key: '${user.tron_wallet_public_key}'
+                            <br/>
+                            Private Key: '${user.tron_wallet_private_key}'
+                            <br/>
+                            Date Created: ${user.createdAt}
+                            <br/><br/>
+                            If you have not performed this action, please contact support.
+                            <br/><br/>
+                            Thanks,<br/>
+                            Team ${process.env.PROJECT_NAME}
+                            `;
+
+    let error, result;
+    [error, result] = await utilites.to(mailer.sendEmail(user.email, subject, body));
+    if (result) return Promise.resolve(true);
     else return Promise.reject(error);
 }
 
@@ -109,5 +155,6 @@ module.exports = {
     signUpTemplate,
     contactUsTemplate,
     passwordSuccessfullyChanged,
-    sendPrivateKey
+    sendPrivateKey,
+    addNewAdminTemplate
 };
