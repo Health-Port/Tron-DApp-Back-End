@@ -245,7 +245,9 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 
 async function verifyTwoFactorAuthentication(req, res) {
 	try {
-		const { email, authenticationCode } = req.body
+		const { authenticationCode } = req.body
+		const { email } = req.auth
+
 		let table
 		if (req.baseUrl === '/admin') {
 			table = 'admins'
