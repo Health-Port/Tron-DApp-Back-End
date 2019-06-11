@@ -94,7 +94,7 @@ async function signIn(req, res) {
             name: admin.name,
             email: admin.email,
             is_admin: admin.is_admin,
-            twofa_enable: admin.twofa_enable,
+            twofa_enable: admin.is_twofa_enable,
             is_twofa_verified: admin.is_twofa_verified,
             roleId: permissions[0].roleId,
             permissions: permissions.map(a => a.route)
@@ -862,7 +862,8 @@ async function updateSPRewardSettings(req, res) {
             { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }
         ))
         if (err) return response.errReturned(res, err)
-        if (spSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+        if (spSettings.length == 0) 
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)

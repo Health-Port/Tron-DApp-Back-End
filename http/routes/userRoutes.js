@@ -3,9 +3,10 @@ const authorize = require('../../middlewares/authorization')
 const userController = require('../controllers/user/userController')
 const tokenController = require('../controllers/token/tokenController')
 const allergyController = require('../controllers/allergy/allergyController')
+const providerController = require('../controllers/provider/providerController')
 const procedureController = require('../controllers/procedure/procedureController')
 const medicationController = require('../controllers/medication/medicationController')
-const providerController = require('../controllers/provider/providerController')
+const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 
 router.get('/test',userController.test)
 router.post('/signUp', userController.signUp)
@@ -38,5 +39,11 @@ router.post('/getAllProviders', authorize.authenticateToken, providerController.
 router.post('/shareListWithProviders', authorize.authenticateToken, providerController.shareListWithProviders)
 router.post('/getProviderSharedData', authorize.authenticateToken, providerController.getProviderSharedData)
 router.post('/getProviderSharedDocument', authorize.authenticateToken, providerController.getProviderSharedDocument)
+
+//TwoFactorAuthentication Routes
+router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
+router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
+router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication)
+
 
 module.exports = router
