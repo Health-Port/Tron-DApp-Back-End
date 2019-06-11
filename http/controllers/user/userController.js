@@ -195,21 +195,23 @@ async function signIn(req, res) {
             user_id: user.id,
             email: user.email,
             referal_coupon: user.referal_coupon,
+            twofa_enable: user.is_twofa_enable,
+            is_twofa_verified: user.is_twofa_verified,
             wallet_address: utils.decrypt(user.tron_wallet_public_key),
             total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
             user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key)),
         }
 
         //Saving login history
-        let loginHistory = {}
-        loginHistory = {
-            user_id: user.id,
-            ip_address: obj.ip_address
-        };
-
-        [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
-        if (err) return response.errReturned(res, err)
-
+        if (process.env.NODE_ENV != 'dev') {
+            let loginHistory = {}
+            loginHistory = {
+                user_id: user.id,
+                ip_address: obj.ip_address
+            };
+            [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
+            if (err) return response.errReturned(res, err)
+        }
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
@@ -743,8 +745,8 @@ async function getPrivateKey(req, res) {
         }
 
         //Returing successful response
-        if(mailSent)
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
+        if (mailSent)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
 
     } catch (error) {
         console.log(error)

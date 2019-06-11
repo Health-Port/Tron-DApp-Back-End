@@ -56,7 +56,18 @@ module.exports = (sequelize, Sequelize) => {
         signup_reward_given: {
             type: Sequelize.BOOLEAN,
             allowNull: true
-        }
+        },
+        is_twofa_enable:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        },
+        is_twofa_verified:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        },
+        twofa_formatted_key:{
+            type: Sequelize.STRING
+        },
     })
     return users
 }
