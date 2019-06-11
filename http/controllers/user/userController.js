@@ -168,7 +168,10 @@ async function signIn(req, res) {
 
         //Finding record from db    
         [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (user == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (!user.status)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
         if (!user.email_confirmed) {
             [err, passCode] = await utils.to(db.models.pass_codes.findOne(
                 {

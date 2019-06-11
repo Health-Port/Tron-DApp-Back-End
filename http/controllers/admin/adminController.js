@@ -862,7 +862,7 @@ async function updateSPRewardSettings(req, res) {
             { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }
         ))
         if (err) return response.errReturned(res, err)
-        if (spSettings.length == 0) 
+        if (spSettings.length == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
@@ -1398,6 +1398,47 @@ async function setAdminPassword(req, res) {
     }
 }
 
+async function updateUserById(req, res) {
+    try {
+        const { userId } = req.params
+        const { id } = req.auth
+        const { status } = req.body
+
+        let err = {}, admin = {}, obj = {}, user = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Getting user data
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!user || user.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Updating user status
+        [err, obj] = await utils.to(db.models.users.update(
+            { status },
+            { where: { id: user.id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        if (status)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ACTIVATED)
+        else
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_BLOCKED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     signIn,
     signUp,
@@ -1428,5 +1469,6 @@ module.exports = {
     getAdminById,
     updateAdminDetailsById,
     addNewAdmin,
-    setAdminPassword
+    setAdminPassword,
+    updateUserById,
 }
