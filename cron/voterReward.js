@@ -33,28 +33,34 @@ var task = cron.schedule('0 12 * * *', async () => {
             return;
         }
         //Getting Transactions which are on TRON Network
-        options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
+        options.uri = `${apiUrlForVotersList}?limit=${pageSize}&candidate=${process.env.VOTER_ACCOUNT}`;
         var response = await rp(options);
 
         let totalPages = Math.ceil(response.total / pageSize);
         let data = response.data;
         for (let i = 1; i < totalPages; i++) {
             start = parseInt(i * pageSize);
-            options.uri = `${apiUrlForVotersList}?limit=${pageSize}&start=${start}&candidate=${process.env.COMMISSION_ACCOUNT_ADDRESS_KEY}`;
+            options.uri = `${apiUrlForVotersList}?limit=${pageSize}&start=${start}&candidate=${process.env.VOTER_ACCOUNT}`;
             let response = await rp(options);
             data = data.concat(response.data);
         }
         response.data = data;
-
+        let flag = false;
         let rewardPerVote = rewardObj[0].reward_per_vote
         if (!(response.totalVotes * rewardPerVote <= rewardObj[0].max_amount)) {
-            rewardPerVote = Math.floor(rewardObj[0].max_amount / response.totalVotes)
+            flag = true
         }
-        rewardPerVote = rewardPerVote == 0 ? 1 : rewardPerVote
-
         for (let i = 0; i < response.data.length; i++) {
             if (response.data[i].voterAddress != response.data[i].candidateAddress) {
-                await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardPerVote);
+                if (response.data[i].voterAddress != process.env.MAIN_ACCOUNT_ADDRESS_KEY) {
+                    if (flag) {
+                        let percentage = response.data[i].votes / response.totalVotes
+                        let reward = Math.ceil(percentage * rewardObj[0].max_amount)
+                        await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, reward);
+                    } else {
+                        await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, response.data[i].votes * rewardPerVote);
+                    }
+                }
             }
         }
     }

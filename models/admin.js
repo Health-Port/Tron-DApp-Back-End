@@ -5,6 +5,10 @@ module.exports = (sequelize, Sequelize) => {
             autoIncrement: true,
             unique: true,
         },
+        role_id: {
+            type: Sequelize.INTEGER,
+            allowNull: false
+		},
         name: {
             type: Sequelize.STRING,
             allowNull: true
@@ -16,11 +20,7 @@ module.exports = (sequelize, Sequelize) => {
         },
         password: {
             type: Sequelize.STRING,
-            allowNull: false
-        },
-        is_admin:{
-            type: Sequelize.BOOLEAN,
-            defaultValue: true
+            allowNull: true
         },
         is_twofa_enable:{
             type: Sequelize.BOOLEAN,
@@ -32,6 +32,10 @@ module.exports = (sequelize, Sequelize) => {
         },
         twofa_formatted_key:{
             type: Sequelize.STRING
+        },
+        status:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: true
         }
     })
     return admins
