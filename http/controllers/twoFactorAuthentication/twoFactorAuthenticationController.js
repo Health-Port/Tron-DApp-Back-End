@@ -37,8 +37,6 @@ async function requestTwoFactorAuthentication(req, res) {
 		if (err) return response.errReturned(res, err)
 		if (data == null || data.length == 0 || !data)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-		if (data[0].twofa_formatted_key)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.TWO_FACTOR_IS_ALREADY_ENABLED)
 
 		const twoFAFormattedKey = authenticator.generateKey()
 
