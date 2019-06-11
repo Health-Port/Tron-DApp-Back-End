@@ -38,6 +38,4 @@ global.healthportDb.authenticate()
   .then(() => console.log('Db Connected'))
   .catch(err => console.log(err))
 
-console.log('Env var pvt key: ', process.env.MAIN_ACCOUNT_PRIVATE_KEY)
-
 module.exports = app
