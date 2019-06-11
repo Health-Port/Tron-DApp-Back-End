@@ -43,7 +43,7 @@ async function requestTwoFactorAuthentication(req, res) {
 		const toTpURI = authenticator.generateTotpUri(
 			twoFAFormattedKey,
 			data[0].email,
-			`${process.env.PROJECT_NAME}-User`,
+			req.baseUrl === '/admin' ? `${process.env.PROJECT_NAME}` :`${process.env.PROJECT_NAME}-User`,
 			process.env.AUTHENTICATOR_ALGO, 6, 30
 		);
 
