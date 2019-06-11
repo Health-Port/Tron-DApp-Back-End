@@ -68,6 +68,10 @@ module.exports = (sequelize, Sequelize) => {
         twofa_formatted_key:{
             type: Sequelize.STRING
         },
+        status:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: true
+        },
     })
     return users
 }
