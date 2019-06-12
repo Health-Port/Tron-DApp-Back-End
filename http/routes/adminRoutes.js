@@ -24,7 +24,7 @@ router.post('/getUsers', authorize.authenticateRole, authorize.authenticateToken
 router.post('/getUserById', authorize.authenticateRole, authorize.authenticateToken, adminController.getUserById)
 router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
 router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
-router.put('/status/:userId', authorize.authenticateToken, adminController.updateUserById)
+router.put('/status/:userId', authorize.authenticateRole, authorize.authenticateToken, adminController.updateUserById)
 
 router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
 router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)

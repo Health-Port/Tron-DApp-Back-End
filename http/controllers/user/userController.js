@@ -371,15 +371,24 @@ async function verifyEmail(req, res) {
             'email': req.auth.email,
             'passcode': req.auth.pass_code,
             'newEmail': req.auth.new_email,
+            'password': req.body.password
         }
 
         let err, user = {}, data
 
+        //Reguler expression testing for password requirements
+        if (obj.password) {
+            if (!regex.passRegex.test(obj.password))
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY)
+        }
+
         if (!obj.newEmail) {
             //Finding user record from db
             [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-            if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-            if (user.email_confirmed == true) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
+            if (user == null)
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+            if (user.email_confirmed == true)
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
 
             //Finding passcode record from db
             [err, data] = await utils.to(db.models.pass_codes.findOne(
@@ -465,6 +474,7 @@ async function verifyEmail(req, res) {
             [err, data] = await utils.to(db.models.users.update(
                 {
                     email_confirmed: true,
+                    password: obj.passcode ? obj.password : null,
                     signup_reward_given: rewardGiven
                 },
                 { where: { email: obj.email } }))
@@ -473,7 +483,8 @@ async function verifyEmail(req, res) {
             return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCOUNT_IS_VERIFIED)
         } else {
             [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-            if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ALREADY_VERIFIED);
+            if (user == null)
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ALREADY_VERIFIED);
 
             //Finding passcode record from db
             [err, data] = await utils.to(db.models.pass_codes.findOne(
