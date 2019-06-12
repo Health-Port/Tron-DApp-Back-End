@@ -34,6 +34,7 @@ const ResponseMessagesEnum = {
     MAIL_UPDATED: 'Your email changed successfully, please login to continue.',
     MAIL_ALREADY_EXIST: 'Email already exist.',
     NO_RECORD_FOUND: 'No record found.',
+    NOT_ALLOWED: 'You are not allowed to perform this action.',
     PARENT_ID_MISSING: 'Parent id is missing.',
     PASSWORD_ARE_SAME: 'Current and new passwords are same.',
     PASSWORD_ERROR: 'Password length needs to between 8 to 30 characters.',
@@ -73,7 +74,7 @@ const ResponseMessagesEnum = {
     USER_BLOCKED: 'User is blocked successfully.',
     USER_KYC_SUBMITTED: 'User Kyc details submitted successfully',
     UNABLE_TO_SIGNUP_RIGHT_NOW: 'Sorry unable to signup right now.',
-    UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.'
+    UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.',
 }
 
 module.exports = ResponseMessagesEnum

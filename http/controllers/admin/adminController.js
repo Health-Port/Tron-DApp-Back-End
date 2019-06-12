@@ -454,7 +454,8 @@ async function getUsers(req, res) {
             'searchValue': req.body.searchValue,
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
-            'role': req.body.role
+            'role': req.body.role,
+            'status': req.body.status
         }
 
         let err = {}, dbData
@@ -464,24 +465,41 @@ async function getUsers(req, res) {
         let pageSize = parseInt(obj.pageSize)
         let pageNumber = parseInt(obj.pageNumber)
         if (!pageNumber) pageNumber = 0
-        if (!pageSize) pageSize = 20
+        if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
-        [err, dbData] = await utils.to(db.query('select id, name, email, role, tron_wallet_public_key, createdAt from users order by createdAt desc',
+        [err, dbData] = await utils.to(db.query(
+            `Select id, name, email, role, tron_wallet_public_key, createdAt, status 
+                From users 
+                Order by createdAt desc`,
             {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
 
+        const filter = typeof obj.status === 'boolean' ? 'filter' : ''
+
         if (dbData) {
-            if (obj.role && obj.searchValue) {
+            if (obj.role && obj.searchValue && filter) {
                 dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+                dbData = dbData.filter(x => x.status == obj.status)
+            } else if (obj.role && obj.searchValue) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            } else if (obj.role && filter) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
+                dbData = dbData.filter(x => x.status == obj.status)
+            } else if (obj.searchValue && filter) {
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+                dbData = dbData.filter(x => x.status == obj.status)
             } else if (obj.role) {
                 dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
             } else if (obj.searchValue) {
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            } else if (filter) {
+                dbData = dbData.filter(x => x.status == obj.status)
             }
 
             returnableData['count'] = dbData.length
@@ -549,16 +567,33 @@ async function listTransactions(req, res) {
         const obj = {
             'searchValue': req.body.searchValue,
             'pageNumber': req.body.pageNumber,
-            'pageSize': req.body.pageSize
+            'pageSize': req.body.pageSize,
+            'from': req.body.from,
+            'to': req.body.to,
+            'isCsvExport': req.body.isCsvExport
         }
-        let err = {}, dbData = {}
+        let err = {}, fromDate, toDate, dbData = {}
         const returnableData = {}
+
+        if (obj.from && obj.to) {
+            fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
+            fromDate = new Date(fromDate).getTime()
+
+            toDate = `${obj.to.year}-${obj.to.month}-${obj.to.day}`
+            toDate = new Date(toDate)
+            toDate = new Date(
+                toDate.getFullYear(),
+                toDate.getMonth(),
+                toDate.getDate() + 1
+            )
+            toDate = new Date(toDate).getTime()
+        }
 
         //Paging
         let pageSize = parseInt(obj.pageSize)
         let pageNumber = parseInt(obj.pageNumber)
         if (!pageNumber) pageNumber = 0
-        if (!pageSize) pageSize = 20
+        if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
@@ -571,11 +606,19 @@ async function listTransactions(req, res) {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (dbData == null || dbData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (dbData == null || dbData.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         if (dbData) {
-            if (obj.searchValue) {
-                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue)) || x.trx_hash.includes(obj.searchValue))
+            if ((obj.from && obj.to) && obj.searchValue) {
+                dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue))
+                    || x.trx_hash.includes(obj.searchValue))
+            } else if (obj.from && obj.to) {
+                dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
+            } else if (obj.searchValue) {
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue))
+                    || x.trx_hash.includes(obj.searchValue))
             }
 
             returnableData['count'] = dbData.length
@@ -586,6 +629,22 @@ async function listTransactions(req, res) {
         //Decrypting public address
         for (let i = 0; i < returnableData.rows.length; i++) {
             returnableData.rows[i].address = utils.decrypt(returnableData.rows[i].address)
+        }
+
+        //For export to csv
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].user_id
+                }
+            }
+
+            if (!dbData || dbData == null || dbData.count == 0 || dbData.length == 0) {
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+            }
+
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Returing successful response
@@ -1470,5 +1529,5 @@ module.exports = {
     updateAdminDetailsById,
     addNewAdmin,
     setAdminPassword,
-    updateUserById,
+    updateUserById
 }
