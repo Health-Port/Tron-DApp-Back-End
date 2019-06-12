@@ -455,11 +455,28 @@ async function getUsers(req, res) {
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
             'role': req.body.role,
-            'status': req.body.status
+            'status': req.body.status,
+            'from': req.body.from,
+            'to': req.body.to,
+            'isCsvExport': req.body.isCsvExport
         }
 
-        let err = {}, dbData
+        let err = {}, dbData, fromDate, toDate
         const returnableData = {}
+
+        if (obj.from && obj.to) {
+            fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
+            fromDate = new Date(fromDate).getTime()
+
+            toDate = `${obj.to.year}-${obj.to.month}-${obj.to.day}`
+            toDate = new Date(toDate)
+            toDate = new Date(
+                toDate.getFullYear(),
+                toDate.getMonth(),
+                toDate.getDate() + 1
+            )
+            toDate = new Date(toDate).getTime()
+        }
 
         //Paging
         let pageSize = parseInt(obj.pageSize)
@@ -502,9 +519,31 @@ async function getUsers(req, res) {
                 dbData = dbData.filter(x => x.status == obj.status)
             }
 
+            //New addition for date range
+            if(fromDate && toDate){
+                dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
+            }
+
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
+        }
+
+        //For export to csv
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].id
+                    dbData[i].tron_wallet_public_key = utils.decrypt(dbData[i].tron_wallet_public_key)
+                }
+            }
+
+            if (!dbData || dbData == null || dbData.count == 0 || dbData.length == 0) {
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+            }
+
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Decrypting public address
