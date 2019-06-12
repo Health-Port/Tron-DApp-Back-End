@@ -402,9 +402,11 @@ async function verifyEmail(req, res) {
                 const now = moment().format('YYYY-MM-DD HH:mm:ss')
                 const timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
 
-                //Checking link expiry
-                if (timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_LINK_EXPIRY_TIME))
-                    return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_EXPIRED)
+                if (!obj.password) {
+                    //Checking link expiry
+                    if (timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_LINK_EXPIRY_TIME))
+                        return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_EXPIRED)
+                }
             }
 
             //Reward giving
@@ -471,12 +473,11 @@ async function verifyEmail(req, res) {
             }
 
             //Updating record in db
-            [err, data] = await utils.to(db.models.users.update(
-                {
-                    email_confirmed: true,
-                    password: obj.passcode ? obj.password : null,
-                    signup_reward_given: rewardGiven
-                },
+            [err, data] = await utils.to(db.models.users.update({
+                email_confirmed: true,
+                password: obj.password ? bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) : null,
+                signup_reward_given: rewardGiven
+            },
                 { where: { email: obj.email } }))
 
             //Returing successful response
