@@ -180,7 +180,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				data.permissions = permissions.filter(x => x.parentId)
 			} else {
 				data = {
-					id: admin[0].id,
+					user_id: admin[0].id,
 					name: admin[0].name,
 					email: admin[0].email,
 					is_admin: admin[0].is_admin,
@@ -224,7 +224,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				data.permissions = permissions.filter(x => x.parentId)
 			} else {
 				data = {
-					id: admin[0].id,
+					user_id: admin[0].id,
 					name: admin[0].name,
 					email: admin[0].email,
 					is_admin: admin[0].is_admin,
