@@ -376,8 +376,13 @@ async function verifyEmail(req, res) {
 
         let err, user = {}, data
 
-        //Reguler expression testing for password requirements
-        if (obj.password) {
+        //Only if when account was created by provider.
+        if (req.auth.set_password) {
+            //Checking empty email
+            if (!obj.password) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+            }
+            //Reguler expression testing for password requirements
             if (!regex.passRegex.test(obj.password))
                 return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY)
         }

@@ -486,13 +486,12 @@ async function getUsers(req, res) {
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
-        [err, dbData] = await utils.to(db.query(
-            `Select id, name, email, role, tron_wallet_public_key, createdAt, status 
-                From users 
-                Order by createdAt desc`,
+        [err, dbData] = await utils.to(db.models.users.findAll(
             {
-                type: db.QueryTypes.SELECT,
-            }))
+                attributes: ['id', 'name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
+                order: [['createdAt', 'DESC']]
+            }
+        ))
         if (err) return response.errReturned(res, err)
 
         const filter = typeof obj.status === 'boolean' ? 'filter' : ''
@@ -520,7 +519,7 @@ async function getUsers(req, res) {
             }
 
             //New addition for date range
-            if(fromDate && toDate){
+            if (fromDate && toDate) {
                 dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
             }
 
