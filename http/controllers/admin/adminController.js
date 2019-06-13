@@ -1,5 +1,6 @@
 const moment = require('moment')
 const passcodeGenerator = require('generate-password')
+const bcrypt = require('bcrypt')
 
 const rewardEnum = require('../../../enum/rewardEnum')
 const utils = require('../../../etc/utils')
@@ -11,6 +12,7 @@ const tokenGenerator = require('../../../etc/generateToken')
 const emailTemplates = require('../../../etc/emailTemplates')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const _ = require('lodash')
+
 const db = global.healthportDb
 
 async function signIn(req, res) {
@@ -20,7 +22,7 @@ async function signIn(req, res) {
             'password': req.body.password,
             'ip_address': req.headers['x-real-ip']
         }
-        let err, admin = {}, token = {}, permissions = {}
+        let err, admin = {}, token = {}, permissions = {}, passwordCheck = {}
 
         //Checking empty email and password 
         if (!(obj.email && obj.password))
@@ -38,8 +40,12 @@ async function signIn(req, res) {
         if (!admin.password || admin.password == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.CHECK_YOUR_EMAIL)
         if (!admin.status)
-            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
-        if (obj.password != admin.password)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd);
+        //Decrypting password
+        // if (obj.password != admin.password)
+        //     return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
+        [err, passwordCheck] = await utils.to(bcrypt.compare(obj.password, admin.password))
+        if (!passwordCheck)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
         //**** //Saving login history */
@@ -1536,6 +1542,36 @@ async function updateUserById(req, res) {
     }
 }
 
+async function encryptPasswords(req, res) {
+    try {
+        let err = {}, admins = {}, obj = {};
+
+        [err, admins] = await utils.to(db.query(`
+            Select * 
+                From admins where password is not null
+                Order by id asc`,
+            {
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        for (let i = 0; i < admins.length; i++) {
+            if (admins[i].password.length < 20) {
+                admins[i].password = bcrypt.hashSync(admins[i].password, parseInt(process.env.SALT_ROUNDS))
+            }
+        }
+
+        [err, obj] = await utils.to(db.models.admins.bulkCreate(
+            admins,
+            { updateOnDuplicate: ['password'] }
+        ))
+        if (err) return response.errReturned(res, err)
+        console.log(obj)
+        return response.sendResponse(res, resCode.SUCCESS, 'Passwords encryption done.')
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1567,5 +1603,6 @@ module.exports = {
     updateAdminDetailsById,
     addNewAdmin,
     setAdminPassword,
-    updateUserById
+    updateUserById,
+    encryptPasswords
 }

@@ -76,4 +76,8 @@ router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateT
 //Login History Routes
 router.post('/history/:adminId', authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
+//Password encryption
+router.get('/encryptPasswords', adminController.encryptPasswords)
+
+
 module.exports = router

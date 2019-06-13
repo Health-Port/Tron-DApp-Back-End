@@ -6,6 +6,8 @@ const tokenGenerator = require('../../../etc/generateToken')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const _ = require('lodash')
+const tronUtils = require('../../../etc/tronUtils')
+
 const db = global.healthportDb
 
 async function requestTwoFactorAuthentication(req, res) {
@@ -43,7 +45,7 @@ async function requestTwoFactorAuthentication(req, res) {
 		const toTpURI = authenticator.generateTotpUri(
 			twoFAFormattedKey,
 			data[0].email,
-			req.baseUrl === '/admin' ? `${process.env.PROJECT_NAME}` :`${process.env.PROJECT_NAME}-User`,
+			req.baseUrl === '/admin' ? `${process.env.PROJECT_NAME}` : `${process.env.PROJECT_NAME}-User`,
 			process.env.AUTHENTICATOR_ALGO, 6, 30
 		);
 
@@ -180,12 +182,16 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				data.permissions = permissions.filter(x => x.parentId)
 			} else {
 				data = {
-					user_id: admin[0].id,
+					role: admin[0].role,
 					name: admin[0].name,
+					user_id: admin[0].id,
 					email: admin[0].email,
-					is_admin: admin[0].is_admin,
+					referal_coupon: admin[0].referal_coupon,
 					twofa_enable: true,
 					is_twofa_verified: true,
+					wallet_address: utils.decrypt(admin[0].tron_wallet_public_key),
+					total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
+					user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(admin[0].tron_wallet_private_key), utils.decrypt(admin[0].tron_wallet_public_key)),
 				};
 				[err, token] = await utils.to(tokenGenerator.createToken(data))
 			}
@@ -224,12 +230,16 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				data.permissions = permissions.filter(x => x.parentId)
 			} else {
 				data = {
-					user_id: admin[0].id,
+					role: admin[0].role,
 					name: admin[0].name,
+					user_id: admin[0].id,
 					email: admin[0].email,
-					is_admin: admin[0].is_admin,
+					referal_coupon: admin[0].referal_coupon,
 					twofa_enable: false,
 					is_twofa_verified: false,
+					wallet_address: utils.decrypt(admin[0].tron_wallet_public_key),
+					total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
+					user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(admin[0].tron_wallet_private_key), utils.decrypt(admin[0].tron_wallet_public_key)),
 				};
 				[err, token] = await utils.to(tokenGenerator.createToken(data))
 			}
@@ -326,12 +336,17 @@ async function verifyTwoFactorAuthentication(req, res) {
 			data.permissions = permissions.filter(x => x.parentId)
 		} else {
 			data = {
-				id: admin[0].id,
+				role: admin[0].role,
 				name: admin[0].name,
+				user_id: admin[0].id,
 				email: admin[0].email,
-				is_admin: admin[0].is_admin,
+				referal_coupon: admin[0].referal_coupon,
 				twofa_enable: admin[0].is_twofa_enable,
 				is_twofa_verified: admin[0].is_twofa_verified,
+				wallet_address: utils.decrypt(admin[0].tron_wallet_public_key),
+				total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
+				user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(admin[0].tron_wallet_private_key), utils.decrypt(admin[0].tron_wallet_public_key)),
+
 			};
 			[err, token] = await utils.to(tokenGenerator.createToken(data))
 		}
