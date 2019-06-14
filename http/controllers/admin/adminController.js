@@ -494,7 +494,7 @@ async function getUsers(req, res) {
 
         [err, dbData] = await utils.to(db.models.users.findAll(
             {
-                attributes: ['id', 'name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
+                attributes: ['name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
                 order: [['createdAt', 'DESC']]
             }
         ))
@@ -670,11 +670,6 @@ async function listTransactions(req, res) {
             returnableData['rows'] = slicedData
         }
 
-        //Decrypting public address
-        for (let i = 0; i < returnableData.rows.length; i++) {
-            returnableData.rows[i].address = utils.decrypt(returnableData.rows[i].address)
-        }
-
         //For export to csv
         if (obj.isCsvExport) {
             if (dbData.length > 0) {
@@ -689,6 +684,11 @@ async function listTransactions(req, res) {
 
             //Returing successful response
             return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
+        }
+
+        //Decrypting public address
+        for (let i = 0; i < returnableData.rows.length; i++) {
+            returnableData.rows[i].address = utils.decrypt(returnableData.rows[i].address)
         }
 
         //Returing successful response
@@ -770,7 +770,7 @@ async function getLoginHistories(req, res) {
         let pageSize = parseInt(obj.pageSize)
         let pageNumber = parseInt(obj.pageNumber)
         if (!pageNumber) pageNumber = 0
-        if (!pageSize) pageSize = 20
+        if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
