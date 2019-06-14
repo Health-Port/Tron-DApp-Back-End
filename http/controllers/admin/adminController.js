@@ -1460,7 +1460,11 @@ async function setAdminPassword(req, res) {
         let err = {}, admin = {}, obj = {}
 
         if (!password)
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+        //Reguler expression testing for password requirements
+        if (!regex.passRegex.test(password))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY);
 
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
         if (err) return response.errReturned(res, err)
@@ -1475,11 +1479,14 @@ async function setAdminPassword(req, res) {
             }))
         if (err) return response.errReturned(res, err)
         if (obj.is_used)
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED);
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
+
+        //Encrypting password
+        const passwordHash = bcrypt.hashSync(password, parseInt(process.env.SALT_ROUNDS));
 
         //Updating admin password
         [err, obj] = await utils.to(db.models.admins.update(
-            { password },
+            { password: passwordHash },
             { where: { id: admin.id } }
         ))
         if (err) return response.errReturned(res, err)
