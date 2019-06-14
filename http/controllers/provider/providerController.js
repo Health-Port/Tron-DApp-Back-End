@@ -317,7 +317,7 @@ async function addPatient(req, res) {
             }))
 
         //Email sending
-        const url = `${process.env.BASE_URL}${process.env.SET_PASSWORD_ROUTE}?token=${token}`;
+        const url = `${process.env.BASE_URL}${process.env.RESET_PASSWOR_ROUTE}?token=${token}&newpatient=1`;
         [err, mailSent] = await utils.to(emailTemplates.addNewPatient(patient.email, url, patient.name))
         if (!mailSent) {
             console.log(err)
