@@ -488,7 +488,7 @@ async function verifyEmail(req, res) {
             //Updating record in db
             [err, data] = await utils.to(db.models.users.update({
                 email_confirmed: true,
-                password: obj.password ? bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) : null,
+                password: obj.password ? bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) : user.password,
                 signup_reward_given: rewardGiven
             },
                 { where: { email: obj.email } }))
