@@ -172,6 +172,8 @@ async function signIn(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
         if (!user.status)
             return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
+        if (!user.password)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHECK_YOUR_EMAIL)
         if (!user.email_confirmed) {
             [err, passCode] = await utils.to(db.models.pass_codes.findOne(
                 {
@@ -179,7 +181,12 @@ async function signIn(req, res) {
                     order: [['createdAt', 'DESC']]
                 }));
 
-            [err, token] = await utils.to(tokenGenerator.createToken({ email: user.email, user_id: user.id, pass_code: passCode.pass_code }))
+            [err, token] = await utils.to(tokenGenerator.createToken(
+                {
+                    email: user.email,
+                    user_id: user.id,
+                    pass_code: passCode.pass_code
+                }))
 
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.EMAIL_CONFIRMATION_REQUIRED, null, token)
         }
@@ -189,7 +196,8 @@ async function signIn(req, res) {
 
         //Decrypting password
         [err, passwordCheck] = await utils.to(bcrypt.compare(obj.password, user.password))
-        if (!passwordCheck) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
+        if (!passwordCheck)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
         //Returing successful response with data
         const data = {
@@ -486,6 +494,9 @@ async function verifyEmail(req, res) {
                 { where: { email: obj.email } }))
 
             //Returing successful response
+            if (req.auth.set_password)
+                return response.sendResponse(res, resCode.SUCCESS, resMessage.PASSWORD_UPDATED)
+
             return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCOUNT_IS_VERIFIED)
         } else {
             [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))

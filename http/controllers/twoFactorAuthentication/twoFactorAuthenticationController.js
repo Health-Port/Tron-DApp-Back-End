@@ -88,6 +88,10 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 		}
 		let err, admin = {}, token, update = {}, permissions = {}, data = {}
 
+		//Checking code length
+		if (authenticationCode.length != 6) {
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CODE_NOT_VARIFIED)
+		}
 		//Checking required fileds 
 		if (!(entityId && state !== undefined && authenticationCode))
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
@@ -264,6 +268,12 @@ async function verifyTwoFactorAuthentication(req, res) {
 		}
 		let err, admin = {}, token = {}, permissions = {}, data = {}
 
+		//Checking code length
+		if (authenticationCode.length != 6) {
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CODE_NOT_VARIFIED)
+		}
+
+		//Required field validation
 		if (!(email && authenticationCode))
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
