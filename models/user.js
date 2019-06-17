@@ -21,7 +21,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         password: {
             type: Sequelize.STRING,
-            allowNull: false
         },
         role: {
             type: Sequelize.ENUM,
@@ -56,7 +55,22 @@ module.exports = (sequelize, Sequelize) => {
         signup_reward_given: {
             type: Sequelize.BOOLEAN,
             allowNull: true
-        }
+        },
+        is_twofa_enable:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        },
+        is_twofa_verified:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        },
+        twofa_formatted_key:{
+            type: Sequelize.STRING
+        },
+        status:{
+            type: Sequelize.BOOLEAN,
+            defaultValue: true
+        },
     })
     return users
 }

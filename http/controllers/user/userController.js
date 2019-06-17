@@ -168,7 +168,12 @@ async function signIn(req, res) {
 
         //Finding record from db    
         [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-        if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (user == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (!user.status)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
+        if (!user.password)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHECK_YOUR_EMAIL)
         if (!user.email_confirmed) {
             [err, passCode] = await utils.to(db.models.pass_codes.findOne(
                 {
@@ -176,7 +181,12 @@ async function signIn(req, res) {
                     order: [['createdAt', 'DESC']]
                 }));
 
-            [err, token] = await utils.to(tokenGenerator.createToken({ email: user.email, user_id: user.id, pass_code: passCode.pass_code }))
+            [err, token] = await utils.to(tokenGenerator.createToken(
+                {
+                    email: user.email,
+                    user_id: user.id,
+                    pass_code: passCode.pass_code
+                }))
 
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.EMAIL_CONFIRMATION_REQUIRED, null, token)
         }
@@ -186,7 +196,8 @@ async function signIn(req, res) {
 
         //Decrypting password
         [err, passwordCheck] = await utils.to(bcrypt.compare(obj.password, user.password))
-        if (!passwordCheck) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
+        if (!passwordCheck)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
         //Returing successful response with data
         const data = {
@@ -195,21 +206,23 @@ async function signIn(req, res) {
             user_id: user.id,
             email: user.email,
             referal_coupon: user.referal_coupon,
+            twofa_enable: user.is_twofa_enable,
+            is_twofa_verified: user.is_twofa_verified,
             wallet_address: utils.decrypt(user.tron_wallet_public_key),
             total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
             user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key)),
         }
 
         //Saving login history
-        let loginHistory = {}
-        loginHistory = {
-            user_id: user.id,
-            ip_address: obj.ip_address
-        };
-
-        [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
-        if (err) return response.errReturned(res, err)
-
+        if (process.env.NODE_ENV != 'dev') {
+            let loginHistory = {}
+            loginHistory = {
+                user_id: user.id,
+                ip_address: obj.ip_address
+            };
+            [err, loginHistory] = await utils.to(db.models.login_histories.create(loginHistory));
+            if (err) return response.errReturned(res, err)
+        }
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
 
     } catch (error) {
@@ -366,15 +379,29 @@ async function verifyEmail(req, res) {
             'email': req.auth.email,
             'passcode': req.auth.pass_code,
             'newEmail': req.auth.new_email,
+            'password': req.body.password
         }
 
         let err, user = {}, data
 
+        //Only if when account was created by provider.
+        if (req.auth.set_password) {
+            //Checking empty email
+            if (!obj.password) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+            }
+            //Reguler expression testing for password requirements
+            if (!regex.passRegex.test(obj.password))
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY)
+        }
+
         if (!obj.newEmail) {
             //Finding user record from db
             [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-            if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-            if (user.email_confirmed == true) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
+            if (user == null)
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+            if (user.email_confirmed == true)
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
 
             //Finding passcode record from db
             [err, data] = await utils.to(db.models.pass_codes.findOne(
@@ -388,9 +415,11 @@ async function verifyEmail(req, res) {
                 const now = moment().format('YYYY-MM-DD HH:mm:ss')
                 const timeDifferInMin = moment(now, 'YYYY-MM-DD HH:mm:ss').diff(passcodeCreateTime, 'm')
 
-                //Checking link expiry
-                if (timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_LINK_EXPIRY_TIME))
-                    return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_EXPIRED)
+                if (!obj.password) {
+                    //Checking link expiry
+                    if (timeDifferInMin >= parseInt(process.env.FORGETPASSWORD_LINK_EXPIRY_TIME))
+                        return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_EXPIRED)
+                }
             }
 
             //Reward giving
@@ -457,18 +486,22 @@ async function verifyEmail(req, res) {
             }
 
             //Updating record in db
-            [err, data] = await utils.to(db.models.users.update(
-                {
-                    email_confirmed: true,
-                    signup_reward_given: rewardGiven
-                },
+            [err, data] = await utils.to(db.models.users.update({
+                email_confirmed: true,
+                password: obj.password ? bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) : user.password,
+                signup_reward_given: rewardGiven
+            },
                 { where: { email: obj.email } }))
 
             //Returing successful response
+            if (req.auth.set_password)
+                return response.sendResponse(res, resCode.SUCCESS, resMessage.PASSWORD_UPDATED)
+
             return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCOUNT_IS_VERIFIED)
         } else {
             [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
-            if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ALREADY_VERIFIED);
+            if (user == null)
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ALREADY_VERIFIED);
 
             //Finding passcode record from db
             [err, data] = await utils.to(db.models.pass_codes.findOne(
@@ -743,8 +776,8 @@ async function getPrivateKey(req, res) {
         }
 
         //Returing successful response
-        if(mailSent)
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
+        if (mailSent)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT)
 
     } catch (error) {
         console.log(error)

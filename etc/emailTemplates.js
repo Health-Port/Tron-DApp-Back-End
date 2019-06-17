@@ -56,6 +56,25 @@ async function addNewAdminTemplate(token, email, url, name) {
     else return Promise.reject(error);
 }
 
+async function addNewPatient(email, url, name) {
+    let urlLink = url;
+    let subject = `Welcome to ${process.env.PROJECT_NAME} - Account Setup`;
+    let body = `
+    Dear ${name},<br/><br/>
+                        Your health port account has been created with the following details:<br/><br/>
+                        Full Name: ${name}<br/>
+                        Email: ${email}<br/><br/>
+                        Please click <a href="${urlLink}" target="_blank">here</a> to setup your account's password.<br/><br/>
+                        Regards,<br/>
+                        Team ${process.env.PROJECT_NAME}
+                        `;
+
+    let error, result;
+    [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
+    if (result) return Promise.resolve(true);
+    else return Promise.reject(error);
+}
+
 async function contactUsTemplate(message, email, name) {
     let subject = `${process.env.PROJECT_NAME} Support`;
     let body = `
@@ -156,5 +175,6 @@ module.exports = {
     contactUsTemplate,
     passwordSuccessfullyChanged,
     sendPrivateKey,
-    addNewAdminTemplate
+    addNewAdminTemplate,
+    addNewPatient
 };

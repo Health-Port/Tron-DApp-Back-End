@@ -14,15 +14,19 @@ router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.authenticateToken, adminController.changePassword)
 router.post('/confirmForgotPassword', authorize.authenticateToken, adminController.confirmForgotPassword)
 
+//TwoFactorAuthentication Routes
 router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
 router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
 router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication)
 
-router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
+//User related Routes
 router.post('/getUsers', authorize.authenticateRole, authorize.authenticateToken, adminController.getUsers)
 router.post('/getUserById', authorize.authenticateRole, authorize.authenticateToken, adminController.getUserById)
 router.post('/getTransactionsByUserId', authorize.authenticateToken, adminController.getTransactionsByUserId)
 router.post('/getLoginHistoriesByUserId', authorize.authenticateToken, adminController.getLoginHistoriesByUserId)
+router.put('/status/:userId', authorize.authenticateRole, authorize.authenticateToken, adminController.updateUserById)
+
+router.post('/getLoginHistories', authorize.authenticateToken, adminController.getLoginHistories)
 router.post('/getReferrals', authorize.authenticateToken, adminController.getReferrals)
 router.post('/sendUserResetPasswordRequest', authorize.authenticateToken, adminController.sendUserResetPasswordRequest)
 router.post('/listTransactions', authorize.authenticateToken, adminController.listTransactions)
@@ -71,5 +75,9 @@ router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateT
 
 //Login History Routes
 router.post('/history/:adminId', authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
+
+//Password encryption
+router.get('/encryptPasswords', adminController.encryptPasswords)
+
 
 module.exports = router

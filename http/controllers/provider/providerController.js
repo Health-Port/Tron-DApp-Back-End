@@ -1,11 +1,18 @@
 var _ = require('lodash');
 
-const utils = require('../../../etc/utils');
-const response = require('../../../etc/response');
-const roleEnum = require('./../../../enum/roleEnum');
-const resCode = require('../../../enum/responseCodesEnum');
-const resMessage = require('../../../enum/responseMessagesEnum');
-var cutCommission = require('./../../../etc/commission');
+const regex = require('../../../etc/regex')
+const utils = require('../../../etc/utils')
+const response = require('../../../etc/response')
+const tronUtils = require('../../../etc/tronUtils')
+const roleEnum = require('./../../../enum/roleEnum')
+const passcodeGenerator = require('generate-password')
+const resCode = require('../../../enum/responseCodesEnum')
+const resMessage = require('../../../enum/responseMessagesEnum')
+var cutCommission = require('./../../../etc/commission')
+const mailChimpUtil = require('../../../etc/mailChimpUtil')
+const tokenGenerator = require('../../../etc/generateToken')
+const emailTemplates = require('../../../etc/emailTemplates')
+
 const Sequelize = require('sequelize')
 const db = global.healthportDb;
 
@@ -38,10 +45,10 @@ async function getAllProviders(req, res) {
                 from patient_provider_records p
                 inner join users u ON u.id = p.share_with_id
                 where p.user_Id = :userId and p.type = :type`,
-			{
-				replacements: { type: type, userId: user_id },
-				type: db.QueryTypes.SELECT,
-            }));
+                {
+                    replacements: { type: type, userId: user_id },
+                    type: db.QueryTypes.SELECT,
+                }));
             for (let i = 0; i < obj.length; i++) {
                 objData[i] = {
                     'share_with_id': obj[i].id,
@@ -65,10 +72,10 @@ async function getAllProviders(req, res) {
                 where p.user_Id = :userId
                 group by p.share_with_id
                 having COUNT(p.share_with_id) = 3`,
-			{
-				replacements: { type: type, userId: user_id },
-				type: db.QueryTypes.SELECT,
-            }));
+                {
+                    replacements: { type: type, userId: user_id },
+                    type: db.QueryTypes.SELECT,
+                }));
             for (let i = 0; i < obj.length; i++) {
                 objData[i] = {
                     'share_with_id': obj[i].id,
@@ -237,9 +244,101 @@ async function shareListWithProviders(req, res) {
     }
 }
 
+async function addPatient(req, res) {
+    try {
+        const userId = req.auth.user_id
+        const { email, name } = req.body
+
+        let err = {}, patient = {}, provider = {}
+
+        //Checking empty field
+        if (!(name && email))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+        //Reguler expression testing for email
+        if (!regex.emailRegex.test(email))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Checking if email exists
+        [err, patient] = await utils.to(db.models.users.findOne({ where: { email } }))
+        if (err) return response.errReturned(res, err)
+        if (patient)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST);
+
+        //Creating Tron Account.
+        const account = await tronUtils.createAccount();
+
+        //Saving admin record in db 
+        [err, patient] = await utils.to(db.models.users.create(
+            {
+                name,
+                email,
+                role: roleEnum.PATIENT,
+                refer_destination: roleEnum.PROVIDER,
+                tron_wallet_private_key: utils.encrypt(account.privateKey),
+                tron_wallet_public_key: utils.encrypt(account.address.base58),
+                referal_coupon: passcodeGenerator.generate({ length: 14, numbers: true }),
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!patient) 
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        const spilt_name = name.split(' ')
+        if (spilt_name.length == 2) {
+            mailChimpUtil(email, spilt_name[0], spilt_name[1])
+        }
+        else {
+            mailChimpUtil(email, spilt_name[0], process.env.PROJECT_NAME)
+        }
+
+        //Saving passcode in db
+        [err, passCode] = await utils.to(db.models.pass_codes.create(
+            {
+                user_id: patient.id,
+                pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
+                type: 'signup'
+            }));
+
+        //Jwt token generating
+        [err, token] = await utils.to(tokenGenerator.createToken(
+            {
+                email: patient.email,
+                user_id: patient.id,
+                pass_code: passCode.pass_code,
+                set_password: true
+            }))
+
+        //Email sending
+        const url = `${process.env.BASE_URL}${process.env.RESET_PASSWOR_ROUTE}?token=${token}&newpatient=1`;
+        [err, mailSent] = await utils.to(emailTemplates.addNewPatient(patient.email, url, patient.name))
+        if (!mailSent) {
+            console.log(err)
+            return response.errReturned(res, err)
+        }
+
+        //Returing successful response
+        return response.sendResponse(
+            res,
+            resCode.SUCCESS,
+            resMessage.USER_ADDED_SUCCESSFULLY, null, token)
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
+    addPatient,
     getAllProviders,
-    shareListWithProviders,
     getProviderSharedData,
-    getProviderSharedDocument
+    shareListWithProviders,
+    getProviderSharedDocument,
 }

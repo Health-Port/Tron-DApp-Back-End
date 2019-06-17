@@ -1,5 +1,6 @@
 const moment = require('moment')
 const passcodeGenerator = require('generate-password')
+const bcrypt = require('bcrypt')
 
 const rewardEnum = require('../../../enum/rewardEnum')
 const utils = require('../../../etc/utils')
@@ -11,6 +12,7 @@ const tokenGenerator = require('../../../etc/generateToken')
 const emailTemplates = require('../../../etc/emailTemplates')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const _ = require('lodash')
+
 const db = global.healthportDb
 
 async function signIn(req, res) {
@@ -20,7 +22,7 @@ async function signIn(req, res) {
             'password': req.body.password,
             'ip_address': req.headers['x-real-ip']
         }
-        let err, admin = {}, token = {}, permissions = {}
+        let err, admin = {}, token = {}, permissions = {}, passwordCheck = {}
 
         //Checking empty email and password 
         if (!(obj.email && obj.password))
@@ -38,8 +40,9 @@ async function signIn(req, res) {
         if (!admin.password || admin.password == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.CHECK_YOUR_EMAIL)
         if (!admin.status)
-            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
-        if (obj.password != admin.password)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd);
+        [err, passwordCheck] = await utils.to(bcrypt.compare(obj.password, admin.password))
+        if (!passwordCheck)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
         //**** //Saving login history */
@@ -94,7 +97,7 @@ async function signIn(req, res) {
             name: admin.name,
             email: admin.email,
             is_admin: admin.is_admin,
-            twofa_enable: admin.twofa_enable,
+            twofa_enable: admin.is_twofa_enable,
             is_twofa_verified: admin.is_twofa_verified,
             roleId: permissions[0].roleId,
             permissions: permissions.map(a => a.route)
@@ -454,39 +457,98 @@ async function getUsers(req, res) {
             'searchValue': req.body.searchValue,
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
-            'role': req.body.role
+            'role': req.body.role,
+            'status': req.body.status,
+            'from': req.body.from,
+            'to': req.body.to,
+            'isCsvExport': req.body.isCsvExport
         }
 
-        let err = {}, dbData
+        let err = {}, dbData, fromDate, toDate
         const returnableData = {}
+
+        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
+        }
+        if (obj.from && obj.to) {
+            fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
+            fromDate = new Date(fromDate).getTime()
+
+            toDate = `${obj.to.year}-${obj.to.month}-${obj.to.day}`
+            toDate = new Date(toDate)
+            toDate = new Date(
+                toDate.getFullYear(),
+                toDate.getMonth(),
+                toDate.getDate() + 1
+            )
+            toDate = new Date(toDate).getTime()
+        }
 
         //Paging
         let pageSize = parseInt(obj.pageSize)
         let pageNumber = parseInt(obj.pageNumber)
         if (!pageNumber) pageNumber = 0
-        if (!pageSize) pageSize = 20
+        if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
-        [err, dbData] = await utils.to(db.query('select id, name, email, role, tron_wallet_public_key, createdAt from users order by createdAt desc',
+        [err, dbData] = await utils.to(db.models.users.findAll(
             {
-                type: db.QueryTypes.SELECT,
-            }))
+                attributes: ['id', 'name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
+                order: [['createdAt', 'DESC']]
+            }
+        ))
         if (err) return response.errReturned(res, err)
 
+        const filter = typeof obj.status === 'boolean' ? 'filter' : ''
+
         if (dbData) {
-            if (obj.role && obj.searchValue) {
+            if (obj.role && obj.searchValue && filter) {
                 dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+                dbData = dbData.filter(x => x.status == obj.status)
+            } else if (obj.role && obj.searchValue) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            } else if (obj.role && filter) {
+                dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
+                dbData = dbData.filter(x => x.status == obj.status)
+            } else if (obj.searchValue && filter) {
+                dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+                dbData = dbData.filter(x => x.status == obj.status)
             } else if (obj.role) {
                 dbData = dbData.filter(x => x.role.toLowerCase() == obj.role.toLowerCase())
             } else if (obj.searchValue) {
                 dbData = dbData.filter(x => x.name.toLowerCase().includes(obj.searchValue.toLowerCase()) || x.email.toLowerCase().includes(obj.searchValue.toLowerCase()))
+            } else if (filter) {
+                dbData = dbData.filter(x => x.status == obj.status)
+            }
+
+            //New addition for date range
+            if (fromDate && toDate) {
+                dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
             }
 
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
+        }
+
+        //For export to csv
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].id
+                    dbData[i].tron_wallet_public_key = utils.decrypt(dbData[i].tron_wallet_public_key)
+                }
+            }
+
+            if (!dbData || dbData == null || dbData.count == 0 || dbData.length == 0) {
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+            }
+
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Decrypting public address
@@ -549,16 +611,36 @@ async function listTransactions(req, res) {
         const obj = {
             'searchValue': req.body.searchValue,
             'pageNumber': req.body.pageNumber,
-            'pageSize': req.body.pageSize
+            'pageSize': req.body.pageSize,
+            'from': req.body.from,
+            'to': req.body.to,
+            'isCsvExport': req.body.isCsvExport
         }
-        let err = {}, dbData = {}
+        let err = {}, fromDate, toDate, dbData = {}
         const returnableData = {}
+
+        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
+        }
+        if (obj.from && obj.to) {
+            fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
+            fromDate = new Date(fromDate).getTime()
+
+            toDate = `${obj.to.year}-${obj.to.month}-${obj.to.day}`
+            toDate = new Date(toDate)
+            toDate = new Date(
+                toDate.getFullYear(),
+                toDate.getMonth(),
+                toDate.getDate() + 1
+            )
+            toDate = new Date(toDate).getTime()
+        }
 
         //Paging
         let pageSize = parseInt(obj.pageSize)
         let pageNumber = parseInt(obj.pageNumber)
         if (!pageNumber) pageNumber = 0
-        if (!pageSize) pageSize = 20
+        if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
@@ -571,16 +653,40 @@ async function listTransactions(req, res) {
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
-        if (dbData == null || dbData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+        if (dbData == null || dbData.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
         if (dbData) {
-            if (obj.searchValue) {
-                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue)) || x.trx_hash.includes(obj.searchValue))
+            if ((obj.from && obj.to) && obj.searchValue) {
+                dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue))
+                    || x.trx_hash.includes(obj.searchValue))
+            } else if (obj.from && obj.to) {
+                dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
+            } else if (obj.searchValue) {
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue))
+                    || x.trx_hash.includes(obj.searchValue))
             }
 
             returnableData['count'] = dbData.length
             const slicedData = dbData.slice(start, end)
             returnableData['rows'] = slicedData
+        }
+
+        //For export to csv
+        if (obj.isCsvExport) {
+            if (dbData.length > 0) {
+                for (let i = 0; i < dbData.length; i++) {
+                    delete dbData[i].user_id
+                }
+            }
+
+            if (!dbData || dbData == null || dbData.count == 0 || dbData.length == 0) {
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+            }
+
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
         }
 
         //Decrypting public address
@@ -649,6 +755,9 @@ async function getLoginHistories(req, res) {
         let err = {}, fromDate, toDate, dbData
         const returnableData = {}
 
+        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
+        }
         if (obj.from && obj.to) {
             fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
             fromDate = new Date(fromDate).getTime()
@@ -667,7 +776,7 @@ async function getLoginHistories(req, res) {
         let pageSize = parseInt(obj.pageSize)
         let pageNumber = parseInt(obj.pageNumber)
         if (!pageNumber) pageNumber = 0
-        if (!pageSize) pageSize = 20
+        if (!pageSize) pageSize = 10
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
@@ -862,7 +971,8 @@ async function updateSPRewardSettings(req, res) {
             { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }
         ))
         if (err) return response.errReturned(res, err)
-        if (spSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
+        if (spSettings.length == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
@@ -1356,7 +1466,11 @@ async function setAdminPassword(req, res) {
         let err = {}, admin = {}, obj = {}
 
         if (!password)
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+        //Reguler expression testing for password requirements
+        if (!regex.passRegex.test(password))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY);
 
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
         if (err) return response.errReturned(res, err)
@@ -1371,11 +1485,14 @@ async function setAdminPassword(req, res) {
             }))
         if (err) return response.errReturned(res, err)
         if (obj.is_used)
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED);
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
+
+        //Encrypting password
+        const passwordHash = bcrypt.hashSync(password, parseInt(process.env.SALT_ROUNDS));
 
         //Updating admin password
         [err, obj] = await utils.to(db.models.admins.update(
-            { password },
+            { password: passwordHash },
             { where: { id: admin.id } }
         ))
         if (err) return response.errReturned(res, err)
@@ -1397,6 +1514,77 @@ async function setAdminPassword(req, res) {
     }
 }
 
+async function updateUserById(req, res) {
+    try {
+        const { userId } = req.params
+        const { id } = req.auth
+        const { status } = req.body
+
+        let err = {}, admin = {}, obj = {}, user = {};
+
+        //Verifying user authenticity
+        [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+        if (err) return response.errReturned(res, err)
+        if (!admin || admin.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Getting user data
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!user || user.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        //Updating user status
+        [err, obj] = await utils.to(db.models.users.update(
+            { status },
+            { where: { id: user.id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        if (status)
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ACTIVATED)
+        else
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_BLOCKED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function encryptPasswords(req, res) {
+    try {
+        let err = {}, admins = {}, obj = {};
+
+        [err, admins] = await utils.to(db.query(`
+            Select * 
+                From admins where password is not null
+                Order by id asc`,
+            {
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        for (let i = 0; i < admins.length; i++) {
+            if (admins[i].password.length < 20) {
+                admins[i].password = bcrypt.hashSync(admins[i].password, parseInt(process.env.SALT_ROUNDS))
+            }
+        }
+
+        [err, obj] = await utils.to(db.models.admins.bulkCreate(
+            admins,
+            { updateOnDuplicate: ['password'] }
+        ))
+        if (err) return response.errReturned(res, err)
+        console.log(obj)
+        return response.sendResponse(res, resCode.SUCCESS, 'Passwords encryption done.')
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     signIn,
     signUp,
@@ -1427,5 +1615,7 @@ module.exports = {
     getAdminById,
     updateAdminDetailsById,
     addNewAdmin,
-    setAdminPassword
+    setAdminPassword,
+    updateUserById,
+    encryptPasswords
 }

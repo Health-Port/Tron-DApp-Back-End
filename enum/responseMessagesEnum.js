@@ -11,6 +11,7 @@ const ResponseMessagesEnum = {
     BANDWIDTH_IS_LOW: 'You currently have low bandwidth on TRON Network. Please wait for a few minutes and try again.',
     BANDWIDTH_IS_LOW_RECEIVER: 'Please wait bandwidth to be allocated to receiver address. Try again after 5 minutes.',
     COUNTRY_INTEGER: 'Country should be integer.',
+    CODE_NOT_VARIFIED: 'Invalid authentication code.',
     CHECK_YOUR_EMAIL: 'Please check email to setup your account password.',
     DOCUMENT_SAVED: 'Document saved successfully.',
     DOCUMENT_RETRIEVED: 'Document retrieved successfully.',
@@ -33,6 +34,7 @@ const ResponseMessagesEnum = {
     MAIL_UPDATED: 'Your email changed successfully, please login to continue.',
     MAIL_ALREADY_EXIST: 'Email already exist.',
     NO_RECORD_FOUND: 'No record found.',
+    NOT_ALLOWED: 'You are not allowed to perform this action.',
     PARENT_ID_MISSING: 'Parent id is missing.',
     PASSWORD_ARE_SAME: 'Current and new passwords are same.',
     PASSWORD_ERROR: 'Password length needs to between 8 to 30 characters.',
@@ -53,12 +55,16 @@ const ResponseMessagesEnum = {
     ROLE_ACTIVATED: 'Role is activated successfully.',
     SUCCESSFULLY_LOGGEDIN: 'User login successfully.',
     SUCCESS: 'Success',
+    STATE_IS_INVALID: 'State is invalid.',
     SIGNUP_LIMIT: 'Sign Up limit has exceeded, come back tomorrow for registration',
     TOKEN_ERROR: 'Unable to generate token.',
     TRON_IS_NOT_CONNECTED: 'Tron node is not connected.',
     TRON_BALANCE_IS_ZERO: 'Your have insufficient Tron balance.',
     TERMS_CONDITIONS:'Please check terms and conditions.',
     TO_FROM_ADDRESS_ARE_SAME:'You cannot send EHR from your account to your own address.',
+    TWO_FACTOR_IS_ALREADY_ENABLED: '2 Factor authentication is already enabled.',
+    TWO_FACTOR_IS_ENABLED: '2 Factor Authentication is enabled successfully',
+    TWO_FACTOR_IS_DISABLED: '2 Factor Authentication is disabled successfully',
     USER_ADDED_SUCCESSFULLY: 'User added successfully.',
     USER_UPDATED_SUCCESSFULLY: 'User updated successfully.',
     USER_ALREADY_EXIST: 'User already exist.',
@@ -68,7 +74,7 @@ const ResponseMessagesEnum = {
     USER_BLOCKED: 'User is blocked successfully.',
     USER_KYC_SUBMITTED: 'User Kyc details submitted successfully',
     UNABLE_TO_SIGNUP_RIGHT_NOW: 'Sorry unable to signup right now.',
-    UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.'
+    UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.',
 }
 
 module.exports = ResponseMessagesEnum

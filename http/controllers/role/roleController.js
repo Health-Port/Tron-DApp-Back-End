@@ -130,6 +130,9 @@ async function addNewRole(req, res) {
 
 		let err = {}, admin = {}, role = {}, permissions = {}, mappedFeatures = []
 
+		if (features.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
+
 		let flag = false
 		features.forEach(element => {
 			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId'))) {
@@ -239,6 +242,9 @@ async function updateRoleById(req, res) {
 
 		let err = {}, admin = {}, role = {}, obj = {}, permissions = {}, mappedFeatures = []
 
+		if (features.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
+			
 		let flag = false
 		features.forEach(element => {
 			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId'))) {
