@@ -494,7 +494,7 @@ async function getUsers(req, res) {
 
         [err, dbData] = await utils.to(db.models.users.findAll(
             {
-                attributes: ['name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
+                attributes: ['id','name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
                 order: [['createdAt', 'DESC']]
             }
         ))
