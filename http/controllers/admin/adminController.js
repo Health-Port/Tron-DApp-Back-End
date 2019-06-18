@@ -41,9 +41,6 @@ async function signIn(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.CHECK_YOUR_EMAIL)
         if (!admin.status)
             return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd);
-        //Decrypting password
-        // if (obj.password != admin.password)
-        //     return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
         [err, passwordCheck] = await utils.to(bcrypt.compare(obj.password, admin.password))
         if (!passwordCheck)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
@@ -470,6 +467,9 @@ async function getUsers(req, res) {
         let err = {}, dbData, fromDate, toDate
         const returnableData = {}
 
+        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
+        }
         if (obj.from && obj.to) {
             fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
             fromDate = new Date(fromDate).getTime()
@@ -619,6 +619,9 @@ async function listTransactions(req, res) {
         let err = {}, fromDate, toDate, dbData = {}
         const returnableData = {}
 
+        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
+        }
         if (obj.from && obj.to) {
             fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
             fromDate = new Date(fromDate).getTime()
@@ -752,6 +755,9 @@ async function getLoginHistories(req, res) {
         let err = {}, fromDate, toDate, dbData
         const returnableData = {}
 
+        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
+        }
         if (obj.from && obj.to) {
             fromDate = `${obj.from.year}-${obj.from.month}-${obj.from.day}`
             fromDate = new Date(fromDate).getTime()
