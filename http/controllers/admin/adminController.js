@@ -1555,36 +1555,6 @@ async function updateUserById(req, res) {
     }
 }
 
-async function encryptPasswords(req, res) {
-    try {
-        let err = {}, admins = {}, obj = {};
-
-        [err, admins] = await utils.to(db.query(`
-            Select * 
-                From admins where password is not null
-                Order by id asc`,
-            {
-                type: db.QueryTypes.SELECT,
-            }))
-        if (err) return response.errReturned(res, err)
-        for (let i = 0; i < admins.length; i++) {
-            if (admins[i].password.length < 20) {
-                admins[i].password = bcrypt.hashSync(admins[i].password, parseInt(process.env.SALT_ROUNDS))
-            }
-        }
-
-        [err, obj] = await utils.to(db.models.admins.bulkCreate(
-            admins,
-            { updateOnDuplicate: ['password'] }
-        ))
-        if (err) return response.errReturned(res, err)
-        console.log(obj)
-        return response.sendResponse(res, resCode.SUCCESS, 'Passwords encryption done.')
-    } catch (error) {
-        console.log(error)
-        return response.errReturned(res, error)
-    }
-}
 module.exports = {
     signIn,
     signUp,
@@ -1616,6 +1586,5 @@ module.exports = {
     updateAdminDetailsById,
     addNewAdmin,
     setAdminPassword,
-    updateUserById,
-    encryptPasswords
+    updateUserById
 }

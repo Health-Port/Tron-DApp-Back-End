@@ -6,6 +6,7 @@ const dashboardController = require('../controllers/dashboard/dashboardControlle
 const featureController = require('../controllers/feature/featureController')
 const roleController = require('../controllers/role/roleController')
 const loginHistoryController = require('../controllers/loginHistory/loginHistoryController')
+const attributeListController = require('../controllers/attributeList/attributeListController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -76,8 +77,8 @@ router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateT
 //Login History Routes
 router.post('/history/:adminId', authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
-//Password encryption
-router.get('/encryptPasswords', adminController.encryptPasswords)
-
+//Attribute List Routes
+router.post('/attributeList/add', authorize.authenticateToken, attributeListController.addAttributeList)
+router.post('/attributeList', authorize.authenticateToken, attributeListController.getAttributeLists)
 
 module.exports = router
