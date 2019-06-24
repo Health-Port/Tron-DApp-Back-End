@@ -81,6 +81,50 @@ async function addAttributeList(req, res) {
 	}
 }
 
+async function getAttributeLists(req, res) {
+	try {
+		const { id } = req.auth
+		let { pageNumber, pageSize } = req.body
+		const { searchValue } = req.body
+
+		let err = {}, dbData = {}, admin = {}
+
+		//Paging
+		pageSize = parseInt(pageSize)
+		pageNumber = parseInt(pageNumber)
+		if (!pageNumber) pageNumber = 0
+		if (!pageSize) pageSize = 10
+		const start = parseInt(pageNumber * pageSize);
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+		const searchObj = {}
+		if (searchValue)
+			searchObj.name = searchValue;
+		[err, dbData] = await utils.to(db.models.attribute_lists.findAndCountAll(
+			{
+				where: searchObj,
+				order: [['createdAt', 'DESC']],
+				limit: pageSize,
+				offset: start
+			}))
+		if (err) return response.errReturned(res, err)
+		if (dbData == null || dbData.count == 0 || dbData == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 module.exports = {
-	addAttributeList
+	addAttributeList,
+	getAttributeLists
 }

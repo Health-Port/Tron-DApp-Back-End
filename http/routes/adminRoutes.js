@@ -79,6 +79,6 @@ router.post('/history/:adminId', authorize.authenticateRole, authorize.authentic
 
 //Attribute List Routes
 router.post('/attributeList/add', authorize.authenticateToken, attributeListController.addAttributeList)
-
+router.post('/attributeList', authorize.authenticateToken, attributeListController.getAttributeLists)
 
 module.exports = router
