@@ -113,8 +113,6 @@ async function getAttributeLists(req, res) {
 				offset: start
 			}))
 		if (err) return response.errReturned(res, err)
-		if (dbData == null || dbData.count == 0 || dbData == undefined)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
