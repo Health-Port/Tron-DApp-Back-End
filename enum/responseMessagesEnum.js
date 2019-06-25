@@ -34,6 +34,7 @@ const ResponseMessagesEnum = {
     LIST_NAME_REQUIRED: 'List name is required.',
     LIST_CHARACTER_COUNT_ERROR: 'List Name should be less than 30 Characters.',
     LIST_ADDED_SUCCESSFULLY: 'List added successfully.',
+    LIST_UPDATED_SUCCESSFULLY: 'List updated successfully.',
     MAIL_SENT: 'Please check your email to continue further.',
     MAIL_SENT_USER: 'Link has been sent to user email address.',
     MAIL_NOT_SENT: 'Email server is down, please try again later.',
