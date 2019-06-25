@@ -10,5 +10,10 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false
         }
     })
+
+    attributeLists.associate = (models) => {
+		attributeLists.hasMany(models.attribute_list_values, { foreignKey: 'list_id' })
+    }
+    
     return attributeLists
 }

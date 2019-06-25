@@ -124,7 +124,58 @@ async function getAttributeLists(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
+async function getAttributeListById(req, res) {
+	try {
+		const { id } = req.auth
+		const { attrId } = req.params
+		
+		let err = {}, admin = {}, list = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Querying db for list records
+		[err, list] = await utils.to(db.query(`
+			Select l.id as listId, v.id as attrId, l.name, v.label, v.value, v.createdAt 
+				From attribute_lists l
+				Inner join attribute_list_values v ON l.id = v.list_id
+				Where l.id = :id
+				Order by l.createdAt DESC;`,
+			{
+				replacements: { id: attrId },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (!list || list.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//maping data and columns
+		const data = {
+			listId: list[0].listId,
+			listName: list[0].name,
+			attributeList: list.map(elem => (
+				{
+					attrId: elem.attrId,
+					label: elem.label,
+					value: elem.value
+				}
+			))
+		}
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	addAttributeList,
-	getAttributeLists
+	getAttributeLists,
+	getAttributeListById
 }
