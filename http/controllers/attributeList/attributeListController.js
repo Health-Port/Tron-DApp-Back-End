@@ -25,7 +25,7 @@ async function addAttributeList(req, res) {
 			if (arr.indexOf(el) !== i && acc.indexOf(el) < 0) acc.push(el); return acc
 		}, [])
 		if (duplicates.length > 0)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.duplicates, duplicates)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.DUPLICATE_ITEMS, duplicates)
 
 		if (!listAttributes || listAttributes.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
