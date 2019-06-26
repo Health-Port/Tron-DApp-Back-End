@@ -17,7 +17,7 @@ async function addTemplate(req, res) {
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_IS_REQUIRED)
 		if (name.length >= 30)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LIST_CHARACTER_COUNT_ERROR)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHARACTER_COUNT_ERROR)
 
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
