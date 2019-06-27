@@ -126,6 +126,7 @@ async function updateTemplateStatusById(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
 module.exports = {
 	addTemplate,
 	updateTemplateStatusById
