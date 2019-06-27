@@ -152,7 +152,7 @@ async function getTemplates(req, res) {
 
 		//Quering db for data
 		[err, dbData] = await utils.to(db.query(`
-			Select id, name, status, createdAt 
+			Select id, name, status, description, createdAt 
 				From templates
 				Order by createdAt DESC`,
 			{
