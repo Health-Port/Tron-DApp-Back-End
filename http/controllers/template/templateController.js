@@ -34,7 +34,7 @@ async function addTemplate(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
 		//Checking duplicate items in attribute list
-		const filterArray = templateFields.filter(x=>x.attribute_list_id != '')
+		const filterArray = templateFields.filter(x => x.attribute_list_id != '')
 		const input = filterArray.map(x => x.attribute_list_id)
 		const duplicates = input.reduce((acc, el, i, arr) => {
 			if (arr.indexOf(el) !== i && acc.indexOf(el) < 0) acc.push(el); return acc
@@ -85,6 +85,48 @@ async function addTemplate(req, res) {
 	}
 }
 
+async function updateTemplateStatusById(req, res) {
+	try {
+		const { id } = req.auth
+		const { status } = req.body
+		const { tempId } = req.params
+
+		let err = {}, template = {}, obj = {}, admin = {}
+
+		const flag = typeof status === 'boolean' ? true : false
+		if (!flag)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.STATUS_IS_NOT_BOOLEAN);
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking if template exists
+		[err, template] = await utils.to(db.models.templates.findOne({ where: { id: tempId } }))
+		if (err) return response.errReturned(res, err)
+		if (!template)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NO_RECORD_FOUND);
+
+		//Updating status
+		[err, obj] = await utils.to(db.models.templates.update(
+			{ status },
+			{ where: { id: template.id } }
+		))
+		if (err) return response.errReturned(res, err)
+		if (obj[0] == 0)
+			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.STATUS_UPDATED_SUCCESSFULLY)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 module.exports = {
-	addTemplate
+	addTemplate,
+	updateTemplateStatusById
 }

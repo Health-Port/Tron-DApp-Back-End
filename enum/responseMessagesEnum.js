@@ -65,6 +65,8 @@ const ResponseMessagesEnum = {
     ROLE_ACTIVATED: 'Role is activated successfully.',
     SUCCESSFULLY_LOGGEDIN: 'User login successfully.',
     SUCCESS: 'Success',
+    STATUS_UPDATED_SUCCESSFULLY: 'Status updated successfully.',
+    STATUS_IS_NOT_BOOLEAN: 'Status must be boolean.',
     STATE_IS_INVALID: 'State is invalid.',
     SIGNUP_LIMIT: 'Sign Up limit has exceeded, come back tomorrow for registration',
     TOKEN_ERROR: 'Unable to generate token.',

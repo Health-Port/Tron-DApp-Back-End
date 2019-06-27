@@ -86,5 +86,6 @@ router.put('/attributeList/update/:listId', authorize.authenticateToken, attribu
 
 //Template Routes
 router.post('/template/add', authorize.authenticateToken, templateController.addTemplate)
+router.post('/template/update/status/:tempId', authorize.authenticateToken, templateController.updateTemplateStatusById)
 
 module.exports = router
