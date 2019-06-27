@@ -31,16 +31,16 @@ async function addTemplate(req, res) {
 			}
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
 
 		//Checking duplicate items in attribute list
-		const filterArray = templateFields.filter(x => x.attribute_list_id != '')
-		const input = filterArray.map(x => x.attribute_list_id)
-		const duplicates = input.reduce((acc, el, i, arr) => {
-			if (arr.indexOf(el) !== i && acc.indexOf(el) < 0) acc.push(el); return acc
-		}, [])
-		if (duplicates.length > 0)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.DUPLICATE_ITEMS, duplicates);
+		// const filterArray = templateFields.filter(x => x.attribute_list_id != '')
+		// const input = filterArray.map(x => x.attribute_list_id)
+		// const duplicates = input.reduce((acc, el, i, arr) => {
+		// 	if (arr.indexOf(el) !== i && acc.indexOf(el) < 0) acc.push(el); return acc
+		// }, [])
+		// if (duplicates.length > 0)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.DUPLICATE_ITEMS, duplicates);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -64,7 +64,7 @@ async function addTemplate(req, res) {
 				type: elem.type,
 				label: elem.label,
 				placeholder: elem.placeholder,
-				required: elem.required,
+				required: elem.required ? elem.required : false,
 				attribute_list_id: elem.attribute_list_id,
 				template_id: template.id
 			}
@@ -127,7 +127,62 @@ async function updateTemplateStatusById(req, res) {
 	}
 }
 
+async function getTemplates(req, res) {
+	try {
+		const { id } = req.auth
+		const { searchValue, status } = req.body
+		let { pageNumber, pageSize } = req.body
+
+		let err = {}, dbData = {}, admin = {}
+		const returnableData = {}
+
+		//Paging
+		pageSize = parseInt(pageSize)
+		pageNumber = parseInt(pageNumber)
+		if (!pageNumber) pageNumber = 0
+		if (!pageSize) pageSize = 10
+		const start = parseInt(pageNumber * pageSize)
+		const end = parseInt(start + pageSize);
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Quering db for data
+		[err, dbData] = await utils.to(db.query(`
+			Select id, name, status, description, createdAt 
+				From templates
+				Order by createdAt DESC`,
+			{
+				type: db.QueryTypes.SELECT
+			}))
+		if (err) return response.errReturned(res, err)
+
+		const filter = typeof status === 'boolean' ? 'filter' : ''
+
+		if (dbData) {
+			if (searchValue)
+				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
+			if (filter)
+				dbData = dbData.filter(x => x.status == status)
+
+			returnableData['count'] = dbData.length
+			const slicedData = dbData.slice(start, end)
+			returnableData['rows'] = slicedData
+		}
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 module.exports = {
 	addTemplate,
-	updateTemplateStatusById
+	updateTemplateStatusById,
+	getTemplates
 }
