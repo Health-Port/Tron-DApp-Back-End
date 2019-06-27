@@ -123,6 +123,33 @@ async function getAttributeLists(req, res) {
 	}
 }
 
+async function getAllAttributeLists(req, res) {
+	try {
+		const { id } = req.auth
+
+		let err = {}, dbData = {}, admin = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		[err, dbData] = await utils.to(db.models.attribute_lists.findAll(
+			{
+				order: [['createdAt', 'DESC']]
+			}))
+		if (err) return response.errReturned(res, err)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 async function getAttributeListById(req, res) {
 	try {
 		const { id } = req.auth
@@ -255,5 +282,6 @@ module.exports = {
 	addAttributeList,
 	getAttributeLists,
 	getAttributeListById,
-	updateAttributeListById
+	updateAttributeListById,
+	getAllAttributeLists
 }
