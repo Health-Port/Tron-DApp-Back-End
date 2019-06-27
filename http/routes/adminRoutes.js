@@ -7,6 +7,7 @@ const featureController = require('../controllers/feature/featureController')
 const roleController = require('../controllers/role/roleController')
 const loginHistoryController = require('../controllers/loginHistory/loginHistoryController')
 const attributeListController = require('../controllers/attributeList/attributeListController')
+const templateController = require('../controllers/template/templateController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -82,5 +83,8 @@ router.post('/attributeList/add', authorize.authenticateToken, attributeListCont
 router.post('/attributeList', authorize.authenticateToken, attributeListController.getAttributeLists)
 router.get('/attributeList/:attrId', authorize.authenticateToken, attributeListController.getAttributeListById)
 router.put('/attributeList/update/:listId', authorize.authenticateToken, attributeListController.updateAttributeListById)
+
+//Template Routes
+router.post('/template/add', authorize.authenticateToken, templateController.addTemplate)
 
 module.exports = router
