@@ -181,8 +181,77 @@ async function getTemplates(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
+async function getTemplateById(req, res) {
+	try {
+		const { id } = req.auth
+		const { tempId } = req.params
+
+		let err = {}, admin = {}, temp = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Querying db for list records
+		[err, temp] = await utils.to(db.query(`
+		Select t.id, t.name, t.description, t.status, tf.type, 
+		tf.label, tf.placeholder, tf.required, tf.attribute_list_id
+		From templates t 
+		inner join template_fields tf ON t.id = tf.template_id
+		Where t.id = :id`,
+			{
+				replacements: { id: tempId },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (!temp || temp.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//maping data and columns
+		const data = {
+			id: temp[0].id,
+			name: temp[0].name,
+			description: temp[0].description,
+			fields: temp.map(elem => (
+				{
+					type: elem.type,
+					label: elem.label,
+					placeholder: elem.placeholder,
+					required: elem.required,
+					attributeList: elem.attribute_list_id ?
+						elem.attribute_list_id
+						: ''
+				}
+			))
+		}
+		for (let i = 0; i < data.fields.length; i++) {
+			if (data.fields[i].attributeList) {
+				data.fields[i].attributeList = await getAttributeListValue(data.fields[i].attributeList)
+			}
+		}
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+async function getAttributeListValue(id) {
+	let err = {}, listValues = {};
+	[err, listValues] = await utils.to(db.models.attribute_list_values.findAll({
+		where: { list_id: id },
+		attributes: ['id', 'label', 'value'],
+	}))
+	console.log(err)
+	return listValues
+}
 module.exports = {
 	addTemplate,
 	updateTemplateStatusById,
-	getTemplates
+	getTemplates,
+	getTemplateById
 }
