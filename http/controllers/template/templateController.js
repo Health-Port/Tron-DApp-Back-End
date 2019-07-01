@@ -9,7 +9,7 @@ async function addTemplate(req, res) {
 	try {
 		const { id } = req.auth
 		const { name, description } = req.body
-		let { templateFields } = req.body
+		let { templateFields, accessRights } = req.body
 
 		let err = {}, template = {}, tempFields = {}, admin = {}
 
@@ -76,6 +76,19 @@ async function addTemplate(req, res) {
 		if (tempFields == null || !tempFields)
 			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
+		//
+		accessRights = accessRights.map(elem => (
+			{
+				view: elem.view,
+				edit: elem.edit,
+				update: elem.update,
+				share_via_email: elem.share_via_email,
+				share: elem.share,
+				template_id: template.id,
+				system_role_id: elem.systemRoleId
+			}
+		))
+		console.log(accessRights)
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_ADDED_SUCCESSFULLY)
 
