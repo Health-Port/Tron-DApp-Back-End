@@ -283,7 +283,7 @@ async function getTemplateById(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 		if (!temp || temp.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_ACCESS_RIGHTS_FOUND)
 		data.accessRights = temp
 
 		//Returing successful response
