@@ -85,7 +85,7 @@ async function getAttributeLists(req, res) {
 	try {
 		const { id } = req.auth
 		let { pageNumber, pageSize } = req.body
-		const { searchValue } = req.body
+		let { searchValue } = req.body
 
 		let err = {}, dbData = {}, admin = {}
 
@@ -100,7 +100,10 @@ async function getAttributeLists(req, res) {
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
 		if (err) return response.errReturned(res, err)
 		if (!admin || admin.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+		if (searchValue == undefined)
+			searchValue = '';
 
 		[err, dbData] = await utils.to(db.models.attribute_lists.findAndCountAll(
 			{
