@@ -268,7 +268,23 @@ async function getTemplateById(req, res) {
 						: ''
 				}
 			))
-		}
+		};
+		// Getting access rights against template id
+		[err, temp] = await utils.to(db.query(`
+		Select s.id, s.view, s.edit, s.update, s.share_via_email, s.share, 
+			r.name as roleName
+			From system_role_rights s 
+			Inner join templates t ON s.template_id = t.id
+			Inner join system_roles r ON r.id = s.system_role_id
+			Where t.id = :id`,
+			{
+				replacements: { id: tempId },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (!temp || temp.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+		data.accessRights = temp
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
