@@ -236,7 +236,7 @@ async function getTemplateById(req, res) {
 		[err, temp] = await utils.to(db.query(`
 		Select t.id, t.name, t.description, t.status, tf.type, 
 			tf.label, tf.placeholder, tf.required, tf.attribute_list_id, 
-			al.name as attributeListName
+			al.name as attributeListName 
 			From templates t 
 			Inner join template_fields tf ON t.id = tf.template_id
 			left join attribute_lists al ON al.id = tf.attribute_list_id
@@ -299,7 +299,7 @@ async function updateTemplateById(req, res) {
 	try {
 		const { id } = req.auth
 		const { name, description } = req.body
-		let { templateFields } = req.body
+		let { templateFields, accessRights } = req.body
 		const { tempId } = req.params
 
 		let err = {}, admin = {}, temp = {}, obj = {}, tempFields = {}
@@ -313,6 +313,9 @@ async function updateTemplateById(req, res) {
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
+		if (!accessRights || accessRights.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
+
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
@@ -322,7 +325,30 @@ async function updateTemplateById(req, res) {
 			}
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+
+		flag = false
+		accessRights.forEach(element => {
+			if (!(element.hasOwnProperty('systemRoleId'))) {
+				flag = true
+			} else if (!(element.systemRoleId)) {
+				flag = true
+			}
+		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+
+		//Checking attribute list id for dropdowns
+		flag = false
+		const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'dropdown')
+		filterArray.forEach(element => {
+			if (!(element.hasOwnProperty('attribute_list_id')))
+				flag = true
+			else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
+				flag = true
+		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
 
 
 		//Verifying user authenticity
@@ -380,6 +406,31 @@ async function updateTemplateById(req, res) {
 
 		//Saving attributes
 		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(templateFields))
+		if (err) return response.errReturned(res, err)
+		if (tempFields == null || !tempFields)
+			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Mapping access rights
+		accessRights = accessRights.map(elem => (
+			{
+				id: elem.id,
+				view: elem.view,
+				edit: elem.edit,
+				update: elem.update,
+				share_via_email: elem.share_via_email,
+				share: elem.share,
+				template_id: parseInt(tempId),
+				system_role_id: elem.systemRoleId
+			}
+		));
+
+		//Updating rights access
+		[err, tempFields] = await utils.to(db.models.system_role_rights.bulkCreate(
+			accessRights, {
+				updateOnDuplicate: [
+					'view', 'edit', 'update', 'share_via_email', 'share', 'template_id', 'system_role_id'
+				]
+			}))
 		if (err) return response.errReturned(res, err)
 		if (tempFields == null || !tempFields)
 			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
