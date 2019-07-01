@@ -11,7 +11,7 @@ async function addTemplate(req, res) {
 		const { name, description } = req.body
 		let { templateFields, accessRights } = req.body
 
-		let err = {}, template = {}, tempFields = {}, admin = {}
+		let err = {}, template = {}, tempFields = {}, admin = {}, rights = {}
 
 		//Name validations
 		if (!name)
@@ -22,6 +22,9 @@ async function addTemplate(req, res) {
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
+		if (!accessRights || accessRights.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
+
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
@@ -31,16 +34,30 @@ async function addTemplate(req, res) {
 			}
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
-		//Checking duplicate items in attribute list
-		// const filterArray = templateFields.filter(x => x.attribute_list_id != '')
-		// const input = filterArray.map(x => x.attribute_list_id)
-		// const duplicates = input.reduce((acc, el, i, arr) => {
-		// 	if (arr.indexOf(el) !== i && acc.indexOf(el) < 0) acc.push(el); return acc
-		// }, [])
-		// if (duplicates.length > 0)
-		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.DUPLICATE_ITEMS, duplicates);
+		flag = false
+		accessRights.forEach(element => {
+			if (!(element.hasOwnProperty('systemRoleId'))) {
+				flag = true
+			} else if (!(element.systemRoleId)) {
+				flag = true
+			}
+		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+
+		//Checking attribute list id for dropdowns
+		flag = false
+		const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'dropdown')
+		filterArray.forEach(element => {
+			if (!(element.hasOwnProperty('attribute_list_id')))
+				flag = true
+			else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
+				flag = true
+		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -59,6 +76,7 @@ async function addTemplate(req, res) {
 		if (err) return response.errReturned(res, err)
 		if (!template) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
+		//Maping template field columns
 		templateFields = templateFields.map(elem => (
 			{
 				type: elem.type,
@@ -76,7 +94,7 @@ async function addTemplate(req, res) {
 		if (tempFields == null || !tempFields)
 			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
-		//
+		//Mapping access rights
 		accessRights = accessRights.map(elem => (
 			{
 				view: elem.view,
@@ -87,8 +105,14 @@ async function addTemplate(req, res) {
 				template_id: template.id,
 				system_role_id: elem.systemRoleId
 			}
-		))
-		console.log(accessRights)
+		));
+
+		//Saving rights
+		[err, rights] = await utils.to(db.models.system_role_rights.bulkCreate(accessRights))
+		if (err) return response.errReturned(res, err)
+		if (rights == null || !rights)
+			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_ADDED_SUCCESSFULLY)
 

@@ -1,6 +1,8 @@
 const ResponseMessagesEnum = {
     API_ERROR: 'Server is down, please try again later.',
     ATTRIBUTE_IS_REQUIRED: 'Atleast one attribute is required to add new list.',
+    ATTRIBUTE_LIST_ID_REQUIRED: 'Attribute list id is required for dropdowns.',
+    ACCESS_RIGHTS_REQUIRED: 'Access rights are required.',
     ALREADY_VERIFIED: 'Account already verified.',
     ACCESS_DENIED: 'Access denied. No token provided.',
     ACCOUNT_IS_VERIFIED: 'Your account is verified successfully.',
@@ -66,6 +68,7 @@ const ResponseMessagesEnum = {
     ROLE_ACTIVATED: 'Role is activated successfully.',
     SUCCESSFULLY_LOGGEDIN: 'User login successfully.',
     SUCCESS: 'Success',
+    SYSTEM_ROLE_ID_REQUIRED: 'System role id is required.',
     STATUS_UPDATED_SUCCESSFULLY: 'Status updated successfully.',
     STATUS_IS_NOT_BOOLEAN: 'Status must be boolean.',
     STATE_IS_INVALID: 'State is invalid.',
