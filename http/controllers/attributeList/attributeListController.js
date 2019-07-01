@@ -2,6 +2,7 @@ const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
+const Sequelize = require('sequelize')
 
 const db = global.healthportDb
 
@@ -107,7 +108,7 @@ async function getAttributeLists(req, res) {
 
 		[err, dbData] = await utils.to(db.models.attribute_lists.findAndCountAll(
 			{
-				where: { name: { $like: `%${searchValue}%` } },
+				where: { name: { [Sequelize.Op.like]: `%${searchValue}%` } },
 				order: [['createdAt', 'DESC']],
 				limit: pageSize,
 				offset: start
