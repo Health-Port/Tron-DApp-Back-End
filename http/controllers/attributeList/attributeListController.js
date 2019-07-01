@@ -100,14 +100,11 @@ async function getAttributeLists(req, res) {
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
 		if (err) return response.errReturned(res, err)
 		if (!admin || admin.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
-		const searchObj = {}
-		if (searchValue)
-			searchObj.name = searchValue;
 		[err, dbData] = await utils.to(db.models.attribute_lists.findAndCountAll(
 			{
-				where: searchObj,
+				where: { name: { $like: `%${searchValue}%` } },
 				order: [['createdAt', 'DESC']],
 				limit: pageSize,
 				offset: start

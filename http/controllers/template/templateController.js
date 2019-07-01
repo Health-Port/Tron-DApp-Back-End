@@ -198,10 +198,12 @@ async function getTemplateById(req, res) {
 		//Querying db for list records
 		[err, temp] = await utils.to(db.query(`
 		Select t.id, t.name, t.description, t.status, tf.type, 
-		tf.label, tf.placeholder, tf.required, tf.attribute_list_id
-		From templates t 
-		inner join template_fields tf ON t.id = tf.template_id
-		Where t.id = :id`,
+			tf.label, tf.placeholder, tf.required, tf.attribute_list_id, 
+			al.name as attributeListName
+			From templates t 
+			Inner join template_fields tf ON t.id = tf.template_id
+			left join attribute_lists al ON al.id = tf.attribute_list_id
+			Where t.id = :id`,
 			{
 				replacements: { id: tempId },
 				type: db.QueryTypes.SELECT,
@@ -221,17 +223,16 @@ async function getTemplateById(req, res) {
 					label: elem.label,
 					placeholder: elem.placeholder,
 					required: elem.required,
-					attributeList: elem.attribute_list_id ?
+					attributeListId: elem.attribute_list_id ?
 						elem.attribute_list_id
+						: '',
+					attributeListName: elem.attribute_list_id ?
+						elem.attributeListName
 						: ''
 				}
 			))
 		}
-		for (let i = 0; i < data.fields.length; i++) {
-			if (data.fields[i].attributeList) {
-				data.fields[i].attributeList = await getAttributeListValue(data.fields[i].attributeList)
-			}
-		}
+
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
 
@@ -240,18 +241,109 @@ async function getTemplateById(req, res) {
 		return response.errReturned(res, error)
 	}
 }
-async function getAttributeListValue(id) {
-	let err = {}, listValues = {};
-	[err, listValues] = await utils.to(db.models.attribute_list_values.findAll({
-		where: { list_id: id },
-		attributes: ['id', 'label', 'value'],
-	}))
-	console.log(err)
-	return listValues
+
+async function updateTemplateById(req, res) {
+	try {
+		const { id } = req.auth
+		const { name, description } = req.body
+		let { templateFields } = req.body
+		const { tempId } = req.params
+
+		let err = {}, admin = {}, temp = {}, obj = {}, tempFields = {}
+
+		//Name validations
+		if (!name)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_IS_REQUIRED)
+		if (name.length >= 30)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHARACTER_COUNT_ERROR)
+
+		if (!templateFields || templateFields.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
+
+		let flag = false
+		templateFields.forEach(element => {
+			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
+				flag = true
+			} else if (!(element.label && element.type)) {
+				flag = true
+			}
+		})
+		if (flag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
+
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting template from db
+		[err, temp] = await utils.to(db.models.templates.findOne({ where: { id: tempId } }))
+		if (err) return response.errReturned(res, err)
+		if (!temp || temp.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting template from db
+		[err, obj] = await utils.to(db.models.templates.findOne({ where: { name } }))
+		if (err) return response.errReturned(res, err)
+
+		if (obj) {
+			if (temp.id == obj.id) {
+				[err, obj] = await utils.to(db.models.templates.update(
+					{ name, description },
+					{ where: { id: temp.id } }
+				))
+				if (err) return response.errReturned(res, err)
+				if (obj[0] == 0)
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			} else {
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_ALREADY_EXISTS)
+			}
+		} else {
+			[err, obj] = await utils.to(db.models.templates.update(
+				{ name, description },
+				{ where: { id: temp.id } }
+			))
+			if (err) return response.errReturned(res, err)
+			if (obj[0] == 0)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		}
+
+		//Deleting existing records
+		[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
+		if (err) return response.errReturned(res, err)
+
+		templateFields = templateFields.map(elem => (
+			{
+				type: elem.type,
+				label: elem.label,
+				placeholder: elem.placeholder,
+				required: elem.required ? elem.required : false,
+				attribute_list_id: elem.attribute_list_id,
+				template_id: tempId
+			}
+		));
+
+		//Saving attributes
+		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(templateFields))
+		if (err) return response.errReturned(res, err)
+		if (tempFields == null || !tempFields)
+			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_ADDED_SUCCESSFULLY)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
 }
+
 module.exports = {
 	addTemplate,
 	updateTemplateStatusById,
 	getTemplates,
-	getTemplateById
+	getTemplateById,
+	updateTemplateById
 }
