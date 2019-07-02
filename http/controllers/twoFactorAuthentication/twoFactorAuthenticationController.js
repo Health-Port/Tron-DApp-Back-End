@@ -59,7 +59,7 @@ async function requestTwoFactorAuthentication(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 		if (obj[0].fieldCount != 0)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		return response.sendResponse(
 			res,
@@ -168,7 +168,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				}))
 			if (err) return response.errReturned(res, err)
 			if (update[0].fieldCount != 0)
-				return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 			if (req.baseUrl === '/admin') {
 				data = {
@@ -216,7 +216,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 				}))
 			if (err) return response.errReturned(res, err)
 			if (update[0].fieldCount != 0)
-				return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 			if (req.baseUrl === '/admin') {
 				data = {
