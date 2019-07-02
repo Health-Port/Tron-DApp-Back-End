@@ -71,7 +71,7 @@ async function addAttributeList(req, res) {
 		[err, listValue] = await utils.to(db.models.attribute_list_values.bulkCreate(listAttributes))
 		if (err) return response.errReturned(res, err)
 		if (listValue == null || !listValue)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.LIST_ADDED_SUCCESSFULLY)
@@ -207,7 +207,7 @@ async function updateAttributeListById(req, res) {
 		const { listName } = req.body
 		let { listAttributes } = req.body
 
-		let err = {}, listValue = {}, admin = {}, obj = {}
+		let err = {}, listValue = {}, admin = {}, obj = {}, temp = {}
 
 		//Name validations
 		if (!listName)
@@ -243,16 +243,40 @@ async function updateAttributeListById(req, res) {
 		if (!admin || admin.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
-
-		//Updating list name
-		[err, obj] = await utils.to(db.models.attribute_lists.update(
-			{ name: listName },
-			{ where: { id: listId } }
-		))
+		//Getting list from db by id
+		[err, temp] = await utils.to(db.models.attribute_lists.findOne({ where: { id: listId } }))
 		if (err) return response.errReturned(res, err)
-		if (obj[0] == 0)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (!temp || temp.length == 0)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
+		//Getting list from db by name
+		[err, obj] = await utils.to(db.models.attribute_lists.findOne({ where: { name: listName } }))
+		if (err) return response.errReturned(res, err)
+
+		//Checking if name already exists or not
+		if (obj) {
+			if (temp.id == obj.id) {
+				[err, obj] = await utils.to(db.models.attribute_lists.update(
+					{ name: listName },
+					{ where: { id: temp.id } }
+				))
+				if (err) return response.errReturned(res, err)
+				if (obj[0] == 0)
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			} else {
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_ALREADY_EXISTS)
+			}
+		} else {
+			[err, obj] = await utils.to(db.models.attribute_lists.update(
+				{ name: listName },
+				{ where: { id: temp.id } }
+			))
+			if (err) return response.errReturned(res, err)
+			if (obj[0] == 0)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		}
+
+		//Mapping object
 		listAttributes = listAttributes.map(elem => (
 			{
 				id: elem.attrId ? elem.attrId : '',
@@ -268,7 +292,7 @@ async function updateAttributeListById(req, res) {
 		))
 		if (err) return response.errReturned(res, err)
 		if (listValue == null || !listValue)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.LIST_UPDATED_SUCCESSFULLY)

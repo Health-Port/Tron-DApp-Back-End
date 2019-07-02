@@ -92,7 +92,7 @@ async function addTemplate(req, res) {
 		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(templateFields))
 		if (err) return response.errReturned(res, err)
 		if (tempFields == null || !tempFields)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Mapping access rights
 		accessRights = accessRights.map(elem => (
@@ -111,7 +111,7 @@ async function addTemplate(req, res) {
 		[err, rights] = await utils.to(db.models.system_role_rights.bulkCreate(accessRights))
 		if (err) return response.errReturned(res, err)
 		if (rights == null || !rights)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_ADDED_SUCCESSFULLY)
@@ -153,7 +153,7 @@ async function updateTemplateStatusById(req, res) {
 		))
 		if (err) return response.errReturned(res, err)
 		if (obj[0] == 0)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.STATUS_UPDATED_SUCCESSFULLY)
@@ -357,13 +357,13 @@ async function updateTemplateById(req, res) {
 		if (!admin || admin.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
-		//Getting template from db
+		//Getting template from db by id
 		[err, temp] = await utils.to(db.models.templates.findOne({ where: { id: tempId } }))
 		if (err) return response.errReturned(res, err)
 		if (!temp || temp.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
-		//Getting template from db
+		//Getting template from db by name
 		[err, obj] = await utils.to(db.models.templates.findOne({ where: { name } }))
 		if (err) return response.errReturned(res, err)
 
@@ -408,7 +408,7 @@ async function updateTemplateById(req, res) {
 		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(templateFields))
 		if (err) return response.errReturned(res, err)
 		if (tempFields == null || !tempFields)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Mapping access rights
 		accessRights = accessRights.map(elem => (
@@ -433,7 +433,7 @@ async function updateTemplateById(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 		if (tempFields == null || !tempFields)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_ADDED_SUCCESSFULLY)
