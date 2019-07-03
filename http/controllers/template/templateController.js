@@ -25,27 +25,40 @@ async function addTemplate(req, res) {
 		if (!accessRights || accessRights.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
 
+		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
+		let statusFlag = false
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
 				flag = true
 			} else if (!(element.label && element.type)) {
 				flag = true
+			}else if(!utils.isBoolean(element.required)){
+				statusFlag = true
 			}
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
+		if (statusFlag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
+
+		//accessRights' Boolean fields must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		flag = false
+		statusFlag = false
 		accessRights.forEach(element => {
 			if (!(element.hasOwnProperty('systemRoleId'))) {
 				flag = true
 			} else if (!(element.systemRoleId)) {
 				flag = true
+			} else if(!(utils.isBoolean(element.view) && utils.isBoolean(element.edit) && utils.isBoolean(element.update) && utils.isBoolean(element.share_via_email) && utils.isBoolean(element.share))){
+				statusFlag=true
 			}
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+		if (statusFlag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
 
 		//Checking attribute list id for dropdowns
 		flag = false
@@ -309,20 +322,26 @@ async function updateTemplateById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_IS_REQUIRED)
 		if (name.length >= 30)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHARACTER_COUNT_ERROR)
-
+		
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
-
+		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
+		let statusFlag = false
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
 				flag = true
 			} else if (!(element.label && element.type)) {
 				flag = true
+			}else if(!utils.isBoolean(element.required)){
+				statusFlag=true
 			}
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+		
+		if (statusFlag)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED);
 
 
 		//Verifying user authenticity
