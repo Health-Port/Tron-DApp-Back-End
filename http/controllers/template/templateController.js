@@ -385,7 +385,9 @@ async function updateTemplateById(req, res) {
 			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_ADDED_SUCCESSFULLY)
+		//response message changed from temp-added-successfully to temp-updated-successful"
+		//HP-540 - Zaigham Javed - 03/july/2019
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_UPDATED_SUCCESSFULLY)
 
 	} catch (error) {
 		console.log(error)
