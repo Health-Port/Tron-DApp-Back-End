@@ -244,7 +244,7 @@ async function updateRoleById(req, res) {
 
 		if (features.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FEATURE_IS_REQUIRED)
-			
+
 		let flag = false
 		features.forEach(element => {
 			if (!(element.hasOwnProperty('id') && element.hasOwnProperty('parentId'))) {
@@ -302,7 +302,8 @@ async function updateRoleById(req, res) {
 			{ where: { id: role.id } }
 		))
 		if (err) return response.errReturned(res, err)
-		if (obj[0] == 0) return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+		if (obj[0] == 0)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
 
 		//Deleting existing permissions
 		[err, obj] = await utils.to(db.models.permissions.destroy({ where: { role_id: role.id } }))
@@ -367,7 +368,7 @@ async function updateRoleStatusById(req, res) {
 		))
 		if (err) return response.errReturned(res, err)
 		if (obj[0] == 0)
-			return utils.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		if (status)
