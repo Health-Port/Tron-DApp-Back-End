@@ -467,7 +467,7 @@ async function getUsers(req, res) {
         let err = {}, dbData, fromDate, toDate
         const returnableData = {}
 
-        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+        if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
         }
         if (obj.from && obj.to) {
@@ -619,7 +619,7 @@ async function listTransactions(req, res) {
         let err = {}, fromDate, toDate, dbData = {}
         const returnableData = {}
 
-        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+        if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
         }
         if (obj.from && obj.to) {
@@ -678,6 +678,7 @@ async function listTransactions(req, res) {
             if (dbData.length > 0) {
                 for (let i = 0; i < dbData.length; i++) {
                     delete dbData[i].user_id
+                    dbData[i].address = utils.decrypt(dbData[i].address)
                 }
             }
 
@@ -755,7 +756,7 @@ async function getLoginHistories(req, res) {
         let err = {}, fromDate, toDate, dbData
         const returnableData = {}
 
-        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+        if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
         }
         if (obj.from && obj.to) {
