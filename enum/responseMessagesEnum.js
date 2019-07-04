@@ -13,6 +13,7 @@ const ResponseMessagesEnum = {
     BOTH_ID_PARENTID_REQUIRED: 'Both id and parent id are required.',
     BOTH_LABEL_VALUE_REQUIRED: 'Both label and values are required in attribute list.',
     BOTH_LABEL_TYPE_REQUIRED: 'Both label and types are required in templete fields.',
+    BOOLEAN_VALUE_REQUIRED: 'Only boolean value is allowed.',
     BANDWIDTH_IS_LOW: 'You currently have low bandwidth on TRON Network. Please wait for a few minutes and try again.',
     BANDWIDTH_IS_LOW_RECEIVER: 'Please wait bandwidth to be allocated to receiver address. Try again after 5 minutes.',
     COUNTRY_INTEGER: 'Country should be integer.',
