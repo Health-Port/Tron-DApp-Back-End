@@ -207,7 +207,7 @@ async function updateAttributeListById(req, res) {
 		const { listName } = req.body
 		let { listAttributes } = req.body
 
-		let err = {}, listValue = {}, admin = {}, obj = {}, temp = {}
+		let err = {}, listValue = {}, admin = {}, obj = {}, temp = {}, objs = {}
 
 		//Name validations
 		if (!listName)
@@ -285,6 +285,32 @@ async function updateAttributeListById(req, res) {
 				list_id: parseInt(listId),
 			}
 		));
+			
+		//attribute id of another list was updated - only the attribute id of spacific list is now updated
+		//HP-554 - Zaigham javed
+		//Getting list from db by list id
+		[err, objs] = await utils.to(db.models.attribute_list_values.findAll({ where: { list_id: listId } }))
+		if (err) return response.errReturned(res, err)
+		for (let i = 0; i < listAttributes.length; i++) {
+			if (listAttributes[i].id != '') {
+				flag=false
+				for (let j = 0; j < objs.length; j++) {
+					if (listAttributes[i].id == objs[j].id) {
+						flag=true
+						break
+					}
+				}
+				if(!flag){
+					break
+				}
+			}
+			
+		}
+
+		if (!flag) {
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.WRONG_ID_FOR_THIS_LIST)
+		}
+
 
 		//Saving or updating attributes
 		[err, listValue] = await utils.to(db.models.attribute_list_values.bulkCreate(
