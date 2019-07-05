@@ -308,7 +308,7 @@ async function updateAttributeListById(req, res) {
 		}
 
 		if (!flag) {
-			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.WRONG_ID_FOR_THIS_LIST)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.WRONG_ID_FOR_THIS_LIST)
 		}
 
 
