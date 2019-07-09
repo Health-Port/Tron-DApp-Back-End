@@ -33,15 +33,16 @@ async function addTemplate(req, res) {
 				flag = true
 			} else if (!(element.label && element.type)) {
 				flag = true
-			}else if(!utils.isBoolean(element.required)){
-				statusFlag = true
 			}
+			// else if(!utils.isBoolean(element.required)){
+			// 	statusFlag = true
+			// }
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
-		if (statusFlag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
+		// if (statusFlag)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
 
 		//accessRights' Boolean fields must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		flag = false
@@ -51,26 +52,26 @@ async function addTemplate(req, res) {
 				flag = true
 			} else if (!(element.systemRoleId)) {
 				flag = true
-			} else if(!(utils.isBoolean(element.view) && utils.isBoolean(element.edit) && utils.isBoolean(element.update) && utils.isBoolean(element.share_via_email) && utils.isBoolean(element.share))){
-				statusFlag=true
+			} else if (!(utils.isBoolean(element.view) && utils.isBoolean(element.edit) && utils.isBoolean(element.update) && utils.isBoolean(element.share_via_email) && utils.isBoolean(element.share))) {
+				statusFlag = true
 			}
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 		if (statusFlag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED);
 
 		//Checking attribute list id for dropdowns
-		flag = false
-		const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'dropdown')
-		filterArray.forEach(element => {
-			if (!(element.hasOwnProperty('attribute_list_id')))
-				flag = true
-			else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
-				flag = true
-		})
-		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
+		// flag = false
+		// const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'select')
+		// filterArray.forEach(element => {
+		// 	if (!(element.hasOwnProperty('attribute_list_id')))
+		// 		flag = true
+		// 	else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
+		// 		flag = true
+		// })
+		// if (flag)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -247,7 +248,7 @@ async function getTemplateById(req, res) {
 
 		//Querying db for list records
 		[err, temp] = await utils.to(db.query(`
-		Select t.id, t.name, t.description, t.status, tf.type, 
+		Select t.id, t.name, t.description, t.status, tf.id as tfId, tf.type, 
 			tf.label, tf.placeholder, tf.required, tf.attribute_list_id, 
 			al.name as attributeListName 
 			From templates t 
@@ -269,6 +270,7 @@ async function getTemplateById(req, res) {
 			description: temp[0].description,
 			fields: temp.map(elem => (
 				{
+					Id: elem.tfId.toString(),
 					type: elem.type,
 					label: elem.label,
 					placeholder: elem.placeholder,
@@ -284,7 +286,7 @@ async function getTemplateById(req, res) {
 		};
 		// Getting access rights against template id
 		[err, temp] = await utils.to(db.query(`
-		Select s.id, s.view, s.edit, s.update, s.share_via_email, s.share, 
+		Select s.id as systemRoleId, s.view, s.edit, s.update, s.share_via_email, s.share, 
 			r.name as roleName
 			From system_role_rights s 
 			Inner join templates t ON s.template_id = t.id
@@ -322,9 +324,10 @@ async function updateTemplateById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_IS_REQUIRED)
 		if (name.length >= 30)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHARACTER_COUNT_ERROR)
-		
+
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
+
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		let statusFlag = false
 		let flag = false
@@ -333,25 +336,11 @@ async function updateTemplateById(req, res) {
 				flag = true
 			} else if (!(element.label && element.type)) {
 				flag = true
-			}else if(!utils.isBoolean(element.required)){
-				statusFlag=true
 			}
-		})
-		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
-
-		if (statusFlag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
-
-		
-		statusFlag = false
-		flag = false
-		accessRights.forEach(element => {
-			if (!(element.hasOwnProperty('systemRoleId'))) {
-				flag = true
-			} else if (!(element.systemRoleId)) {
-				flag = true
-			} else if (!(utils.isBoolean(element.view) && utils.isBoolean(element.edit) && utils.isBoolean(element.update) && utils.isBoolean(element.share_via_email) && utils.isBoolean(element.share))){
+			// else if (!utils.isBoolean(element.required)) {
+			// 	statusFlag = true
+			// }
+			else if (!(element.hasOwnProperty('id'))) {
 				statusFlag = true
 			}
 		})
@@ -359,19 +348,42 @@ async function updateTemplateById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
 		if (statusFlag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
 
-		//Checking attribute list id for dropdowns
+
+		statusFlag = false
 		flag = false
-		const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'dropdown')
-		filterArray.forEach(element => {
-			if (!(element.hasOwnProperty('attribute_list_id')))
+		accessRights.forEach(element => {
+			if (!(element.hasOwnProperty('systemRoleId'))) {
 				flag = true
-			else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
+			} else if (!(element.systemRoleId)) {
 				flag = true
+			}
+			// else if (!(utils.isBoolean(element.view) &&
+			// 	utils.isBoolean(element.edit) &&
+			// 	utils.isBoolean(element.update) &&
+			// 	utils.isBoolean(element.share_via_email) &&
+			// 	utils.isBoolean(element.share))) {
+			// 	statusFlag = true
+			// }
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
+
+		// if (statusFlag)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
+
+		//Checking attribute list id for dropdowns
+		// flag = false
+		// const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'select')
+		// filterArray.forEach(element => {
+		// 	if (!(element.hasOwnProperty('attribute_list_id')))
+		// 		flag = true
+		// 	else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
+		// 		flag = true
+		// })
+		// if (flag)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
 
 
 		//Verifying user authenticity
@@ -413,11 +425,12 @@ async function updateTemplateById(req, res) {
 		}
 
 		//Deleting existing records
-		[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
-		if (err) return response.errReturned(res, err)
+		//[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
+		//if (err) return response.errReturned(res, err)
 
 		templateFields = templateFields.map(elem => (
 			{
+				id: elem.id,
 				type: elem.type,
 				label: elem.label,
 				placeholder: elem.placeholder,
@@ -427,8 +440,13 @@ async function updateTemplateById(req, res) {
 			}
 		));
 
-		//Saving attributes
-		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(templateFields))
+		//Saving/updating attributes
+		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(
+			templateFields, {
+				updateOnDuplicate: [
+					'type', 'label', 'placeholder', 'required', 'attribute_list_id', 'template_id'
+				]
+			}))
 		if (err) return response.errReturned(res, err)
 		if (tempFields == null || !tempFields)
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
