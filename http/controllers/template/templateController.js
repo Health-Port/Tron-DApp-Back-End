@@ -97,7 +97,7 @@ async function addTemplate(req, res) {
 				label: elem.label,
 				placeholder: elem.placeholder,
 				required: elem.required ? elem.required : false,
-				attribute_list_id: elem.attribute_list_id,
+				attribute_list_id: elem.dropdown ? parseInt(elem.dropdown) : '',
 				template_id: template.id
 			}
 		));
@@ -270,7 +270,7 @@ async function getTemplateById(req, res) {
 			description: temp[0].description,
 			fields: temp.map(elem => (
 				{
-					Id: elem.tfId.toString(),
+					id: elem.tfId.toString(),
 					type: elem.type,
 					label: elem.label,
 					placeholder: elem.placeholder,
@@ -329,7 +329,7 @@ async function updateTemplateById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
-		let statusFlag = false
+		//let statusFlag = false
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
@@ -340,18 +340,17 @@ async function updateTemplateById(req, res) {
 			// else if (!utils.isBoolean(element.required)) {
 			// 	statusFlag = true
 			// }
-			else if (!(element.hasOwnProperty('id'))) {
-				statusFlag = true
-			}
+			//else if (!(element.hasOwnProperty('id'))) {
+				//statusFlag = true
+			//}
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
-		if (statusFlag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
+		//if (statusFlag)
+			//return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
 
-
-		statusFlag = false
+		//statusFlag = false
 		flag = false
 		accessRights.forEach(element => {
 			if (!(element.hasOwnProperty('systemRoleId'))) {
@@ -425,8 +424,8 @@ async function updateTemplateById(req, res) {
 		}
 
 		//Deleting existing records
-		//[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
-		//if (err) return response.errReturned(res, err)
+		[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
+		if (err) return response.errReturned(res, err)
 
 		templateFields = templateFields.map(elem => (
 			{
@@ -435,7 +434,7 @@ async function updateTemplateById(req, res) {
 				label: elem.label,
 				placeholder: elem.placeholder,
 				required: elem.required ? elem.required : false,
-				attribute_list_id: elem.attribute_list_id,
+				attribute_list_id: elem.dropdown ? parseInt(elem.dropdown) : '',
 				template_id: tempId
 			}
 		));
@@ -454,14 +453,14 @@ async function updateTemplateById(req, res) {
 		//Mapping access rights
 		accessRights = accessRights.map(elem => (
 			{
-				id: elem.id,
+				id: elem.systemRoleId,
 				view: elem.view,
 				edit: elem.edit,
 				update: elem.update,
 				share_via_email: elem.share_via_email,
 				share: elem.share,
 				template_id: parseInt(tempId),
-				system_role_id: elem.systemRoleId
+				//system_role_id: elem.systemRoleId
 			}
 		));
 
@@ -469,7 +468,7 @@ async function updateTemplateById(req, res) {
 		[err, tempFields] = await utils.to(db.models.system_role_rights.bulkCreate(
 			accessRights, {
 				updateOnDuplicate: [
-					'view', 'edit', 'update', 'share_via_email', 'share', 'template_id', 'system_role_id'
+					'view', 'edit', 'update', 'share_via_email', 'share', 'template_id'
 				]
 			}))
 		if (err) return response.errReturned(res, err)
