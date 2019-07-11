@@ -424,12 +424,12 @@ async function updateTemplateById(req, res) {
 		}
 
 		//Deleting existing records
-		[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
-		if (err) return response.errReturned(res, err)
+		//[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
+		//if (err) return response.errReturned(res, err)
 
 		templateFields = templateFields.map(elem => (
 			{
-				id: elem.id,
+				id: parseInt(elem.id),
 				type: elem.type,
 				label: elem.label,
 				placeholder: elem.placeholder,
