@@ -429,7 +429,7 @@ async function updateTemplateById(req, res) {
 
 		templateFields = templateFields.map(elem => (
 			{
-				id: parseInt(elem.id),
+				id: elem.id ? parseInt(elem.id) : '',
 				type: elem.type,
 				label: elem.label.replace(/&nbsp;/g, ''),
 				placeholder: elem.placeholder,
