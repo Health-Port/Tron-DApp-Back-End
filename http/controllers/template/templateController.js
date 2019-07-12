@@ -431,7 +431,7 @@ async function updateTemplateById(req, res) {
 			{
 				id: parseInt(elem.id),
 				type: elem.type,
-				label: elem.label,
+				label: elem.label.replace(/&nbsp;/g, ''),
 				placeholder: elem.placeholder,
 				required: elem.required ? elem.required : false,
 				attribute_list_id: elem.dropdown ? parseInt(elem.dropdown) : '',
