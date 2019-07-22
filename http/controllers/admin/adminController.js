@@ -467,7 +467,7 @@ async function getUsers(req, res) {
         let err = {}, dbData, fromDate, toDate
         const returnableData = {}
 
-        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+        if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
         }
         if (obj.from && obj.to) {
@@ -619,7 +619,7 @@ async function listTransactions(req, res) {
         let err = {}, fromDate, toDate, dbData = {}
         const returnableData = {}
 
-        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+        if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
         }
         if (obj.from && obj.to) {
@@ -678,6 +678,7 @@ async function listTransactions(req, res) {
             if (dbData.length > 0) {
                 for (let i = 0; i < dbData.length; i++) {
                     delete dbData[i].user_id
+                    dbData[i].address = utils.decrypt(dbData[i].address)
                 }
             }
 
@@ -755,7 +756,7 @@ async function getLoginHistories(req, res) {
         let err = {}, fromDate, toDate, dbData
         const returnableData = {}
 
-        if((obj.from && !obj.to) || (obj.to && !obj.from)){
+        if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_DATE)
         }
         if (obj.from && obj.to) {
@@ -1555,36 +1556,6 @@ async function updateUserById(req, res) {
     }
 }
 
-async function encryptPasswords(req, res) {
-    try {
-        let err = {}, admins = {}, obj = {};
-
-        [err, admins] = await utils.to(db.query(`
-            Select * 
-                From admins where password is not null
-                Order by id asc`,
-            {
-                type: db.QueryTypes.SELECT,
-            }))
-        if (err) return response.errReturned(res, err)
-        for (let i = 0; i < admins.length; i++) {
-            if (admins[i].password.length < 20) {
-                admins[i].password = bcrypt.hashSync(admins[i].password, parseInt(process.env.SALT_ROUNDS))
-            }
-        }
-
-        [err, obj] = await utils.to(db.models.admins.bulkCreate(
-            admins,
-            { updateOnDuplicate: ['password'] }
-        ))
-        if (err) return response.errReturned(res, err)
-        console.log(obj)
-        return response.sendResponse(res, resCode.SUCCESS, 'Passwords encryption done.')
-    } catch (error) {
-        console.log(error)
-        return response.errReturned(res, error)
-    }
-}
 module.exports = {
     signIn,
     signUp,
@@ -1616,6 +1587,5 @@ module.exports = {
     updateAdminDetailsById,
     addNewAdmin,
     setAdminPassword,
-    updateUserById,
-    encryptPasswords
+    updateUserById
 }

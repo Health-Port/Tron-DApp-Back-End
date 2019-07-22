@@ -6,6 +6,8 @@ const dashboardController = require('../controllers/dashboard/dashboardControlle
 const featureController = require('../controllers/feature/featureController')
 const roleController = require('../controllers/role/roleController')
 const loginHistoryController = require('../controllers/loginHistory/loginHistoryController')
+const attributeListController = require('../controllers/attributeList/attributeListController')
+const templateController = require('../controllers/template/templateController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
@@ -76,8 +78,18 @@ router.get('/roles/:roleId', authorize.authenticateRole, authorize.authenticateT
 //Login History Routes
 router.post('/history/:adminId', authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
-//Password encryption
-router.get('/encryptPasswords', adminController.encryptPasswords)
+//Attribute List Routes
+router.post('/attributeList/add', authorize.authenticateToken, attributeListController.addAttributeList)
+router.post('/attributeList', authorize.authenticateToken, attributeListController.getAttributeLists)
+router.put('/attributeList/update/:listId', authorize.authenticateToken, attributeListController.updateAttributeListById)
+router.get('/attributeList/all', authorize.authenticateToken, attributeListController.getAllAttributeLists)
+router.get('/attributeList/:attrId', authorize.authenticateToken, attributeListController.getAttributeListById)
 
+//Template Routes
+router.post('/template/add', authorize.authenticateToken, templateController.addTemplate)
+router.post('/template/update/status/:tempId', authorize.authenticateToken, templateController.updateTemplateStatusById)
+router.post('/template/list', authorize.authenticateToken, templateController.getTemplates)
+router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
+router.put('/template/update/:tempId', authorize.authenticateToken, templateController.updateTemplateById)
 
 module.exports = router

@@ -20,9 +20,15 @@ function checkaddresses(to, from) {
     if (to == from) return true;
     return false;
 }
+
+function isBoolean(val){
+    return val ===false || val === true
+}
+
 module.exports = {
     to,
     encrypt,
     decrypt, 
-    checkaddresses
+    checkaddresses,
+    isBoolean
 };
