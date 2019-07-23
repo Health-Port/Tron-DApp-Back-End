@@ -144,6 +144,7 @@ async function addNewRole(req, res) {
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_ID_PARENTID_REQUIRED)
 
+		//Checking if feature id and parent id is same.
 		for (let i = 0; i < features.length; i++) {
 			if (features[i].id == features[i].parentId) {
 				flag = true
