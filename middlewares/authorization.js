@@ -76,7 +76,7 @@ async function blockage(req, res, next) {
             return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_NOT_FOUND)
 
         if (!admin[0].adminStatus)
-            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKED)
 
         if (!admin[0].roleStatus)
             return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.ROLE_IS_BLOCKED)
