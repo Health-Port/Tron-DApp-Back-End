@@ -11,8 +11,8 @@ const templateController = require('../controllers/template/templateController')
 
 router.post('/signIn', adminController.signIn)
 router.post('/signUp', adminController.signUp)
-router.post('/forgetPassword', authorize.blockage, adminController.forgetPassword)
-router.post('/forgetPassword', authorize.blockage, adminController.forgetPassword)
+router.post('/forgetPassword', adminController.forgetPassword)
+router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.blockage, authorize.authenticateToken, adminController.changePassword)
 router.post('/confirmForgotPassword', authorize.blockage, authorize.authenticateToken, adminController.confirmForgotPassword)
 
