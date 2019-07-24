@@ -171,7 +171,7 @@ async function signIn(req, res) {
         if (user == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
         if (!user.status)
-            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKED)
         if (!user.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHECK_YOUR_EMAIL)
         if (!user.email_confirmed) {
