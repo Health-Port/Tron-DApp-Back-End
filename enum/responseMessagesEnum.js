@@ -90,7 +90,7 @@ const ResponseMessagesEnum = {
     USER_ADDED_SUCCESSFULLY: 'User added successfully.',
     USER_UPDATED_SUCCESSFULLY: 'User updated successfully.',
     USER_ALREADY_EXIST: 'User already exist.',
-    USER_IS_BLOCKEd: 'User is blocked.',
+    USER_IS_BLOCKED: 'User is blocked.',
     USER_NOT_FOUND: 'User not found.',
     USER_ACTIVATED: 'User is activated successfully.',
     USER_BLOCKED: 'User is blocked successfully.',
