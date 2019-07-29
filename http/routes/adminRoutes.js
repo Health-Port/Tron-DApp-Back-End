@@ -55,7 +55,7 @@ router.post('/getUserGraphData', authorize.blockage, authorize.authenticateRole,
 
 //Admin Routes
 router.post('/admins', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, adminController.getAllAdmins)
-router.get('/admins/:adminId', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, adminController.getAdminById)
+router.get('/admins/:adminId', authorize.blockage, authorize.authenticateToken, adminController.getAdminById)
 router.put('/update/status/:adminId', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, adminController.updateAdminById)
 router.put('/update/:adminId', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, adminController.updateAdminDetailsById)
 router.post('/admins/add', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, adminController.addNewAdmin)
@@ -72,11 +72,13 @@ router.put('/roles/update/:roleId', authorize.blockage, authorize.authenticateRo
 router.put('/roles/status/:roleId', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, roleController.updateRoleStatusById)
 //Excluded from role authencation bec its part of list view and does not exists as feature.
 router.get('/roles/active', authorize.blockage, authorize.authenticateToken, roleController.getAllActiveRoles)
+router.get('/roles/get/:roleId', authorize.blockage, authorize.authenticateToken, roleController.getRoleByID)
+
 router.get('/roles/list', authorize.blockage, authorize.authenticateToken, roleController.getAllRolesList)
 router.get('/roles/:roleId', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, roleController.getRoleByID)
 
 //Login History Routes
-router.post('/history/:adminId', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
+router.post('/history/:adminId', authorize.blockage, authorize.authenticateToken, loginHistoryController.getLoginHistorybyAdminID)
 
 //Attribute List Routes
 router.post('/attributeList/add', authorize.blockage, authorize.authenticateToken, attributeListController.addAttributeList)
