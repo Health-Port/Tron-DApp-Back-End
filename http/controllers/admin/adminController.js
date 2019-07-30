@@ -40,7 +40,7 @@ async function signIn(req, res) {
         if (!admin.password || admin.password == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.CHECK_YOUR_EMAIL)
         if (!admin.status)
-            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKEd);
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.USER_IS_BLOCKED);
         [err, passwordCheck] = await utils.to(bcrypt.compare(obj.password, admin.password))
         if (!passwordCheck)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
