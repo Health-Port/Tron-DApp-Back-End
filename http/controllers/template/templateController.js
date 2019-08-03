@@ -41,9 +41,6 @@ async function addTemplate(req, res) {
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
-		// if (statusFlag)
-		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
-
 		//accessRights' Boolean fields must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		flag = false
 		statusFlag = false
@@ -60,18 +57,6 @@ async function addTemplate(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 		if (statusFlag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED);
-
-		//Checking attribute list id for dropdowns
-		// flag = false
-		// const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'select')
-		// filterArray.forEach(element => {
-		// 	if (!(element.hasOwnProperty('attribute_list_id')))
-		// 		flag = true
-		// 	else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
-		// 		flag = true
-		// })
-		// if (flag)
-		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -180,7 +165,15 @@ async function updateTemplateStatusById(req, res) {
 
 async function getTemplates(req, res) {
 	try {
-		const { id } = req.auth
+		let { id } = req.auth
+		const { user_id } = req.auth
+		let table
+		if (req.baseUrl === '/admin') {
+			table = 'admins'
+		} else {
+			id = user_id
+			table = 'users'
+		}
 		const { searchValue, status } = req.body
 		let { pageNumber, pageSize } = req.body
 
@@ -196,9 +189,17 @@ async function getTemplates(req, res) {
 		const end = parseInt(start + pageSize);
 
 		//Verifying user authenticity
-		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		[err, admin] = await utils.to(db.query(
+			`Select id
+					From ${table} 
+					where id = :id 
+					Order by id desc limit 1`,
+			{
+				replacements: { id },
+				type: db.QueryTypes.SELECT,
+			}))
 		if (err) return response.errReturned(res, err)
-		if (!admin || admin.length == 0)
+		if (admin == null || admin.length == 0 || !admin)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
 		//Quering db for data
@@ -218,6 +219,10 @@ async function getTemplates(req, res) {
 				dbData = dbData.filter(x => x.name.toLowerCase().includes(searchValue.toLowerCase()))
 			if (filter)
 				dbData = dbData.filter(x => x.status == status)
+
+			//Filtring active templates only for user's call
+			if (req.baseUrl === '/user')
+				dbData = dbData.filter(x => x.status == true)
 
 			returnableData['count'] = dbData.length
 			const slicedData = dbData.slice(start, end)
@@ -284,6 +289,7 @@ async function getTemplateById(req, res) {
 				}
 			))
 		};
+
 		// Getting access rights against template id
 		[err, temp] = await utils.to(db.query(`
 		Select s.id as systemRoleId, s.view, s.edit, s.update, s.share_via_email, s.share, 
@@ -337,20 +343,10 @@ async function updateTemplateById(req, res) {
 			} else if (!(element.label && element.type)) {
 				flag = true
 			}
-			// else if (!utils.isBoolean(element.required)) {
-			// 	statusFlag = true
-			// }
-			//else if (!(element.hasOwnProperty('id'))) {
-				//statusFlag = true
-			//}
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
-		//if (statusFlag)
-			//return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ID_IS_MISSING)
-
-		//statusFlag = false
 		flag = false
 		accessRights.forEach(element => {
 			if (!(element.hasOwnProperty('systemRoleId'))) {
@@ -358,32 +354,9 @@ async function updateTemplateById(req, res) {
 			} else if (!(element.systemRoleId)) {
 				flag = true
 			}
-			// else if (!(utils.isBoolean(element.view) &&
-			// 	utils.isBoolean(element.edit) &&
-			// 	utils.isBoolean(element.update) &&
-			// 	utils.isBoolean(element.share_via_email) &&
-			// 	utils.isBoolean(element.share))) {
-			// 	statusFlag = true
-			// }
 		})
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
-
-		// if (statusFlag)
-		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED)
-
-		//Checking attribute list id for dropdowns
-		// flag = false
-		// const filterArray = templateFields.filter(x => x.type.toLowerCase() == 'select')
-		// filterArray.forEach(element => {
-		// 	if (!(element.hasOwnProperty('attribute_list_id')))
-		// 		flag = true
-		// 	else if (!(element.attribute_list_id && typeof element.attribute_list_id === 'number'))
-		// 		flag = true
-		// })
-		// if (flag)
-		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_LIST_ID_REQUIRED);
-
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -422,10 +395,6 @@ async function updateTemplateById(req, res) {
 			if (obj[0] == 0)
 				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 		}
-
-		//Deleting existing records
-		//[err, obj] = await utils.to(db.models.template_fields.destroy({ where: { template_id: tempId } }))
-		//if (err) return response.errReturned(res, err)
 
 		templateFields = templateFields.map(elem => (
 			{
