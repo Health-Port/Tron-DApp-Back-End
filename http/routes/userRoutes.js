@@ -49,5 +49,6 @@ router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFa
 
 //Template Routes
 router.post('/template/list', authorize.authenticateToken, templateController.getTemplates)
+router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
 
 module.exports = router
