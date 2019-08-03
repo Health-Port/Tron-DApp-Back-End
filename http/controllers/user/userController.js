@@ -756,6 +756,7 @@ async function changeEmail(req, res) {
 
 async function getPrivateKey(req, res) {
     try {
+        const { address } = req.params
         const userId = req.auth.user_id
         let err = {}, user = {}, mailSent = {};
 
@@ -768,10 +769,18 @@ async function getPrivateKey(req, res) {
         user.tron_wallet_public_key = utils.decrypt(user.tron_wallet_public_key)
         user.tron_wallet_private_key = utils.decrypt(user.tron_wallet_private_key);
 
+        //HP-489
+        if (address)
+            return response.sendResponse(
+                res,
+                resCode.SUCCESS,
+                resMessage.SUCCESS,
+                { privateKey: user.tron_wallet_private_key }
+            );
+
         //Email sending
         [err, mailSent] = await utils.to(emailTemplates.sendPrivateKey(user))
         if (!mailSent) {
-            console.log(err)
             return response.errReturned(res, err)
         }
 
@@ -785,45 +794,14 @@ async function getPrivateKey(req, res) {
     }
 }
 
-function getIpInfo(ip) {
-    // IPV6 addresses can include IPV4 addresses
-    // So req.ip can be '::ffff:86.3.182.58'
-    // However geoip-lite returns null for these
-    if (ip.includes('::ffff:')) {
-        ip = ip.split(':').reverse()[0]
-    }
-    var lookedUpIP = geoip.lookup(ip);
-    if ((ip === '127.0.0.1' || ip == "::1")) {
-        return "127.0.0.1"
-    }
-    if (!lookedUpIP) {
-        return { error: "Error occured while trying to process the information" }
-    }
-    console.log(lookedUpIP);
-    return lookedUpIP;
-}
-
-function getIpInfoMiddleware(req) {
-    var xForwardedFor = (req.headers["x-real-ip"] || '').replace(/:\d+$/, '');
-    console.log("ip address with real", xForwardedFor);
-    var ip = xForwardedFor || req.connection.remoteAddress;
-    req.ipInfo = getIpInfo(ip);
-}
-
-async function test(req, res) {
-    getIpInfoMiddleware(req);
-    res.status(200).json({ message: "ip get", ip: req.ipInfo })
-}
-
 module.exports = {
     signUp,
     signIn,
     contactUs,
     verifyEmail,
     changeEmail,
+    getPrivateKey,
     forgetPassword,
     resendLinkEmail,
-    confirmForgotPassword,
-    getPrivateKey,
-    test
+    confirmForgotPassword
 }

@@ -240,26 +240,42 @@ async function getTemplates(req, res) {
 
 async function getTemplateById(req, res) {
 	try {
-		const { id } = req.auth
+		let { id } = req.auth
+		const { user_id } = req.auth
+		let table
+		if (req.baseUrl === '/admin') {
+			table = 'admins'
+		} else {
+			id = user_id
+			table = 'users'
+		}
 		const { tempId } = req.params
 
 		let err = {}, admin = {}, temp = {};
 
 		//Verifying user authenticity
-		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		[err, admin] = await utils.to(db.query(
+			`Select id
+					From ${table} 
+					where id = :id 
+					Order by id desc limit 1`,
+			{
+				replacements: { id },
+				type: db.QueryTypes.SELECT,
+			}))
 		if (err) return response.errReturned(res, err)
-		if (!admin || admin.length == 0)
+		if (admin == null || admin.length == 0 || !admin)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
 		//Querying db for list records
 		[err, temp] = await utils.to(db.query(`
-		Select t.id, t.name, t.description, t.status, tf.id as tfId, tf.type, 
-			tf.label, tf.placeholder, tf.required, tf.attribute_list_id, 
-			al.name as attributeListName 
-			From templates t 
-			Inner join template_fields tf ON t.id = tf.template_id
-			left join attribute_lists al ON al.id = tf.attribute_list_id
-			Where t.id = :id`,
+			Select t.id, t.name, t.description, t.status, tf.id as tfId, tf.type, 
+				tf.label, tf.placeholder, tf.required, tf.attribute_list_id, 
+				al.name as attributeListName 
+				From templates t 
+				Inner join template_fields tf ON t.id = tf.template_id
+				left join attribute_lists al ON al.id = tf.attribute_list_id
+				Where t.id = :id`,
 			{
 				replacements: { id: tempId },
 				type: db.QueryTypes.SELECT,
@@ -288,24 +304,38 @@ async function getTemplateById(req, res) {
 						: ''
 				}
 			))
-		};
+		}
+
+		//Getting dropdown values for user side call
+		if (req.baseUrl === '/user') {
+			const filterd = data.fields.filter(x => x.attributeListId)
+			for (let i = 0; i < filterd.length; i++) {
+				[err, temp] = await utils.to(db.models.attribute_list_values.findAll(
+					{ where: { list_id: filterd[i].attributeListId } }))
+				if (err) return response.errReturned(res, err)
+				const index = data.fields.indexOf(filterd[i])
+				data.fields[index].attributeListValues = temp
+			}
+		}
 
 		// Getting access rights against template id
-		[err, temp] = await utils.to(db.query(`
-		Select s.id as systemRoleId, s.view, s.edit, s.update, s.share_via_email, s.share, 
-			r.name as roleName
-			From system_role_rights s 
-			Inner join templates t ON s.template_id = t.id
-			Inner join system_roles r ON r.id = s.system_role_id
-			Where t.id = :id`,
-			{
-				replacements: { id: tempId },
-				type: db.QueryTypes.SELECT,
-			}))
-		if (err) return response.errReturned(res, err)
-		if (!temp || temp.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_ACCESS_RIGHTS_FOUND)
-		data.accessRights = temp
+		if (req.baseUrl === '/admin') {
+			[err, temp] = await utils.to(db.query(`
+				Select s.id as systemRoleId, s.view, s.edit, s.update, s.share_via_email, s.share, 
+					r.name as roleName
+					From system_role_rights s 
+					Inner join templates t ON s.template_id = t.id
+					Inner join system_roles r ON r.id = s.system_role_id
+					Where t.id = :id`,
+				{
+					replacements: { id: tempId },
+					type: db.QueryTypes.SELECT,
+				}))
+			if (err) return response.errReturned(res, err)
+			if (!temp || temp.length == 0)
+				return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_ACCESS_RIGHTS_FOUND)
+			data.accessRights = temp
+		}
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
@@ -335,7 +365,6 @@ async function updateTemplateById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
-		//let statusFlag = false
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
@@ -457,8 +486,8 @@ async function updateTemplateById(req, res) {
 
 module.exports = {
 	addTemplate,
-	updateTemplateStatusById,
 	getTemplates,
 	getTemplateById,
-	updateTemplateById
+	updateTemplateById,
+	updateTemplateStatusById
 }
