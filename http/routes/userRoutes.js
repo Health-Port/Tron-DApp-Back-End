@@ -7,6 +7,7 @@ const providerController = require('../controllers/provider/providerController')
 const procedureController = require('../controllers/procedure/procedureController')
 const medicationController = require('../controllers/medication/medicationController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
+const templateController = require('../controllers/template/templateController')
 
 router.get('/test',userController.test)
 router.post('/signUp', userController.signUp)
@@ -46,5 +47,7 @@ router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoF
 router.post('/enableDisableTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.enableDisableTwoFactorAuthentication)
 router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.verifyTwoFactorAuthentication)
 
+//Template Routes
+router.post('/template/list', authorize.authenticateToken, templateController.getTemplates)
 
 module.exports = router
