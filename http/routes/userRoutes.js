@@ -9,7 +9,6 @@ const medicationController = require('../controllers/medication/medicationContro
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 const templateController = require('../controllers/template/templateController')
 
-router.get('/test',userController.test)
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
 router.post('/forgetPassword', userController.forgetPassword)
@@ -19,6 +18,7 @@ router.post('/resendLinkEmail', authorize.authenticateToken, userController.rese
 router.post('/contactUs', userController.contactUs)
 router.post('/changeEmail', authorize.authenticateToken, userController.changeEmail)
 router.get('/getPrivateKey', authorize.authenticateToken, userController.getPrivateKey)
+router.get('/getPrivateKey/:address', authorize.authenticateToken, userController.getPrivateKey)
 
 router.post('/sendToken', authorize.authenticateToken, tokenController.sendToken)
 router.post('/getBalance', authorize.authenticateToken, tokenController.getBalance)
