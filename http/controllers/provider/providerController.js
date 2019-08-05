@@ -285,6 +285,7 @@ async function addPatient(req, res) {
                 refer_destination: roleEnum.PROVIDER,
                 tron_wallet_private_key: utils.encrypt(account.privateKey),
                 tron_wallet_public_key: utils.encrypt(account.address.base58),
+                tron_wallet_public_key_hex: utils.encrypt(account.publicKey),
                 referal_coupon: passcodeGenerator.generate({ length: 14, numbers: true }),
             }))
         if (err) return response.errReturned(res, err)
