@@ -53,6 +53,6 @@ router.post('/template/list', authorize.authenticateToken, templateController.ge
 router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
 
 //Medical Record Routes
-router.post('/medicalrecord/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
+router.post('/medical-record/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
 
 module.exports = router

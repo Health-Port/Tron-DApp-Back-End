@@ -40,7 +40,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
         },
         tron_wallet_public_key_hex: {
-            type: Sequelize.STRING,
+            type: Sequelize.TEXT,
             allowNull: false,
         },
         referal_coupon: {

@@ -10,7 +10,7 @@ async function addMedicalRecord(req, res) {
 		const { user_id } = req.auth
 		const { templateId, accessToken } = req.body
 
-		let err = {}, user = {}, record = {}
+		let err = {}, user = {}, record = {}, obj = {}
 
 		//Checking empty required fields 
 		if (!(templateId && accessToken))
@@ -24,25 +24,37 @@ async function addMedicalRecord(req, res) {
 
 		//Checking weather record already exists
 		[err, record] = await utils.to(db.models.medical_records.findOne(
-			{ where: { template_id: templateId, user_id } 
-		}))
-		if (err) return response.errReturned(res, err)
-		if (record)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.MEDICAL_RECORD_ALREADY_EXISTS);
-
-		//Saving medical record in db
-		[err, record] = await utils.to(db.models.medical_records.create(
 			{
-				template_id: templateId,
-				user_id,
-				access_token: accessToken
+				where: { template_id: templateId, user_id }
 			}))
 		if (err) return response.errReturned(res, err)
-		if (!record)
-			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (record) {
+			//Updating existing medical record
+			[err, obj] = await utils.to(db.models.medical_records.update(
+				{ access_token: accessToken },
+				{ where: { template_id: templateId, user_id } }
+			))
+			if (err) return response.errReturned(res, err)
+			if (obj[0] == 0)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		} else {
+			//Saving new medical record in db
+			[err, record] = await utils.to(db.models.medical_records.create(
+				{
+					template_id: templateId,
+					user_id,
+					access_token: accessToken
+				}))
+			if (err) return response.errReturned(res, err)
+			if (!record)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		}
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, 'Medical record added.')
+		if (obj)
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.MEDICAL_RECORD_UPDATED)
+
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.MEDICAL_RECORD_ADDED)
 
 	} catch (error) {
 		console.log(error)
