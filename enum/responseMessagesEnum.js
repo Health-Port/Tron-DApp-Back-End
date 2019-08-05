@@ -46,6 +46,7 @@ const ResponseMessagesEnum = {
     MAIL_SENT_CONTACT_US: 'Your messsage has been sent successfully.',
     MAIL_UPDATED: 'Your email changed successfully, please login to continue.',
     MAIL_ALREADY_EXIST: 'Email already exist.',
+    MEDICAL_RECORD_ALREADY_EXISTS: 'Medical record already exist.',
     NO_RECORD_FOUND: 'No record found.',
     NO_ACCESS_RIGHTS_FOUND: 'No access right found.',
     NOT_ALLOWED: 'You are not allowed to perform this action.',

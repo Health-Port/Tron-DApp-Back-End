@@ -73,7 +73,8 @@ async function addTemplate(req, res) {
 		//Saving template in db
 		[err, template] = await utils.to(db.models.templates.create({ name, description }))
 		if (err) return response.errReturned(res, err)
-		if (!template) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (!template)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Maping template field columns
 		templateFields = templateFields.map(elem => (

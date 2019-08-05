@@ -8,6 +8,7 @@ const procedureController = require('../controllers/procedure/procedureControlle
 const medicationController = require('../controllers/medication/medicationController')
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 const templateController = require('../controllers/template/templateController')
+const medicalRecordController = require('../controllers/medicalRecord/medicalRecordController')
 
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
@@ -50,5 +51,8 @@ router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFa
 //Template Routes
 router.post('/template/list', authorize.authenticateToken, templateController.getTemplates)
 router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
+
+//Medical Record Routes
+router.post('/medicalrecord/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
 
 module.exports = router
