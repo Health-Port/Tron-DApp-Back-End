@@ -102,6 +102,7 @@ async function signUp(req, res) {
                 refer_destination: obj.refer_destination ? obj.refer_destination : 'Direct',
                 tron_wallet_private_key: utils.encrypt(account.privateKey),
                 tron_wallet_public_key: utils.encrypt(account.address.base58),
+                tron_wallet_public_key_hex: utils.encrypt(account.publicKey),
                 referal_coupon: passcodeGenerator.generate({ length: 14, numbers: true }),
             }))
         if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST)
@@ -155,7 +156,6 @@ async function signIn(req, res) {
         if (process.env.NODE_ENV != 'dev') {
             [err, captcha] = await utils.to(invisibleCaptcha.validate(obj.captcha_key))
             if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_CAPTCHA)
-            console.log(err, captcha)
         }
 
         //Checking empty email and password 
@@ -209,6 +209,8 @@ async function signIn(req, res) {
             twofa_enable: user.is_twofa_enable,
             is_twofa_verified: user.is_twofa_verified,
             wallet_address: utils.decrypt(user.tron_wallet_public_key),
+            public_key_hex: user.tron_wallet_public_key_hex ? 
+                utils.decrypt(user.tron_wallet_public_key_hex) : '',
             total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
             user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key)),
         }
@@ -770,13 +772,17 @@ async function getPrivateKey(req, res) {
         user.tron_wallet_private_key = utils.decrypt(user.tron_wallet_private_key);
 
         //HP-489
-        if (address)
+        if (address && address != user.tron_wallet_public_key)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_TO_ADDRESS)
+
+        if (address) {
             return response.sendResponse(
                 res,
                 resCode.SUCCESS,
                 resMessage.SUCCESS,
                 { privateKey: user.tron_wallet_private_key }
             );
+        }
 
         //Email sending
         [err, mailSent] = await utils.to(emailTemplates.sendPrivateKey(user))

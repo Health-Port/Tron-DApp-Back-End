@@ -39,6 +39,10 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false,
         },
+        tron_wallet_public_key_hex: {
+            type: Sequelize.STRING,
+            allowNull: false,
+        },
         referal_coupon: {
             type: Sequelize.STRING,
             unique: true,

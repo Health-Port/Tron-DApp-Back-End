@@ -194,6 +194,8 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 					twofa_enable: true,
 					is_twofa_verified: true,
 					wallet_address: utils.decrypt(admin[0].tron_wallet_public_key),
+					public_key_hex: admin[0].tron_wallet_public_key_hex ?
+						utils.decrypt(admin[0].tron_wallet_public_key_hex) : '',
 					total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
 					user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(admin[0].tron_wallet_private_key), utils.decrypt(admin[0].tron_wallet_public_key)),
 				};
@@ -242,6 +244,8 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 					twofa_enable: false,
 					is_twofa_verified: false,
 					wallet_address: utils.decrypt(admin[0].tron_wallet_public_key),
+					public_key_hex: admin[0].tron_wallet_public_key_hex ?
+						utils.decrypt(admin[0].tron_wallet_public_key_hex) : '',
 					total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
 					user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(admin[0].tron_wallet_private_key), utils.decrypt(admin[0].tron_wallet_public_key)),
 				};
@@ -354,6 +358,8 @@ async function verifyTwoFactorAuthentication(req, res) {
 				twofa_enable: admin[0].is_twofa_enable,
 				is_twofa_verified: admin[0].is_twofa_verified,
 				wallet_address: utils.decrypt(admin[0].tron_wallet_public_key),
+				public_key_hex: admin[0].tron_wallet_public_key_hex ?
+					utils.decrypt(admin[0].tron_wallet_public_key_hex) : '',
 				total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
 				user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(admin[0].tron_wallet_private_key), utils.decrypt(admin[0].tron_wallet_public_key)),
 
