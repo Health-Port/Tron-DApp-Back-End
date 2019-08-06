@@ -62,6 +62,59 @@ async function addMedicalRecord(req, res) {
 	}
 }
 
+async function getMedicalRecordsByUserId(req, res) {
+	try {
+		const { user_id } = req.auth
+		let { pageNumber, pageSize } = req.body
+
+		let err = {}, user = {}, records = {}, count = {}
+
+		//Paging
+		pageSize = parseInt(pageSize)
+		pageNumber = parseInt(pageNumber)
+		if (!pageNumber) pageNumber = 0
+		if (!pageSize) pageSize = 10
+		const start = parseInt(pageNumber * pageSize);
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting medical records from db with paging
+		[err, records] = await utils.to(db.query(`
+			SELECT m.id as medicalRecordId, t.id as templateId, t.name as templateName, 
+				m.access_token as accessToken, m.createdAt	  
+				FROM medical_records m
+				INNER JOIN templates t ON m.template_id = t.id
+				WHERE m.user_id = :user_id
+				ORDER by m.createdAt DESC
+				LIMIT ${start}, ${pageSize}`,
+			{
+				replacements: { user_id },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (records == null || records.count == 0 || records == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+		//Getting total count
+		[err, count] = await await utils.to(db.models.medical_records.count({
+			where: { user_id }
+		}))
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, {count, rows: records})
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
+
 module.exports = {
-	addMedicalRecord
+	addMedicalRecord,
+	getMedicalRecordsByUserId
 }
