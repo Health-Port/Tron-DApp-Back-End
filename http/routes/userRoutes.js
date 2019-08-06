@@ -56,5 +56,6 @@ router.get('/template/:tempId', authorize.authenticateToken, templateController.
 router.post('/medical-record/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
 router.post('/medical-record/list', authorize.authenticateToken, medicalRecordController.getMedicalRecordsByUserId)
 router.get('/medical-record/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateId)
+router.get('/medical-record/template-attribute/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateIdWithAttributes)
 
 module.exports = router

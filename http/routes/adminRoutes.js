@@ -84,7 +84,7 @@ router.post('/history/:adminId', authorize.blockage, authorize.authenticateToken
 router.post('/attributeList/add', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, attributeListController.addAttributeList)
 router.post('/attributeList', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, attributeListController.getAttributeLists)
 router.put('/attributeList/update/:listId', authorize.authenticateRole, authorize.blockage, authorize.authenticateToken, attributeListController.updateAttributeListById)
-router.get('/attributeList/all', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, attributeListController.getAllAttributeLists)
+router.get('/attributeList/all', authorize.blockage, authorize.authenticateToken, attributeListController.getAllAttributeLists)
 router.get('/attributeList/:attrId', authorize.blockage, authorize.authenticateToken, attributeListController.getAttributeListById)
 
 //Template Routes

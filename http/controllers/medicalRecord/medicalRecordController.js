@@ -152,8 +152,87 @@ async function getMedicalRecordByTemplateId(req, res) {
 	}
 }
 
+async function getMedicalRecordByTemplateIdWithAttributes(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { tempId } = req.params
+
+		let err = {}, user = {}, record = {}, temp = {}, data = {}
+
+		//Checking empty required fields 
+		if (!tempId)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		[err, record] = await utils.to(db.models.medical_records.findOne(
+			{
+				where: { template_id: tempId, user_id }
+			}))
+		if (err) return response.errReturned(res, err)
+		if (record == null || record.count == 0 || record == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+		if (record) {
+			[err, temp] = await utils.to(db.query(`
+			SELECT t.id, t.name, t.description, t.status, tf.id as tfId, tf.type, 
+				tf.label, tf.placeholder, tf.required, tf.attribute_list_id, 
+				al.name as attributeListName 
+				FROM templates t 
+				INNER JOIN template_fields tf ON t.id = tf.template_id
+				LEFT JOIN attribute_lists al ON al.id = tf.attribute_list_id
+				WHERE t.id = :id`,
+				{
+					replacements: { id: tempId },
+					type: db.QueryTypes.SELECT,
+				}))
+			if (err) return response.errReturned(res, err)
+			if (!temp || temp.length == 0)
+				return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+			//maping data and columns
+			data = {
+				id: temp[0].id,
+				name: temp[0].name,
+				description: temp[0].description,
+				fields: temp.map(elem => (
+					{
+						id: elem.tfId.toString(),
+						type: elem.type,
+						label: elem.label,
+						placeholder: elem.placeholder,
+						required: elem.required,
+						attributeListId: elem.attribute_list_id ?
+							elem.attribute_list_id
+							: '',
+						attributeListName: elem.attribute_list_id ?
+							elem.attributeListName
+							: ''
+					}
+				))
+			}
+		}
+
+		//Returing successful response
+		return response.sendResponse(
+			res,
+			resCode.SUCCESS,
+			resMessage.SUCCESS,
+			{ accessToken: record.access_token, templateFields: data.fields }
+		)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	addMedicalRecord,
 	getMedicalRecordsByUserId,
-	getMedicalRecordByTemplateId
+	getMedicalRecordByTemplateId,
+	getMedicalRecordByTemplateIdWithAttributes
 }
