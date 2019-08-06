@@ -105,7 +105,7 @@ async function getMedicalRecordsByUserId(req, res) {
 		}))
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, {count, rows: records})
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { count, rows: records })
 
 	} catch (error) {
 		console.log(error)
@@ -113,8 +113,47 @@ async function getMedicalRecordsByUserId(req, res) {
 	}
 }
 
+async function getMedicalRecordByTemplateId(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { tempId } = req.params
+
+		let err = {}, user = {}, record = {}
+
+		//Checking empty required fields 
+		if (!tempId)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		[err, record] = await utils.to(db.models.medical_records.findOne(
+			{
+				where: { template_id: tempId, user_id }
+			}))
+		if (err) return response.errReturned(res, err)
+		if (record == null || record.count == 0 || record == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(
+			res,
+			resCode.SUCCESS,
+			resMessage.SUCCESS,
+			{ accessToken: record.access_token }
+		)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 
 module.exports = {
 	addMedicalRecord,
-	getMedicalRecordsByUserId
+	getMedicalRecordsByUserId,
+	getMedicalRecordByTemplateId
 }
