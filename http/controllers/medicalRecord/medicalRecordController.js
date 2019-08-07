@@ -37,6 +37,9 @@ async function addMedicalRecord(req, res) {
 			if (err) return response.errReturned(res, err)
 			if (obj[0] == 0)
 				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+			//Returing successful response with update message
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.MEDICAL_RECORD_UPDATED)
 		} else {
 			//Saving new medical record in db
 			[err, record] = await utils.to(db.models.medical_records.create(
@@ -51,9 +54,6 @@ async function addMedicalRecord(req, res) {
 		}
 
 		//Returing successful response
-		if (obj)
-			return response.sendResponse(res, resCode.SUCCESS, resMessage.MEDICAL_RECORD_UPDATED)
-
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.MEDICAL_RECORD_ADDED)
 
 	} catch (error) {

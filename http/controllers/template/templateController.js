@@ -22,6 +22,9 @@ async function addTemplate(req, res) {
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
+		if (templateFields.length > 4)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
+
 		if (!accessRights || accessRights.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
 
@@ -364,6 +367,9 @@ async function updateTemplateById(req, res) {
 
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
+
+		if (templateFields.length > 4)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
 
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		let flag = false

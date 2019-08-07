@@ -86,6 +86,7 @@ const ResponseMessagesEnum = {
     TEMPLATE_ADDED_SUCCESSFULLY: 'Template added successfully.',
     TEMPLATE_UPDATED_SUCCESSFULLY: 'Template updated successfully.',
     TEMPLATE_ALREADY_EXIST: 'Template already exist.',
+    FOUR_TEMPLATE_FIELDS_ALLOWED: 'Maximum four fields should be added in form.',
     TO_FROM_ADDRESS_ARE_SAME:'You cannot send EHR from your account to your own address.',
     TWO_FACTOR_IS_ALREADY_ENABLED: '2 Factor authentication is already enabled.',
     TWO_FACTOR_IS_ENABLED: '2 Factor Authentication is enabled successfully',
