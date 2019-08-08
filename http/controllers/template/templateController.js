@@ -22,7 +22,7 @@ async function addTemplate(req, res) {
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
-		if (templateFields.length > 4)
+		if (templateFields.length > process.env.TEMPLATE_FIELDS_LENGTH)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
 
 		if (!accessRights || accessRights.length == 0)
@@ -368,7 +368,7 @@ async function updateTemplateById(req, res) {
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
-		if (templateFields.length > 4)
+		if (templateFields.length > process.env.TEMPLATE_FIELDS_LENGTH)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
 
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
