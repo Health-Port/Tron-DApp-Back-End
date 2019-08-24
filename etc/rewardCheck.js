@@ -16,14 +16,12 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     user_id: parseInt(user_id)
                 }
             }));
-            if (err) console.log('rewardCheck.js line 14: ', err);
             if (allergyDocs && allergyDocs.length == 0) {
                 [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
                     where: {
                         reward_type: rewardEnum.ALLERGYDOCUMENTREWARD
                     }
                 }));
-                if (err) console.log('rewardCheck.js line 21: ', err);
                 rewardsObject = rewardsObj;
                 sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source);
             } else {
@@ -32,7 +30,6 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
                     'Upload'
                 ));
-                if (err) console.log('rewardCheck.js line 30: ', err);
                 if (err) {
                     if (err == 'Bandwidth is low') {
                         return Promise.reject(resMessage.BANDWIDTH_IS_LOW);
@@ -48,14 +45,12 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     user_id: parseInt(user_id)
                 }
             }));
-            if (err) console.log('rewardCheck.js line 46: ', err);
             if (medicationsDocs && medicationsDocs.length == 0) {
                 [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
                     where: {
                         reward_type: rewardEnum.MEDICATIONDOCUMENTREWARD
                     }
                 }));
-                if (err) console.log('rewardCheck.js line 53: ', err);
                 rewardsObject = rewardsObj;
                 sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source);
             } else {
@@ -64,7 +59,6 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
                     'Upload'
                 ));
-                if (err) console.log('rewardCheck.js line 62: ', err);
                 if (err) {
                     if (err == 'Bandwidth is low') {
                         return Promise.reject(resMessage.BANDWIDTH_IS_LOW);
@@ -80,14 +74,12 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     user_id: parseInt(user_id)
                 }
             }));
-            if (err) console.log('rewardCheck.js line 78: ', err);
             if (proceduresDocs && proceduresDocs.length == 0) {
                 [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
                     where: {
                         reward_type: rewardEnum.PROCEDUREDOCUMENTREWARD
                     }
                 }));
-                if (err) console.log('rewardCheck.js line 85: ', err);
                 rewardsObject = rewardsObj;
                 sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source);
             } else {
@@ -96,7 +88,6 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
                     'Upload'
                 ));
-                if (err) console.log('rewardCheck.js line 94: ', err);
                 if (err) {
                     if (err == 'Bandwidth is low') {
                         return Promise.reject(resMessage.BANDWIDTH_IS_LOW);
@@ -150,13 +141,11 @@ async function sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key
                         type: source
                     }
                 ]));
-                if (err) console.log('rewardCheck.js line 134: ', err);
                 [err, result] = await utils.to(cutCommission(
                     tron_wallet_public_key,
                     rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
                     'Upload'
                 ));
-                if (err) console.log('rewardCheck.js line 150: ', err);
                 if (err) {
                     if (err == 'Bandwidth is low') {
                         return Promise.reject(resMessage.BANDWIDTH_IS_LOW);
@@ -182,7 +171,6 @@ async function checkAllDocumentsReward(user_id, tron_wallet_public_key) {
                 user_id: parseInt(user_id)
             }
         }));
-        if (err) console.log('rewardCheck.js line 176: ', err);
         [err, medicationsDocs] = await utils.to(db.models.medications.findAll({
             where: {
                 user_id: parseInt(user_id)
@@ -193,14 +181,12 @@ async function checkAllDocumentsReward(user_id, tron_wallet_public_key) {
                 user_id: parseInt(user_id)
             }
         }));
-        if (err) console.log('rewardCheck.js line 187: ', err);
         if (allergyDocs && allergyDocs.length >= 1 && medicationsDocs && medicationsDocs.length >= 1 && proceduresDocs && proceduresDocs.length >= 1) {
             [err, allDocumentsRewardObj] = await utils.to(db.models.reward_conf.findAll({
                 where: {
                     reward_type: rewardEnum.ALLDOCUMENTSREWARD
                 }
             }));
-            if (err) console.log('rewardCheck.js line 194: ', err);
             if (allDocumentsRewardObj && allDocumentsRewardObj.length > 0) {
                 [err, usersCountResult] = await utils.to(
                     db.models.transections.findAndCountAll({
@@ -209,7 +195,6 @@ async function checkAllDocumentsReward(user_id, tron_wallet_public_key) {
                         }
                     })
                 );
-                if (err) console.log('rewardCheck.js line 201: ', err);
                 if (usersCountResult.count <= allDocumentsRewardObj[0].max_users) {
                     amount = parseFloat(allDocumentsRewardObj[0].reward_amount);
                 } else {
@@ -235,7 +220,6 @@ async function checkAllDocumentsReward(user_id, tron_wallet_public_key) {
                         type: rewardEnum.ALLDOCUMENTSREWARD
                     }
                 ]));
-                if (err) console.log('rewardCheck.js line 219: ', err);
             }
 
         }
