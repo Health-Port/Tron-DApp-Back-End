@@ -7,7 +7,8 @@ const RewardEnum = {
     ALLDOCUMENTSREWARD: 'Loyalty Bonus',
     COMMISSIONDOCUMENTSUBMISSION: 'Health Port Network Fee',
     AIRDROPREWARD: 'Airdrop',
-    SUPERREPRESENTATIVEREWARD: 'Super Representative Voting Reward'
+    SUPERREPRESENTATIVEREWARD: 'Super Representative Voting Reward',
+    MEDICALRECORDDOCUMENTREWARD: 'Create Medical Record List'
 }
 
 module.exports = RewardEnum

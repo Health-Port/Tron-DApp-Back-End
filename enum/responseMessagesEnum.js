@@ -32,6 +32,7 @@ const ResponseMessagesEnum = {
     INVALID_TO_ADDRESS: 'Invalid address.',
     INVALID_CAPTCHA: 'Captcha is invalid.',
     INVALID_DATE: 'Date should be in mm-dd-yyyy format.',
+    INVALID_ACTION: 'Invalid action.',
     INSUFFICIENT_BALANCE: 'You have insufficient balance for this transaction',
     LINK_EXPIRED: 'Link has expired.',
     LINK_ALREADY_USED: 'Link already used.',
