@@ -2,6 +2,11 @@ const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
+const actionEnum = require('../../../enum/actionEnum')
+const rewardDisperser = require('../../../etc/rewardCheck')
+const rewardEnum = require('../../../enum/rewardEnum')
+const cutCommission = require('./../../../etc/commission')
+const tronUtils = require('../../../etc/tronUtils')
 
 const db = global.healthportDb
 
@@ -230,8 +235,87 @@ async function getMedicalRecordByTemplateIdWithAttributes(req, res) {
 	}
 }
 
+async function ipfsCallHandeling(req, res) {
+	try {
+		const { action } = req.params
+		const { user_id } = req.auth
+
+		let err = {}, result = {}, user = {}, commissionObj = {}, record = {};
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
+			//Checking user's balance before uploading document.
+			const balance = await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key));
+			[err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
+				where: { commission_type: 'Upload' }
+			}))
+			if (err) return response.errReturned(res, err)
+			if (balance < commissionObj.commission_amount)
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+
+			//Checking weather record already exists
+			[err, record] = await utils.to(db.models.medical_records.findOne(
+				{
+					where: { user_id }
+				}))
+			if (err) return response.errReturned(res, err)
+			if (record)
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.MEDICAL_RECORD_ALREADY_EXISTS);
+
+			//Giving reward
+			[err, result] = await utils.to(rewardDisperser(
+				rewardEnum.MEDICALRECORDDOCUMENTREWARD, user_id, user.tron_wallet_public_key))
+			if (err) {
+				return response.sendResponse(
+					res,
+					resCode.BAD_REQUEST,
+					resMessage.BANDWIDTH_IS_LOW
+				)
+			}
+			console.log(result)
+		} else if (action.toLocaleLowerCase() == actionEnum.VIEW.toLocaleLowerCase()) {
+			[err, result] = await utils.to(
+				cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
+			)
+			if (err) {
+				if (err == 'Bandwidth is low') {
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
+				}
+				else {
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE)
+				}
+			}
+			console.log(result)
+		} else if (action.toLocaleLowerCase() == actionEnum.SHARE.toLocaleLowerCase()) {
+			[err, result] = await utils.to(
+				cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Share')
+			)
+			if (err) {
+				if (err == 'Bandwidth is low') {
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
+				}
+				else {
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE)
+				}
+			}
+			console.log(result)
+		} else {
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_ACTION)
+		}
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 module.exports = {
 	addMedicalRecord,
+	ipfsCallHandeling,
 	getMedicalRecordsByUserId,
 	getMedicalRecordByTemplateId,
 	getMedicalRecordByTemplateIdWithAttributes

@@ -57,5 +57,6 @@ router.post('/medical-record/add', authorize.authenticateToken, medicalRecordCon
 router.post('/medical-record/list', authorize.authenticateToken, medicalRecordController.getMedicalRecordsByUserId)
 router.get('/medical-record/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateId)
 router.get('/medical-record/template-attribute/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateIdWithAttributes)
+router.get('/medical-record/ipfs/:action', authorize.authenticateToken, medicalRecordController.ipfsCallHandeling)
 
 module.exports = router
