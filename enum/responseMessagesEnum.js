@@ -17,7 +17,7 @@ const ResponseMessagesEnum = {
     BANDWIDTH_IS_LOW: 'You currently have low bandwidth on TRON Network. Please wait for a few minutes and try again.',
     BANDWIDTH_IS_LOW_RECEIVER: 'Please wait bandwidth to be allocated to receiver address. Try again after 5 minutes.',
     COUNTRY_INTEGER: 'Country should be integer.',
-    CHARACTER_COUNT_ERROR: 'Name should be less than 30 Characters.',
+    CHARACTER_COUNT_ERROR: 'Name should be less than 100 Characters.',
     CODE_NOT_VARIFIED: 'Invalid authentication code.',
     CHECK_YOUR_EMAIL: 'Please check email to setup your account password.',
     DOCUMENT_SAVED: 'Document saved successfully.',

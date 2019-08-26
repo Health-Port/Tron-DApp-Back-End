@@ -16,7 +16,7 @@ async function addTemplate(req, res) {
 		//Name validations
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_IS_REQUIRED)
-		if (name.length >= 30)
+		if (name.length > 100)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHARACTER_COUNT_ERROR)
 
 		if (!templateFields || templateFields.length == 0)
@@ -300,7 +300,7 @@ async function updateTemplateById(req, res) {
 		//Name validations
 		if (!name)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.NAME_IS_REQUIRED)
-		if (name.length >= 30)
+		if (name.length > 100)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.CHARACTER_COUNT_ERROR)
 
 		if (!templateFields || templateFields.length == 0)
@@ -319,10 +319,10 @@ async function updateTemplateById(req, res) {
 			}
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
 
 		//Verifying user authenticity
-		;[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
 		if (err) return response.errReturned(res, err)
 		if (!admin || admin.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
