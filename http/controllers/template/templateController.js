@@ -9,9 +9,9 @@ async function addTemplate(req, res) {
 	try {
 		const { id } = req.auth
 		const { name, description } = req.body
-		let { templateFields, accessRights } = req.body
+		let { templateFields } = req.body
 
-		let err = {}, template = {}, tempFields = {}, admin = {}, rights = {}
+		let err = {}, template = {}, tempFields = {}, admin = {} /*,rights = {}*/
 
 		//Name validations
 		if (!name)
@@ -25,11 +25,7 @@ async function addTemplate(req, res) {
 		if (templateFields.length > process.env.TEMPLATE_FIELDS_LENGTH)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
 
-		if (!accessRights || accessRights.length == 0)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
-
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
-		let statusFlag = false
 		let flag = false
 		templateFields.forEach(element => {
 			if (!(element.hasOwnProperty('label') && element.hasOwnProperty('type'))) {
@@ -37,29 +33,9 @@ async function addTemplate(req, res) {
 			} else if (!(element.label && element.type)) {
 				flag = true
 			}
-			// else if(!utils.isBoolean(element.required)){
-			// 	statusFlag = true
-			// }
 		})
 		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
-
-		//accessRights' Boolean fields must be boolean, not allowed any other value - HP-548 - Zaigham javed
-		flag = false
-		statusFlag = false
-		accessRights.forEach(element => {
-			if (!(element.hasOwnProperty('systemRoleId'))) {
-				flag = true
-			} else if (!(element.systemRoleId)) {
-				flag = true
-			} else if (!(utils.isBoolean(element.view) && utils.isBoolean(element.edit) && utils.isBoolean(element.update) && utils.isBoolean(element.share_via_email) && utils.isBoolean(element.share))) {
-				statusFlag = true
-			}
-		})
-		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
-		if (statusFlag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOOLEAN_VALUE_REQUIRED);
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -95,25 +71,6 @@ async function addTemplate(req, res) {
 		[err, tempFields] = await utils.to(db.models.template_fields.bulkCreate(templateFields))
 		if (err) return response.errReturned(res, err)
 		if (tempFields == null || !tempFields)
-			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
-
-		//Mapping access rights
-		accessRights = accessRights.map(elem => (
-			{
-				view: elem.view,
-				edit: elem.edit,
-				update: elem.update,
-				share_via_email: elem.share_via_email,
-				share: elem.share,
-				template_id: template.id,
-				system_role_id: elem.systemRoleId
-			}
-		));
-
-		//Saving rights
-		[err, rights] = await utils.to(db.models.system_role_rights.bulkCreate(accessRights))
-		if (err) return response.errReturned(res, err)
-		if (rights == null || !rights)
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
@@ -322,25 +279,6 @@ async function getTemplateById(req, res) {
 			}
 		}
 
-		// Getting access rights against template id
-		if (req.baseUrl === '/admin') {
-			[err, temp] = await utils.to(db.query(`
-				Select s.id as systemRoleId, s.view, s.edit, s.update, s.share_via_email, s.share, 
-					r.name as roleName
-					From system_role_rights s 
-					Inner join templates t ON s.template_id = t.id
-					Inner join system_roles r ON r.id = s.system_role_id
-					Where t.id = :id`,
-				{
-					replacements: { id: tempId },
-					type: db.QueryTypes.SELECT,
-				}))
-			if (err) return response.errReturned(res, err)
-			if (!temp || temp.length == 0)
-				return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_ACCESS_RIGHTS_FOUND)
-			data.accessRights = temp
-		}
-
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
 
@@ -354,7 +292,7 @@ async function updateTemplateById(req, res) {
 	try {
 		const { id } = req.auth
 		const { name, description } = req.body
-		let { templateFields, accessRights } = req.body
+		let { templateFields } = req.body
 		const { tempId } = req.params
 
 		let err = {}, admin = {}, temp = {}, obj = {}, tempFields = {}
@@ -383,19 +321,8 @@ async function updateTemplateById(req, res) {
 		if (flag)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED)
 
-		flag = false
-		accessRights.forEach(element => {
-			if (!(element.hasOwnProperty('systemRoleId'))) {
-				flag = true
-			} else if (!(element.systemRoleId)) {
-				flag = true
-			}
-		})
-		if (flag)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BOTH_LABEL_TYPE_REQUIRED);
-
 		//Verifying user authenticity
-		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		;[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
 		if (err) return response.errReturned(res, err)
 		if (!admin || admin.length == 0)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
@@ -455,34 +382,7 @@ async function updateTemplateById(req, res) {
 		if (tempFields == null || !tempFields)
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
-		//Mapping access rights
-		accessRights = accessRights.map(elem => (
-			{
-				id: elem.systemRoleId,
-				view: elem.view,
-				edit: elem.edit,
-				update: elem.update,
-				share_via_email: elem.share_via_email,
-				share: elem.share,
-				template_id: parseInt(tempId),
-				//system_role_id: elem.systemRoleId
-			}
-		));
-
-		//Updating rights access
-		[err, tempFields] = await utils.to(db.models.system_role_rights.bulkCreate(
-			accessRights, {
-				updateOnDuplicate: [
-					'view', 'edit', 'update', 'share_via_email', 'share', 'template_id'
-				]
-			}))
-		if (err) return response.errReturned(res, err)
-		if (tempFields == null || !tempFields)
-			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
-
 		//Returing successful response
-		//response message changed from temp-added-successfully to temp-updated-successful"
-		//HP-540 - Zaigham Javed - 03/july/2019
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.TEMPLATE_UPDATED_SUCCESSFULLY)
 
 	} catch (error) {
