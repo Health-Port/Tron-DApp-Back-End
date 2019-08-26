@@ -13,6 +13,7 @@ const emailTemplates = require('../../../etc/emailTemplates')
 const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
+const roleEnum = require('./../../../enum/roleEnum')
 const Sequelize = require('sequelize')
 const geoip = require('geoip-lite')
 
@@ -209,7 +210,7 @@ async function signIn(req, res) {
             twofa_enable: user.is_twofa_enable,
             is_twofa_verified: user.is_twofa_verified,
             wallet_address: utils.decrypt(user.tron_wallet_public_key),
-            public_key_hex: user.tron_wallet_public_key_hex ? 
+            public_key_hex: user.tron_wallet_public_key_hex ?
                 utils.decrypt(user.tron_wallet_public_key_hex) : '',
             total_tokens: parseFloat(process.env.TRON_TOKEN_TOTAL_SUPPLY),
             user_totkens: await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key)),
@@ -455,8 +456,11 @@ async function verifyEmail(req, res) {
                             ]))
                     }
 
-                    //Singup
-                    [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({ where: { reward_type: rewardEnum.SIGNUPREWARD } }))
+                    //Singup (patient or provider)
+                    if (user.role == roleEnum.PATIENT)
+                        [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({ where: { reward_type: rewardEnum.SIGNUPREWARD } }))
+                    else
+                        [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({ where: { reward_type: rewardEnum.SIGNUPREWARDFORPROVIDER } }))
                     if (err) {
                         return response.sendResponse(
                             res,
