@@ -10,6 +10,7 @@ const twoFactorAuthenticationController = require('../controllers/twoFactorAuthe
 const templateController = require('../controllers/template/templateController')
 const medicalRecordController = require('../controllers/medicalRecord/medicalRecordController')
 const shareTypeController = require('../controllers/shareType/shareTypeController')
+const shareHistoryController = require('../controllers/shareHistory/shareHistoryController')
 
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
@@ -38,7 +39,7 @@ router.post('/saveProcedureByUser', authorize.authenticateToken, procedureContro
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
 //Providers
-router.post('/getAllProviders', authorize.authenticateToken, providerController.getAllProviders)
+router.get('/getAllProviders', authorize.authenticateToken, providerController.getAllProviders)
 router.post('/shareListWithProviders', authorize.authenticateToken, providerController.shareListWithProviders)
 router.post('/getProviderSharedData', authorize.authenticateToken, providerController.getProviderSharedData)
 router.post('/getProviderSharedDocument', authorize.authenticateToken, providerController.getProviderSharedDocument)
@@ -62,5 +63,8 @@ router.get('/medical-record/ipfs/:action', authorize.authenticateToken, medicalR
 
 //Share Types Routes
 router.get('/share-types/list', authorize.authenticateToken, shareTypeController.getShareTypes)
+
+//Share History Routes
+router.post('/share-history/add', authorize.authenticateToken, shareHistoryController.addShareHistory)
 
 module.exports = router
