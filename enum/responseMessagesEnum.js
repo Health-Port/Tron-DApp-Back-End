@@ -56,6 +56,7 @@ const ResponseMessagesEnum = {
     NAME_IS_REQUIRED: 'Name is required.',
     NAME_ALREADY_EXISTS: 'Name already exists.', 
     PARENT_ID_MISSING: 'Parent id is missing.',
+    PROVIDER_IS_REQUIRED: 'At least one provider is required.',
     PASSWORD_ARE_SAME: 'Current and new passwords are same.',
     PASSWORD_ERROR: 'Password length needs to between 8 to 30 characters.',
     PASSWORD_UPDATED: 'Password updated successfully.',
