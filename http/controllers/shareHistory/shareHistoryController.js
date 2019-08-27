@@ -10,7 +10,7 @@ async function addShareHistory(req, res) {
 		const { user_id } = req.auth
 		const { medicalRecordId, providers, rights } = req.body
 
-		let err = {}, user = {}, result = {}, obj = {}, record = {}
+		let err = {}, user = {}, result = {}, shareHistory = {}, record = {}
 
 		if (!medicalRecordId)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
@@ -58,18 +58,18 @@ async function addShareHistory(req, res) {
 		));
 
 		//Saving history in db
-		[err, obj] = await utils.to(db.models.share_histories.bulkCreate(data))
+		[err, shareHistory] = await utils.to(db.models.share_histories.bulkCreate(data))
 		if (err) return response.errReturned(res, err)
-		if (obj == null || !obj)
+		if (shareHistory == null || !shareHistory)
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Adding share rights
-		for (let i = 0; i < obj.length; i++) {
+		for (let i = 0; i < shareHistory.length; i++) {
 			for (let j = 0; j < rights.length; j++) {
 				[err, result] = await utils.to(db.models.share_rights.create(
 					{
 						share_type_id: rights[j].id,
-						share_history_id: obj[i].id
+						share_history_id: shareHistory[i].id
 					}))
 				if (!result || result == null)
 					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
