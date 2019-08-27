@@ -1,97 +1,54 @@
-var _ = require('lodash');
-
+const _ = require('lodash')
 const regex = require('../../../etc/regex')
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const tronUtils = require('../../../etc/tronUtils')
 const roleEnum = require('./../../../enum/roleEnum')
 const passcodeGenerator = require('generate-password')
+const cutCommission = require('./../../../etc/commission')
 const resCode = require('../../../enum/responseCodesEnum')
-const resMessage = require('../../../enum/responseMessagesEnum')
-var cutCommission = require('./../../../etc/commission')
 const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const tokenGenerator = require('../../../etc/generateToken')
 const emailTemplates = require('../../../etc/emailTemplates')
+const resMessage = require('../../../enum/responseMessagesEnum')
 
-const Sequelize = require('sequelize')
 const db = global.healthportDb;
 
 async function getAllProviders(req, res) {
     try {
-        let type = req.body.type;
-        let user_id = req.body.userId;
+        const { user_id } = req.auth;
 
-        let err, providers, finalData = [], data = {}, obj = {}, objData = {};
+        let err = {}, providers = {}, data = {};
+
+        //Verifying user authenticity  
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+        if (err) return response.errReturned(res, err)
+        if (user == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
         //Getting all providers from db
-        [err, providers] = await utils.to(db.models.users.findAll({ where: { role: roleEnum.PROVIDER } }));
+        [err, providers] = await utils.to(db.models.users.findAll(
+            {
+                where: { role: roleEnum.PROVIDER, status: true },
+                order: [['name', 'asc']]
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!providers || providers == null || providers.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-        for (let i = 0; i < providers.length; i++) {
-            data[i] = {
-                'share_with_id': providers[i].id,
-                'share_with_name': providers[i].name,
-                'email': providers[i].email,
-                'share_with_name_email': `${providers[i].name} , ${providers[i].email}`
-            }
-        }
-        data = _.orderBy(data, ['share_with_name'], ['asc']);
-
-        if (type != 'all') {
-            // [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
-            //     { where: { type: type, user_id: user_id } 
-            // }));
-            [err, obj] = await utils.to(db.query(`
-            select p.share_with_id as id, p.share_with_name as name, u.email as email 
-                from patient_provider_records p
-                inner join users u ON u.id = p.share_with_id
-                where p.user_Id = :userId and p.type = :type`,
-                {
-                    replacements: { type: type, userId: user_id },
-                    type: db.QueryTypes.SELECT,
-                }));
-            for (let i = 0; i < obj.length; i++) {
-                objData[i] = {
-                    'share_with_id': obj[i].id,
-                    'share_with_name': obj[i].name,
-                    'email': obj[i].email,
-                    'share_with_name_email': `${obj[i].name} , ${obj[i].email}`
-                }
-            }
-            objData = _.orderBy(objData, ['share_with_name'], ['asc']);
-        } else {
-            // [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
-            //     {
-            //         where: { user_id: user_id },
-            //         group: ['share_with_id'],
-            //         having: Sequelize.literal('COUNT(share_with_id) = 3')
-            //     }));
-            [err, obj] = await utils.to(db.query(`
-            select p.share_with_id as id, p.share_with_name as name, u.email as email 
-                from patient_provider_records p
-                inner join users u ON u.id = p.share_with_id
-                where p.user_Id = :userId
-                group by p.share_with_id
-                having COUNT(p.share_with_id) = 3`,
-                {
-                    replacements: { type: type, userId: user_id },
-                    type: db.QueryTypes.SELECT,
-                }));
-            for (let i = 0; i < obj.length; i++) {
-                objData[i] = {
-                    'share_with_id': obj[i].id,
-                    'share_with_name': obj[i].name,
-                    'email': obj[i].email,
-                    'share_with_name_email': `${obj[i].name} , ${obj[i].email}`
-                }
-            }
-            objData = _.orderBy(objData, ['share_with_name'], ['asc']);
-        }
-
-        finalData.push(objData);
-        finalData.push(data);
-
+        //Mapping data
+        data = providers.map(elem => (
+			{
+				id: elem.id,
+                name: elem.name,
+                email: elem.email,
+                wallet_address: utils.decrypt(elem.tron_wallet_public_key),
+                public_key_hex: utils.decrypt(elem.tron_wallet_public_key_hex)
+			}
+        ))
+        
         //Returing successful response with data
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, finalData);
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data);
 
     } catch (error) {
         console.log(error);
@@ -289,7 +246,7 @@ async function addPatient(req, res) {
                 referal_coupon: passcodeGenerator.generate({ length: 14, numbers: true }),
             }))
         if (err) return response.errReturned(res, err)
-        if (!patient) 
+        if (!patient)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         const spilt_name = name.split(' ')
