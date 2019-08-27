@@ -57,6 +57,7 @@ router.get('/template/:tempId', authorize.authenticateToken, templateController.
 //Medical Record Routes
 router.post('/medical-record/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
 router.post('/medical-record/list', authorize.authenticateToken, medicalRecordController.getMedicalRecordsByUserId)
+router.get('/medical-record/list-all', authorize.authenticateToken, medicalRecordController.getAllMedicalRecordsByUserId)
 router.get('/medical-record/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateId)
 router.get('/medical-record/template-attribute/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateIdWithAttributes)
 router.get('/medical-record/ipfs/:action', authorize.authenticateToken, medicalRecordController.ipfsCallHandeling)
@@ -66,5 +67,6 @@ router.get('/share-types/list', authorize.authenticateToken, shareTypeController
 
 //Share History Routes
 router.post('/share-history/add', authorize.authenticateToken, shareHistoryController.addShareHistory)
+router.post('/rights/update', authorize.authenticateToken, shareHistoryController.updateRights)
 
 module.exports = router

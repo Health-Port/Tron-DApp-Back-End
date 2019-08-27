@@ -3,6 +3,7 @@ const ResponseMessagesEnum = {
     ATTRIBUTE_IS_REQUIRED: 'Atleast one attribute is required to add new list.',
     ATTRIBUTE_LIST_ID_REQUIRED: 'Attribute list id is required for dropdowns.',
     ACCESS_RIGHTS_REQUIRED: 'Access rights are required.',
+    ACCESS_RIGHTS_UPDATED: 'Access rights updated successfully.',
     ACCESS_RIGHTS_LENGHT_ERROR: 'Access rights can not be more then 2.',
     ALREADY_VERIFIED: 'Account already verified.',
     ACCESS_DENIED: 'Access denied. No token provided.',
