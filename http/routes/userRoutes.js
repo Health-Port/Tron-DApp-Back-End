@@ -9,6 +9,7 @@ const medicationController = require('../controllers/medication/medicationContro
 const twoFactorAuthenticationController = require('../controllers/twoFactorAuthentication/twoFactorAuthenticationController')
 const templateController = require('../controllers/template/templateController')
 const medicalRecordController = require('../controllers/medicalRecord/medicalRecordController')
+const shareTypeController = require('../controllers/shareType/shareTypeController')
 
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
@@ -58,5 +59,8 @@ router.post('/medical-record/list', authorize.authenticateToken, medicalRecordCo
 router.get('/medical-record/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateId)
 router.get('/medical-record/template-attribute/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateIdWithAttributes)
 router.get('/medical-record/ipfs/:action', authorize.authenticateToken, medicalRecordController.ipfsCallHandeling)
+
+//Share Types Routes
+router.get('/share-types/list', authorize.authenticateToken, shareTypeController.getShareTypes)
 
 module.exports = router
