@@ -224,8 +224,67 @@ async function getMedicalRecordHisotry(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
+async function removeAccessRightByProviderId(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { medicalRecordId, providerId } = req.body
+
+		let err = {}, user = {}, shareHistory = {}, shareRights = {}
+
+		//Checking empty required fields 
+		if (!(medicalRecordId && providerId))
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+		//Verifying user authenticity  
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking weather record exists  
+		[err, shareHistory] = await utils.to(db.models.share_histories.findOne(
+			{
+				where: {
+					share_with_user_id: providerId,
+					medical_record_id: medicalRecordId,
+					share_from_user_id: user_id
+				}
+			}))
+		if (err) return response.errReturned(res, err)
+		if (shareHistory == null || !shareHistory)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+		//Deleting access rights
+		[err, shareRights] = await utils.to(db.models.share_rights.destroy(
+			{
+				where: { share_history_id: shareHistory.id }
+			}))
+		if (err) return response.errReturned(res, err)
+		if (shareRights == 0)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+		//Deleting share histroy
+		[err, shareRights] = await utils.to(db.models.share_histories.destroy(
+			{
+				where: { id: shareHistory.id }
+			}))
+		if (err) return response.errReturned(res, err)
+		if (shareRights == 0)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	addShareHistory,
 	updateRights,
-	getMedicalRecordHisotry
+	getMedicalRecordHisotry,
+	removeAccessRightByProviderId
 }
