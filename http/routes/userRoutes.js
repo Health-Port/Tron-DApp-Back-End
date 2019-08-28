@@ -68,5 +68,6 @@ router.get('/share-types/list', authorize.authenticateToken, shareTypeController
 //Share History Routes
 router.post('/share-history/add', authorize.authenticateToken, shareHistoryController.addShareHistory)
 router.post('/rights/update', authorize.authenticateToken, shareHistoryController.updateRights)
+router.post('/share-history/list', authorize.authenticateToken, shareHistoryController.getMedicalRecordHisotry)
 
 module.exports = router
