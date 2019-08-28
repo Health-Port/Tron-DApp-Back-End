@@ -118,6 +118,43 @@ async function getMedicalRecordsByUserId(req, res) {
 	}
 }
 
+async function getAllMedicalRecordsByUserId(req, res) {
+	try {
+		const { user_id } = req.auth
+
+		let err = {}, user = {}, records = {};
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting medical records from db with paging
+		[err, records] = await utils.to(db.query(`
+			SELECT m.id as medicalRecordId, t.id as templateId, t.name as templateName, 
+				m.access_token as accessToken, m.createdAt	  
+				FROM medical_records m
+				INNER JOIN templates t ON m.template_id = t.id
+				WHERE m.user_id = :user_id
+				ORDER by m.createdAt DESC`,
+			{
+				replacements: { user_id },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (records == null || records.count == 0 || records == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, records )
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 async function getMedicalRecordByTemplateId(req, res) {
 	try {
 		const { user_id } = req.auth
@@ -317,6 +354,7 @@ module.exports = {
 	addMedicalRecord,
 	ipfsCallHandeling,
 	getMedicalRecordsByUserId,
+	getAllMedicalRecordsByUserId,
 	getMedicalRecordByTemplateId,
 	getMedicalRecordByTemplateIdWithAttributes
 }

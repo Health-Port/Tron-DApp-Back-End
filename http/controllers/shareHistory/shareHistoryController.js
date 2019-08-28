@@ -38,7 +38,7 @@ async function addShareHistory(req, res) {
 		let flag = false
 		for (let i = 0; i < record.length; i++) {
 			for (let j = 0; j < providers.length; j++) {
-				if (record[i].share_with_user_id == providers[j].providerId){
+				if (record[i].share_with_user_id == providers[j].providerId) {
 					flag = true
 					break
 				}
@@ -85,6 +85,68 @@ async function addShareHistory(req, res) {
 	}
 }
 
+async function updateRights(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { medicalRecordId, rights } = req.body
+
+		let err = {}, user = {}, result = {}, record = {}, shareRights = {}
+
+		if (!medicalRecordId)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+		if (!rights || rights.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
+
+		if (rights.length > 2)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_LENGHT_ERROR);
+
+		//Verifying user authenticity  
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking if record already exists
+		[err, record] = await utils.to(db.models.share_histories.findAll(
+			{ where: { medical_record_id: medicalRecordId, share_from_user_id: user_id } }))
+		if (err) return response.errReturned(res, err)
+
+		//Deleting existing rights
+		let flag = false
+		for (let i = 0; i < record.length; i++) {
+			[err, shareRights] = await utils.to(db.models.share_rights.destroy(
+				{
+					where: { share_history_id: record[i].id }
+				}))
+			if (!shareRights) flag = true
+		}
+		if (flag)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Adding share rights
+		for (let i = 0; i < record.length; i++) {
+			for (let j = 0; j < rights.length; j++) {
+				[err, result] = await utils.to(db.models.share_rights.create(
+					{
+						share_type_id: rights[j].id,
+						share_history_id: record[i].id
+					}))
+				if (!result || result == null)
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			}
+		}
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCESS_RIGHTS_UPDATED)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
-	addShareHistory
+	addShareHistory,
+	updateRights
 }
