@@ -88,7 +88,7 @@ async function addShareHistory(req, res) {
 async function updateRights(req, res) {
 	try {
 		const { user_id } = req.auth
-		const { medicalRecordId, rights } = req.body
+		const { medicalRecordId, rights, providerId } = req.body
 
 		let err = {}, user = {}, result = {}, record = {}, shareRights = {}
 
@@ -109,7 +109,11 @@ async function updateRights(req, res) {
 
 		//Checking if record already exists
 		[err, record] = await utils.to(db.models.share_histories.findAll(
-			{ where: { medical_record_id: medicalRecordId, share_from_user_id: user_id } }))
+			{ where: { 
+				medical_record_id: medicalRecordId, 
+				share_from_user_id: user_id,
+				share_with_user_id: providerId 
+			} }))
 		if (err) return response.errReturned(res, err)
 
 		//Deleting existing rights
@@ -180,7 +184,7 @@ async function getMedicalRecordHisotry(req, res) {
 			Inner join share_rights sr ON sr.share_history_id = sh.id
 			Inner join share_types st ON st.id = sr.share_type_id
 			Where sh.medical_record_id = :mId and sh.share_from_user_id = :uId
-			ORDER BY sh.createdAt DESC 
+			ORDER BY sh.id DESC 
 			`,
 			//LIMIT ${start}, ${pageSize}
 			{
