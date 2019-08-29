@@ -297,15 +297,17 @@ async function getSharedMedicalRecords(req, res) {
     try {
         const userId = req.auth.user_id
         let { pageNumber, pageSize } = req.body
+        const { templateId, searchValue } = req.body
 
-        let err = {}, provider = {}, records = {}, count = {}
+        let err = {}, provider = {}, records = {}
 
         //Paging
         pageSize = parseInt(pageSize)
         pageNumber = parseInt(pageNumber)
         if (!pageNumber) pageNumber = 0
         if (!pageSize) pageSize = 10
-        const start = parseInt(pageNumber * pageSize);
+        const start = parseInt(pageNumber * pageSize)
+        const end = parseInt(start + pageSize);
 
         //Verifying user authenticity
         [err, provider] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
@@ -317,32 +319,40 @@ async function getSharedMedicalRecords(req, res) {
 
         //Getting medical records from db with paging
         [err, records] = await utils.to(db.query(`
-            SELECT sh.id as shareHistoryId, t.name as templateName, u.name as patientName, 
-                u.email as patientEmail, sh.createdAt 
+            SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
+                u.name as patientName, u.email as patientEmail, sh.createdAt 
                 FROM share_histories sh
                 INNER JOIN users u ON sh.share_from_user_id = u.id
                 INNER JOIN medical_records m ON sh.medical_record_id = m.id
                 INNER JOIN templates t ON m.template_id = t.id
                 WHERE sh.share_with_user_id = :userId
-                ORDER BY sh.createdAt DESC 
-                LIMIT ${start}, ${pageSize}`,
+                ORDER BY sh.createdAt DESC`,
             {
                 replacements: { userId },
                 type: db.QueryTypes.SELECT,
             }))
         if (err) return response.errReturned(res, err)
         if (records == null || records.count == 0 || records == undefined)
-            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-        //Getting total count
-        [err, count] = await await utils.to(db.models.share_histories.count({
-            where: { share_with_user_id: userId }
-        }))
-        if (err) return response.errReturned(res, err)
+        let returnableData = {}
+        if (records) {
+            if (templateId) {
+                records = records.filter(x => x.templateId == templateId)
+            } 
+            if (searchValue) {
+                records = records.filter(x =>
+                    x.patientName.toLowerCase().includes(searchValue.toLowerCase()) ||
+                    x.patientEmail.toLowerCase().includes(searchValue.toLowerCase()))
+            }
 
-        //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { count, rows: records })
+            returnableData['count'] = records.length
+            let slicedData = records.slice(start, end)
+            returnableData['rows'] = slicedData
 
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+        }
     } catch (error) {
         console.log(error)
         return response.errReturned(res, error)

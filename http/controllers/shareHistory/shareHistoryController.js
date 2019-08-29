@@ -180,7 +180,7 @@ async function getMedicalRecordHisotry(req, res) {
 			Inner join share_rights sr ON sr.share_history_id = sh.id
 			Inner join share_types st ON st.id = sr.share_type_id
 			Where sh.medical_record_id = :mId and sh.share_from_user_id = :uId
-			ORDER BY sh.createdAt DESC 
+			ORDER BY sh.id DESC 
 			`,
 			//LIMIT ${start}, ${pageSize}
 			{
