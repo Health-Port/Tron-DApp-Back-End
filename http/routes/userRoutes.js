@@ -53,6 +53,7 @@ router.post('/verifyTwoFactorAuthentication', authorize.authenticateToken, twoFa
 
 //Template Routes
 router.post('/template/list', authorize.authenticateToken, templateController.getTemplates)
+router.get('/template/list-all', authorize.authenticateToken, templateController.getAllTemplates)
 router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
 
 //Medical Record Routes
