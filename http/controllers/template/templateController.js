@@ -391,9 +391,60 @@ async function updateTemplateById(req, res) {
 	}
 }
 
+async function getAllTemplates(req, res) {
+	try {
+		let { id } = req.auth
+		const { user_id } = req.auth
+		let table
+		if (req.baseUrl === '/admin') {
+			table = 'admins'
+		} else {
+			id = user_id
+			table = 'users'
+		}
+
+		let err = {}, templates = {}, admin = {};
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.query(
+			`Select id
+					From ${table} 
+					where id = :id 
+					Order by id desc limit 1`,
+			{
+				replacements: { id },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (admin == null || admin.length == 0 || !admin)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Quering db for data
+		[err, templates] = await utils.to(db.query(`
+			Select id, name 
+				From templates
+				Where status = 1
+				Order by createdAt DESC`,
+			{
+				type: db.QueryTypes.SELECT
+			}))
+		if (err) return response.errReturned(res, err)
+		if (templates == null || templates.length == 0 || !templates)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, templates)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	addTemplate,
 	getTemplates,
+	getAllTemplates,
 	getTemplateById,
 	updateTemplateById,
 	updateTemplateStatusById
