@@ -38,15 +38,15 @@ async function getAllProviders(req, res) {
 
         //Mapping data
         data = providers.map(elem => (
-			{
-				id: elem.id,
+            {
+                id: elem.id,
                 name: elem.name,
                 email: elem.email,
                 wallet_address: utils.decrypt(elem.tron_wallet_public_key),
                 public_key_hex: utils.decrypt(elem.tron_wallet_public_key_hex)
-			}
+            }
         ))
-        
+
         //Returing successful response with data
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data);
 
@@ -293,10 +293,67 @@ async function addPatient(req, res) {
     }
 }
 
+async function getSharedMedicalRecords(req, res) {
+    try {
+        const userId = req.auth.user_id
+        let { pageNumber, pageSize } = req.body
+
+        let err = {}, provider = {}, records = {}, count = {}
+
+        //Paging
+        pageSize = parseInt(pageSize)
+        pageNumber = parseInt(pageNumber)
+        if (!pageNumber) pageNumber = 0
+        if (!pageSize) pageSize = 10
+        const start = parseInt(pageNumber * pageSize);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Getting medical records from db with paging
+        [err, records] = await utils.to(db.query(`
+            SELECT sh.id as shareHistoryId, t.name as templateName, u.name as patientName, 
+                u.email as patientEmail, sh.createdAt 
+                FROM share_histories sh
+                INNER JOIN users u ON sh.share_from_user_id = u.id
+                INNER JOIN medical_records m ON sh.medical_record_id = m.id
+                INNER JOIN templates t ON m.template_id = t.id
+                WHERE sh.share_with_user_id = :userId
+                ORDER BY sh.createdAt DESC 
+                LIMIT ${start}, ${pageSize}`,
+            {
+                replacements: { userId },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (records == null || records.count == 0 || records == undefined)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+        //Getting total count
+        [err, count] = await await utils.to(db.models.share_histories.count({
+            where: { share_with_user_id: userId }
+        }))
+        if (err) return response.errReturned(res, err)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { count, rows: records })
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     addPatient,
     getAllProviders,
     getProviderSharedData,
     shareListWithProviders,
     getProviderSharedDocument,
+    getSharedMedicalRecords
 }

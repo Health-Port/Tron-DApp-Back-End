@@ -173,7 +173,8 @@ async function getMedicalRecordHisotry(req, res) {
 
 		//Querying db for list records
 		[err, shareHistory] = await utils.to(db.query(`
-		Select sh.id as shareHistoryId, u.name, u.email, st.name as permission, sh.createdAt 
+		Select sh.id as shareHistoryId, u.id as providerId, u.name, u.email, st.name as permission, 
+			sh.createdAt 
 			From share_histories sh
 			Inner join users u ON sh.share_with_user_id = u.id
 			Inner join share_rights sr ON sr.share_history_id = sh.id
@@ -197,6 +198,7 @@ async function getMedicalRecordHisotry(req, res) {
 			if (filterArry.length > 1) {
 				data[i] = {
 					id: shareHistory[i].shareHistoryId,
+					providerId: shareHistory[i].providerId,
 					sharedWith: `${shareHistory[i].name}, ${shareHistory[i].email}`,
 					permission: filterArry.map(x => x.permission),
 					createdAt: shareHistory[i].createdAt
@@ -205,6 +207,7 @@ async function getMedicalRecordHisotry(req, res) {
 			} else {
 				data[i] = {
 					id: shareHistory[i].shareHistoryId,
+					providerId: shareHistory[i].providerId,
 					sharedWith: `${shareHistory[i].name}, ${shareHistory[i].email}`,
 					permission: [shareHistory[i].permission],
 					createdAt: shareHistory[i].createdAt
