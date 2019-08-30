@@ -21,6 +21,11 @@ module.exports = (sequelize, Sequelize) => {
 		access_token: {
             type: Sequelize.STRING,
             allowNull: false
+        },
+        status : {
+            type: Sequelize.STRING,
+            allowNull: false,
+            defaultValue: 'SUCCESS'
         }
     })
     return shareHistories
