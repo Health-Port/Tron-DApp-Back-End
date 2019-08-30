@@ -322,7 +322,7 @@ async function getSharedMedicalRecords(req, res) {
             SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
                 u.name as patientName, u.email as patientEmail, 
                 u.tron_wallet_public_key_hex as patientPublicKeyHex,  
-                m.access_token as accessToken,
+                sh.access_token as accessToken,
                 sh.createdAt 
                 FROM share_histories sh
                 INNER JOIN users u ON sh.share_from_user_id = u.id
