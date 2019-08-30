@@ -92,7 +92,7 @@ async function updateRights(req, res) {
 
 		let err = {}, user = {}, result = {}, record = {}, shareRights = {}
 
-		if (!medicalRecordId)
+		if (!(medicalRecordId && providerId))
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
 
 		if (!rights || rights.length == 0)
@@ -109,11 +109,13 @@ async function updateRights(req, res) {
 
 		//Checking if record already exists
 		[err, record] = await utils.to(db.models.share_histories.findAll(
-			{ where: { 
-				medical_record_id: medicalRecordId, 
-				share_from_user_id: user_id,
-				share_with_user_id: providerId 
-			} }))
+			{
+				where: {
+					medical_record_id: medicalRecordId,
+					share_from_user_id: user_id,
+					share_with_user_id: providerId
+				}
+			}))
 		if (err) return response.errReturned(res, err)
 
 		//Deleting existing rights

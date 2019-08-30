@@ -320,7 +320,8 @@ async function getSharedMedicalRecords(req, res) {
         //Getting medical records from db with paging
         [err, records] = await utils.to(db.query(`
             SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
-                u.name as patientName, u.email as patientEmail, sh.createdAt 
+                u.name as patientName, u.email as patientEmail, m.access_token as accessToken,
+                sh.createdAt 
                 FROM share_histories sh
                 INNER JOIN users u ON sh.share_from_user_id = u.id
                 INNER JOIN medical_records m ON sh.medical_record_id = m.id
@@ -339,7 +340,7 @@ async function getSharedMedicalRecords(req, res) {
         if (records) {
             if (templateId) {
                 records = records.filter(x => x.templateId == templateId)
-            } 
+            }
             if (searchValue) {
                 records = records.filter(x =>
                     x.patientName.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -350,6 +351,22 @@ async function getSharedMedicalRecords(req, res) {
             let slicedData = records.slice(start, end)
             returnableData['rows'] = slicedData
 
+            //Getting access rigths
+            for (let i = 0; i < returnableData.rows.length; i++) {
+                [err, shareRights] = await utils.to(db.query(`
+                SELECT st.name from share_rights sr
+                    INNER JOIN share_types st ON sr.share_type_id = st.id
+                    WHERE share_history_id = :id;`,
+                    {
+                        replacements: { id: returnableData.rows[i].shareHistoryId},
+                        type: db.QueryTypes.SELECT,
+                    }))
+                if (err) return response.errReturned(res, err)
+                if (shareRights == null || shareRights.count == 0 || shareRights == undefined)
+                    return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+                returnableData.rows[i].rigths = shareRights.map(x=>x.name)
+            }
+            
             //Returing successful response
             return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
         }
