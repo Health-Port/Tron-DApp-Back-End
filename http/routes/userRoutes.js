@@ -45,7 +45,7 @@ router.post('/getProviderSharedData', authorize.authenticateToken, providerContr
 router.post('/getProviderSharedDocument', authorize.authenticateToken, providerController.getProviderSharedDocument)
 router.post('/patient/add', authorize.authenticateToken, providerController.addPatient)
 router.post('/shared-medical-records/list', authorize.authenticateToken, providerController.getSharedMedicalRecords)
-router.post('/update-provider-token', authorize.authenticateToken, providerController.updateProviderAccessToken)
+router.post('/provider/update-token', authorize.authenticateToken, providerController.updateProviderAccessToken)
 
 //TwoFactorAuthentication Routes
 router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)
@@ -63,7 +63,7 @@ router.post('/medical-record/list', authorize.authenticateToken, medicalRecordCo
 router.get('/medical-record/list-all', authorize.authenticateToken, medicalRecordController.getAllMedicalRecordsByUserId)
 router.get('/medical-record/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateId)
 router.get('/medical-record/template-attribute/:tempId', authorize.authenticateToken, medicalRecordController.getMedicalRecordByTemplateIdWithAttributes)
-router.get('/medical-record/ipfs/:action', authorize.authenticateToken, medicalRecordController.ipfsCallHandeling)
+router.post('/medical-record/ipfs/:action', authorize.authenticateToken, medicalRecordController.ipfsCallHandeling)
 
 //Share Types Routes
 router.get('/share-types/list', authorize.authenticateToken, shareTypeController.getShareTypes)

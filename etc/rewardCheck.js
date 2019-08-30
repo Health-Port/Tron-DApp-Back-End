@@ -104,7 +104,7 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                 }
             }));
             rewardsObject = rewardsObj;
-            sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source);
+            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source);
         }
         else {
             console.log('NO Source');
@@ -119,11 +119,7 @@ async function sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key
     try {
         if (rewardsObject) {
             let amount = parseFloat(rewardsObject[0].reward_amount);
-            let refRewardTrxId = await tronUtils.sendTRC10Token(
-                utils.decrypt(tron_wallet_public_key),
-                amount,
-                process.env.MAIN_ACCOUNT_PRIVATE_KEY
-            );
+            let refRewardTrxId = await tronUtils.sendTRC10Token(utils.decrypt(tron_wallet_public_key), amount, process.env.MAIN_ACCOUNT_PRIVATE_KEY);
             //Saving transection history into db
             if (refRewardTrxId) {
                 [err, obj] = await utils.to(db.models.transections.bulkCreate([
