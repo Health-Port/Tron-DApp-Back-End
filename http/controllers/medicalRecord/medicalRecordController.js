@@ -147,7 +147,7 @@ async function getAllMedicalRecordsByUserId(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, records )
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, records)
 
 	} catch (error) {
 		console.log(error)
@@ -276,6 +276,7 @@ async function ipfsCallHandeling(req, res) {
 	try {
 		const { action } = req.params
 		const { user_id } = req.auth
+		const { templateId } = req.body
 
 		let err = {}, result = {}, user = {}, commissionObj = {}, record = {};
 
@@ -286,35 +287,41 @@ async function ipfsCallHandeling(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
-			//Checking user's balance before uploading document.
-			const balance = await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key));
-			[err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
-				where: { commission_type: 'Upload' }
-			}))
-			if (err) return response.errReturned(res, err)
-			if (balance < commissionObj.commission_amount)
-				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
-
 			//Checking weather record already exists
 			[err, record] = await utils.to(db.models.medical_records.findOne(
 				{
-					where: { user_id }
+					where: { user_id, template_id: templateId }
 				}))
 			if (err) return response.errReturned(res, err)
-			if (record)
-				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.MEDICAL_RECORD_ALREADY_EXISTS);
-
-			//Giving reward
-			[err, result] = await utils.to(rewardDisperser(
-				rewardEnum.MEDICALRECORDDOCUMENTREWARD, user_id, user.tron_wallet_public_key))
-			if (err) {
-				return response.sendResponse(
-					res,
-					resCode.BAD_REQUEST,
-					resMessage.BANDWIDTH_IS_LOW
+			if (!record) {
+				//Giving reward for 1st time upload a document
+				[err, result] = await utils.to(rewardDisperser(rewardEnum.MEDICALRECORDDOCUMENTREWARD, user_id, user.tron_wallet_public_key))
+				if (err)
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
+				console.log(result)
+			} else {
+				//Checking user's balance before uploading document.
+				const balance = await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key));
+				[err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
+					where: { commission_type: 'Upload' }
+				}))
+				if (err) return response.errReturned(res, err)
+				if (balance < commissionObj.commission_amount)
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+				[err, result] = await utils.to(
+					cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
 				)
+				if (err) {
+					if (err == 'Bandwidth is low') {
+						return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
+					}
+					else {
+						return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE)
+					}
+				}
+				console.log(result)
 			}
-			console.log(result)
+
 		} else if (action.toLocaleLowerCase() == actionEnum.VIEW.toLocaleLowerCase()) {
 			[err, result] = await utils.to(
 				cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
