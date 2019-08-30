@@ -45,6 +45,7 @@ router.post('/getProviderSharedData', authorize.authenticateToken, providerContr
 router.post('/getProviderSharedDocument', authorize.authenticateToken, providerController.getProviderSharedDocument)
 router.post('/patient/add', authorize.authenticateToken, providerController.addPatient)
 router.post('/shared-medical-records/list', authorize.authenticateToken, providerController.getSharedMedicalRecords)
+router.post('/update-provider-token', authorize.authenticateToken, providerController.updateProviderAccessToken)
 
 //TwoFactorAuthentication Routes
 router.post('/requestTwoFactorAuthentication', authorize.authenticateToken, twoFactorAuthenticationController.requestTwoFactorAuthentication)

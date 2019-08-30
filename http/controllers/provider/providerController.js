@@ -320,7 +320,9 @@ async function getSharedMedicalRecords(req, res) {
         //Getting medical records from db with paging
         [err, records] = await utils.to(db.query(`
             SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
-                u.name as patientName, u.email as patientEmail, m.access_token as accessToken,
+                u.name as patientName, u.email as patientEmail, 
+                u.tron_wallet_public_key_hex as patientPublicKeyHex,  
+                m.access_token as accessToken,
                 sh.createdAt 
                 FROM share_histories sh
                 INNER JOIN users u ON sh.share_from_user_id = u.id
@@ -358,15 +360,16 @@ async function getSharedMedicalRecords(req, res) {
                     INNER JOIN share_types st ON sr.share_type_id = st.id
                     WHERE share_history_id = :id;`,
                     {
-                        replacements: { id: returnableData.rows[i].shareHistoryId},
+                        replacements: { id: returnableData.rows[i].shareHistoryId },
                         type: db.QueryTypes.SELECT,
                     }))
                 if (err) return response.errReturned(res, err)
                 if (shareRights == null || shareRights.count == 0 || shareRights == undefined)
                     return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
-                returnableData.rows[i].rigths = shareRights.map(x=>x.name)
+                returnableData.rows[i].rigths = shareRights.map(x => x.name)
+                returnableData.rows[i].patientPublicKeyHex = utils.decrypt(returnableData.rows[i].patientPublicKeyHex)
             }
-            
+
             //Returing successful response
             return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
         }
@@ -376,11 +379,57 @@ async function getSharedMedicalRecords(req, res) {
     }
 }
 
+async function updateProviderAccessToken(req, res) {
+    try {
+        const userId = req.auth.user_id
+        const { shareHistoryId, accessToken } = req.body
+
+        let err = {}, provider = {}, record = {}
+
+        //Checking empty field
+        if (!(shareHistoryId && accessToken))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Checking weather if exists
+        [err, record] = await utils.to(db.models.share_histories.findOne(
+            {
+                where: { id: shareHistoryId, share_with_user_id: userId }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!record || record == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+        //Updating access token
+        [err, record] = await utils.to(db.models.share_histories.update(
+			{ access_token: accessToken, status: 'PENDING' },
+			{ where: { id: shareHistoryId, share_with_user_id: userId } }
+		))
+		if (err) return response.errReturned(res, err)
+		if (record[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+            
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
 module.exports = {
     addPatient,
     getAllProviders,
     getProviderSharedData,
     shareListWithProviders,
     getProviderSharedDocument,
-    getSharedMedicalRecords
+    getSharedMedicalRecords,
+    updateProviderAccessToken
 }
