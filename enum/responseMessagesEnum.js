@@ -5,6 +5,7 @@ const ResponseMessagesEnum = {
     ACCESS_RIGHTS_REQUIRED: 'Access rights are required.',
     ACCESS_RIGHTS_UPDATED: 'Access rights updated successfully.',
     ACCESS_RIGHTS_LENGHT_ERROR: 'Access rights can not be more then 2.',
+    ACCESS_RIGHTS_REMOVED: 'Access rights removed successfully.',
     ALREADY_VERIFIED: 'Account already verified.',
     ACCESS_DENIED: 'Access denied. No token provided.',
     ACCOUNT_IS_VERIFIED: 'Your account is verified successfully.',

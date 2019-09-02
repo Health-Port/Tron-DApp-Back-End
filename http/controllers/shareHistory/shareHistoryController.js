@@ -1,5 +1,6 @@
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
+const roleEnum = require('../../../enum/roleEnum')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
 
@@ -73,6 +74,76 @@ async function addShareHistory(req, res) {
 					}))
 				if (!result || result == null)
 					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			}
+		}
+
+		//Returing successful response with data
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
+async function shareAllMedialRecrods(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { providers, rights } = req.body
+
+		let err = {}, user = {}, result = {}, shareHistory = {}, records = {}
+
+		if (!providers || providers.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PROVIDER_IS_REQUIRED)
+
+		if (!rights || rights.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_REQUIRED)
+
+		if (rights.length > 2)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ACCESS_RIGHTS_LENGHT_ERROR);
+
+		//Verifying user authenticity  
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+		if (user.role != roleEnum.PATIENT)
+			return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+		//Getting all medical records
+		[err, records] = await utils.to(db.models.medical_records.findAll({ where: { user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (records == null || !records)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		for (let i = 0; i < records.length; i++) {
+			//Mapping data for share_historis table
+			const data = providers.map(elem => (
+				{
+					medical_record_id: records[i].id,
+					share_from_user_id: user_id,
+					share_with_user_id: elem.providerId,
+					access_token: elem.accessToken
+				}
+			));
+
+			//Saving history in db
+			[err, shareHistory] = await utils.to(db.models.share_histories.bulkCreate(data))
+			if (err) return response.errReturned(res, err)
+			if (shareHistory == null || !shareHistory)
+				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+			//Adding share rights
+			for (let i = 0; i < shareHistory.length; i++) {
+				for (let j = 0; j < rights.length; j++) {
+					[err, result] = await utils.to(db.models.share_rights.create(
+						{
+							share_type_id: rights[j].id,
+							share_history_id: shareHistory[i].id
+						}))
+					if (!result || result == null)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				}
 			}
 		}
 
@@ -283,7 +354,7 @@ async function removeAccessRightByProviderId(req, res) {
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCESS_RIGHTS_REMOVED)
 
 	} catch (error) {
 		console.log(error)
@@ -295,5 +366,6 @@ module.exports = {
 	addShareHistory,
 	updateRights,
 	getMedicalRecordHisotry,
-	removeAccessRightByProviderId
+	removeAccessRightByProviderId,
+	shareAllMedialRecrods
 }
