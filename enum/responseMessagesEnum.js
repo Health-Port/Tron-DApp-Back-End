@@ -24,6 +24,7 @@ const ResponseMessagesEnum = {
     CODE_NOT_VARIFIED: 'Invalid authentication code.',
     CHECK_YOUR_EMAIL: 'Please check email to setup your account password.',
     DOCUMENT_SAVED: 'Document saved successfully.',
+    DOCUMENT_UPDATED: 'Document updated successfully.',
     DUPLICATE_ITEMS: 'Please remove duplicate items and try again.',
     DOCUMENT_RETRIEVED: 'Document retrieved successfully.',
     EMAIL_CONFIRMATION_REQUIRED: 'Please verify your account to continue further.',

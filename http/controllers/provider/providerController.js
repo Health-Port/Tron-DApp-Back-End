@@ -435,7 +435,7 @@ async function updateProviderAccessToken(req, res) {
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.DOCUMENT_UPDATED)
 
     } catch (error) {
         console.log(error)
