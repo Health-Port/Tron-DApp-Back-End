@@ -97,14 +97,15 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     }
                 }
             }
-        } else if (source == rewardEnum.MEDICALRECORDDOCUMENTREWARD) {
+        } else if (source.split(';')[0] == rewardEnum.MEDICALRECORDDOCUMENTREWARD) {
             [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
                 where: {
                     reward_type: rewardEnum.MEDICALRECORDDOCUMENTREWARD
                 }
             }));
             rewardsObject = rewardsObj;
-            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source);
+            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, 
+                `Create ${source.split(';')[1]} Record List.`);
         }
         else {
             console.log('NO Source');

@@ -287,15 +287,27 @@ async function ipfsCallHandeling(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
-			//Checking weather record already exists
-			[err, record] = await utils.to(db.models.medical_records.findOne(
+			[err, record] = await utils.to(db.query(`
+				SELECT t.id as templateId, t.name as templateName, 
+					mr.id as medicalRecordId 
+					FROM medical_records mr
+					INNER JOIN templates t ON mr.template_id = t.id
+					WHERE 
+						t.id = :templateId
+					AND 
+						mr.user_id = :user_id`,
 				{
-					where: { user_id, template_id: templateId }
+					replacements: { user_id, templateId },
+					type: db.QueryTypes.SELECT,
 				}))
 			if (err) return response.errReturned(res, err)
-			if (!record) {
+			if (record.length == 0) {
 				//Giving reward for 1st time upload a document
-				[err, result] = await utils.to(rewardDisperser(rewardEnum.MEDICALRECORDDOCUMENTREWARD, user_id, user.tron_wallet_public_key))
+				[err, result] = await utils.to(rewardDisperser(
+					`${rewardEnum.MEDICALRECORDDOCUMENTREWARD};${record[0].templateName}`, 
+					user_id, 
+					user.tron_wallet_public_key)
+					)
 				if (err)
 					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
 				console.log(result)
@@ -357,6 +369,7 @@ async function ipfsCallHandeling(req, res) {
 		return response.errReturned(res, error)
 	}
 }
+
 module.exports = {
 	addMedicalRecord,
 	ipfsCallHandeling,

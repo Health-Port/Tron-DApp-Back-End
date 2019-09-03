@@ -435,13 +435,67 @@ async function updateProviderAccessToken(req, res) {
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.DOCUMENT_UPDATED)
 
     } catch (error) {
         console.log(error)
         return response.errReturned(res, error)
     }
 }
+
+async function removeMedicalRecordHisotry(req, res) {
+    try {
+        const { user_id } = req.auth
+        const { sId } = req.params
+
+        let err = {}, provider = {}, record = {}, shareRights = {}
+        if (!sId)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Checking weather if exists
+        [err, record] = await utils.to(db.models.share_histories.findOne(
+            {
+                where: { id: sId, share_with_user_id: user_id }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!record || record == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+        //Deleting share histroy
+        [err, shareRights] = await utils.to(db.models.share_histories.destroy(
+            {
+                where: { id: sId }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (shareRights == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Deleting access rights
+        [err, shareRights] = await utils.to(db.models.share_rights.destroy(
+            {
+                where: { share_history_id: sId }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (shareRights == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCESS_RIGHTS_REMOVED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     addPatient,
     getAllProviders,
@@ -449,5 +503,6 @@ module.exports = {
     shareListWithProviders,
     getProviderSharedDocument,
     getSharedMedicalRecords,
-    updateProviderAccessToken
+    updateProviderAccessToken,
+    removeMedicalRecordHisotry
 }
