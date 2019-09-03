@@ -53,6 +53,7 @@ const ResponseMessagesEnum = {
     MEDICAL_RECORD_ALREADY_EXISTS: 'Medical record already exist.',
     MEDICAL_RECORD_ADDED: 'Medical record added successfully.',
     MEDICAL_RECORD_UPDATED: 'Medical record updated successfully.',
+    MEDICAL_ID_MISSING: 'Medical id is missing.',
     NO_RECORD_FOUND: 'No record found.',
     NO_ACCESS_RIGHTS_FOUND: 'No access right found.',
     NOT_ALLOWED: 'You are not allowed to perform this action.',

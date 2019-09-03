@@ -13,12 +13,13 @@ const emailTemplates = require('../../../etc/emailTemplates')
 const resMessage = require('../../../enum/responseMessagesEnum')
 
 const db = global.healthportDb;
+const Sequelize = require('sequelize')
 
 async function getAllProviders(req, res) {
     try {
         const { user_id } = req.auth;
-
-        let err = {}, providers = {}, data = {};
+        const { mId } = req.params
+        let err = {}, providers = {}, data = {}, ids = [];
 
         //Verifying user authenticity  
         [err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
@@ -26,10 +27,27 @@ async function getAllProviders(req, res) {
         if (user == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
+        if (mId) {
+            //Getting ids with already shared
+            [err, ids] = await utils.to(db.query(`
+                SELECT share_with_user_id
+                    FROM share_histories
+                    WHERE share_from_user_id = :user_id
+                    AND medical_record_id = :mId`,
+                {
+                    replacements: { user_id, mId },
+                    type: db.QueryTypes.SELECT,
+                }));
+        }
+
         //Getting all providers from db
         [err, providers] = await utils.to(db.models.users.findAll(
             {
-                where: { role: roleEnum.PROVIDER, status: true },
+                where:
+                {
+                    role: roleEnum.PROVIDER, status: true,
+                    id: { [Sequelize.Op.notIn]: ids.map(x => x.share_with_user_id) }
+                },
                 order: [['name', 'asc']]
             }))
         if (err) return response.errReturned(res, err)
@@ -409,13 +427,13 @@ async function updateProviderAccessToken(req, res) {
 
         //Updating access token
         [err, record] = await utils.to(db.models.share_histories.update(
-			{ access_token: accessToken, status: 'PENDING' },
-			{ where: { id: shareHistoryId, share_with_user_id: userId } }
-		))
-		if (err) return response.errReturned(res, err)
-		if (record[0] == 0)
+            { access_token: accessToken, status: 'PENDING' },
+            { where: { id: shareHistoryId, share_with_user_id: userId } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (record[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
-            
+
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
 
