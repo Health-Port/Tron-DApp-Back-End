@@ -74,5 +74,6 @@ router.post('/rights/update', authorize.authenticateToken, shareHistoryControlle
 router.post('/share-history/list', authorize.authenticateToken, shareHistoryController.getMedicalRecordHisotry)
 router.post('/share-history/remove-access', authorize.authenticateToken, shareHistoryController.removeAccessRightByProviderId)
 router.post('/share-history/add-all', authorize.authenticateToken, shareHistoryController.shareAllMedialRecrods)
+router.get('/share-history/pending-all', authorize.authenticateToken, shareHistoryController.getPendingshareHistories)
 
 module.exports = router

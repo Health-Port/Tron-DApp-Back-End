@@ -362,10 +362,64 @@ async function removeAccessRightByProviderId(req, res) {
 	}
 }
 
+async function getPendingshareHistories(req, res) {
+	try {
+		const { user_id } = req.auth
+
+		let err = {}, user = {}, records = {}, data = {}
+		const allRecords = [];
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Checking weather record already exists
+		[err, records] = await utils.to(db.query(`
+			SELECT * from share_histories 
+				where status = 'PENDING'
+				AND
+				share_from_user_id = :uId
+				GROUP BY medical_record_id`,
+			{
+				replacements: { uId: user_id },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+		if (!records || records.length == 0 || records == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		for (let i = 0; i < records.length; i++) {
+			[err, data] = await utils.to(db.query(`
+				SELECT 
+					sh.id as shareHistoryId, 
+					u.tron_wallet_public_key_hex as publicKeyHex, 
+					sh.access_token as accessToken 
+					FROM share_histories sh
+					INNER JOIN users u ON sh.share_with_user_id = u.id
+					WHERE sh.medical_record_id = :mId 
+					AND
+					share_from_user_id = :uId`,
+				{
+					replacements: { mId: records[i].medical_record_id, uId: user_id },
+					type: db.QueryTypes.SELECT,
+				}))
+			if (err) return response.errReturned(res, err)
+			allRecords.push(data)
+		}
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, allRecords)
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	addShareHistory,
 	updateRights,
 	getMedicalRecordHisotry,
 	removeAccessRightByProviderId,
-	shareAllMedialRecrods
+	shareAllMedialRecrods,
+	getPendingshareHistories
 }
