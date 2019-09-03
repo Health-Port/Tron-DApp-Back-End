@@ -39,6 +39,7 @@ router.post('/saveProcedureByUser', authorize.authenticateToken, procedureContro
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
 //Providers
+router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
 router.get('/getAllProviders', authorize.authenticateToken, providerController.getAllProviders)
 router.post('/shareListWithProviders', authorize.authenticateToken, providerController.shareListWithProviders)
 router.post('/getProviderSharedData', authorize.authenticateToken, providerController.getProviderSharedData)
