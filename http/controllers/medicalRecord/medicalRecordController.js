@@ -287,12 +287,6 @@ async function ipfsCallHandeling(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
-			//Checking weather record already exists
-			// [err, record] = await utils.to(db.models.medical_records.findOne(
-			// 	{
-			// 		where: { user_id, template_id: templateId }
-			// 	}))
-			// if (err) return response.errReturned(res, err)
 			[err, record] = await utils.to(db.query(`
 				SELECT t.id as templateId, t.name as templateName, 
 					mr.id as medicalRecordId 
