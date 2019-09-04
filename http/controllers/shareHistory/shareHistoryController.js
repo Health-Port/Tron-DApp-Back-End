@@ -91,7 +91,7 @@ async function shareAllMedialRecrods(req, res) {
 		const { user_id } = req.auth
 		const { providers, rights } = req.body
 
-		let err = {}, user = {}, result = {}, shareHistory = {}, records = {}
+		let err = {}, user = {}, result = {}, shareHistory = {}, records = {}, history = {}
 
 		if (!providers || providers.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PROVIDER_IS_REQUIRED)
@@ -114,35 +114,45 @@ async function shareAllMedialRecrods(req, res) {
 		[err, records] = await utils.to(db.models.medical_records.findAll({ where: { user_id } }))
 		if (err) return response.errReturned(res, err)
 		if (records == null || !records)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+		//Getting all share histories
+		[err, history] = await utils.to(db.models.share_histories.findAll(
+			{ where: { share_from_user_id: user_id } }))
+		if (err) return response.errReturned(res, err)
 
 		for (let i = 0; i < records.length; i++) {
-			//Mapping data for share_historis table
-			const data = providers.map(elem => (
-				{
-					medical_record_id: records[i].id,
-					share_from_user_id: user_id,
-					share_with_user_id: elem.providerId,
-					access_token: elem.accessToken
-				}
-			));
+			//Checking if record already shared, then skip
+			const filterdArray = history.filter(x => x.medical_record_id == records[i].id)
+			if (filterdArray.length == 0) {
+				console.log('go work')
+				//Mapping data for share_historis table
+				const data = providers.map(elem => (
+					{
+						medical_record_id: records[i].id,
+						share_from_user_id: user_id,
+						share_with_user_id: elem.providerId,
+						access_token: elem.accessToken
+					}
+				));
 
-			//Saving history in db
-			[err, shareHistory] = await utils.to(db.models.share_histories.bulkCreate(data))
-			if (err) return response.errReturned(res, err)
-			if (shareHistory == null || !shareHistory)
-				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				//Saving history in db
+				[err, shareHistory] = await utils.to(db.models.share_histories.bulkCreate(data))
+				if (err) return response.errReturned(res, err)
+				if (shareHistory == null || !shareHistory)
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
-			//Adding share rights
-			for (let i = 0; i < shareHistory.length; i++) {
-				for (let j = 0; j < rights.length; j++) {
-					[err, result] = await utils.to(db.models.share_rights.create(
-						{
-							share_type_id: rights[j].id,
-							share_history_id: shareHistory[i].id
-						}))
-					if (!result || result == null)
-						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				//Adding share rights
+				for (let i = 0; i < shareHistory.length; i++) {
+					for (let j = 0; j < rights.length; j++) {
+						[err, result] = await utils.to(db.models.share_rights.create(
+							{
+								share_type_id: rights[j].id,
+								share_history_id: shareHistory[i].id
+							}))
+						if (!result || result == null)
+							return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+					}
 				}
 			}
 		}
@@ -408,7 +418,56 @@ async function getPendingshareHistories(req, res) {
 			if (err) return response.errReturned(res, err)
 			allRecords.push(data)
 		}
+		
+		//Decrypting public key hex
+		for (let i = 0; i < allRecords.length; i++) {
+			for (let j = 0; j < allRecords[i].length; j++) {
+				allRecords[i][j].publicKeyHex = utils.decrypt(allRecords[i][j].publicKeyHex)
+			}
+		}
+
+		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, allRecords)
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
+async function recomputeAccessTokens(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { shareHistories } = req.body
+
+		let err = {}, user = {}, records = {};
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+		if (!shareHistories || shareHistories.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
+
+		const mappedData = shareHistories.map(elem => (
+			{
+				id: elem.shareHistoryId,
+				access_token: elem.accessToken,
+				status: 'SUCCESS'
+			}
+		));
+
+		//Updating access tokens
+		[err, records] = await utils.to(db.models.share_histories.bulkCreate(
+			mappedData, { updateOnDuplicate: ['id', 'access_token', 'status'] }))
+		if (err) return response.errReturned(res, err)
+		if (records == null || !records)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
+
 	} catch (error) {
 		console.log(error)
 		return response.errReturned(res, error)
@@ -421,5 +480,6 @@ module.exports = {
 	getMedicalRecordHisotry,
 	removeAccessRightByProviderId,
 	shareAllMedialRecrods,
-	getPendingshareHistories
+	getPendingshareHistories,
+	recomputeAccessTokens
 }

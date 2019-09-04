@@ -135,7 +135,7 @@ async function signUp(req, res) {
             {
                 name: obj.name,
                 email: obj.email,
-                password: obj.password
+                password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS))
             }))
         if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST, err)
 
@@ -253,7 +253,7 @@ async function confirmForgotPassword(req, res) {
 
         //Updating password in db
         [err, data] = await utils.to(db.models.admins.update(
-            { password: obj.password },
+            { password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) },
             { where: { id: data.user_id } }
         ));
 
