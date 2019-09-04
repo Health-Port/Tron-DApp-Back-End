@@ -418,6 +418,13 @@ async function getPendingshareHistories(req, res) {
 			if (err) return response.errReturned(res, err)
 			allRecords.push(data)
 		}
+		
+		//Decrypting public key hex
+		for (let i = 0; i < allRecords.length; i++) {
+			for (let j = 0; j < allRecords[i].length; j++) {
+				allRecords[i][j].publicKeyHex = utils.decrypt(allRecords[i][j].publicKeyHex)
+			}
+		}
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, allRecords)
