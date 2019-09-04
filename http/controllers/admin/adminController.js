@@ -166,7 +166,7 @@ async function forgetPassword(req, res) {
         if (err) return response.errReturned(res, err)
         if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-        const authentication = { pass_code: passcode, user_id: admin.id, email: admin.email };
+        const authentication = { pass_code: passcode, id: admin.id, email: admin.email };
 
         //Checking passcode in db
         [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
