@@ -105,7 +105,7 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
             }));
             rewardsObject = rewardsObj;
             await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, 
-                `Create ${source.split(';')[1]} Record List.`);
+                `Create ${source.split(';')[1]} Record List`);
         }
         else {
             console.log('NO Source');

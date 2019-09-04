@@ -302,12 +302,24 @@ async function ipfsCallHandeling(req, res) {
 				}))
 			if (err) return response.errReturned(res, err)
 			if (record.length == 0) {
+				//Gettting template name
+				[err, record] = await utils.to(db.query(`
+					SELECT name as templateName 
+						FROM templates 
+						WHERE 
+							id = :templateId`,
+					{
+						replacements: { templateId },
+						type: db.QueryTypes.SELECT,
+					}))
+				if (err) return response.errReturned(res, err);
+
 				//Giving reward for 1st time upload a document
 				[err, result] = await utils.to(rewardDisperser(
-					`${rewardEnum.MEDICALRECORDDOCUMENTREWARD};${record[0].templateName}`, 
-					user_id, 
+					`${rewardEnum.MEDICALRECORDDOCUMENTREWARD};${record[0].templateName}`,
+					user_id,
 					user.tron_wallet_public_key)
-					)
+				)
 				if (err)
 					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
 				console.log(result)
