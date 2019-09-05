@@ -405,9 +405,11 @@ async function getPendingshareHistories(req, res) {
 				SELECT 
 					sh.id as shareHistoryId, 
 					u.tron_wallet_public_key_hex as publicKeyHex, 
-					sh.access_token as accessToken 
+					sh.access_token as accessToken, sh.status, sh.medical_record_id as medicalRecordId, 
+					m.template_id as templateId 
 					FROM share_histories sh
 					INNER JOIN users u ON sh.share_with_user_id = u.id
+					INNER JOIN medical_records m ON sh.medical_record_id = m.id
 					WHERE sh.medical_record_id = :mId 
 					AND
 					share_from_user_id = :uId`,
@@ -418,7 +420,7 @@ async function getPendingshareHistories(req, res) {
 			if (err) return response.errReturned(res, err)
 			allRecords.push(data)
 		}
-		
+
 		//Decrypting public key hex
 		for (let i = 0; i < allRecords.length; i++) {
 			for (let j = 0; j < allRecords[i].length; j++) {
@@ -474,6 +476,45 @@ async function recomputeAccessTokens(req, res) {
 	}
 }
 
+async function getShareHistoryById(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { sId } = req.params
+
+		let err = {}, user = {}, record = {};
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+		if (!sId)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+		[err, record] = await utils.to(db.models.share_histories.findOne(
+			{
+				where: { id: sId }
+			}))
+		if (err) return response.errReturned(res, err)
+		if (record == null || record.count == 0 || record == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(
+			res,
+			resCode.SUCCESS,
+			resMessage.SUCCESS,
+			{ accessToken: record.access_token }
+		)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
+
 module.exports = {
 	addShareHistory,
 	updateRights,
@@ -481,5 +522,6 @@ module.exports = {
 	removeAccessRightByProviderId,
 	shareAllMedialRecrods,
 	getPendingshareHistories,
-	recomputeAccessTokens
+	recomputeAccessTokens,
+	getShareHistoryById
 }
