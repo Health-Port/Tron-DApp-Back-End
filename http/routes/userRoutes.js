@@ -78,5 +78,6 @@ router.post('/share-history/remove-access', authorize.authenticateToken, shareHi
 router.post('/share-history/add-all', authorize.authenticateToken, shareHistoryController.shareAllMedialRecrods)
 router.get('/share-history/pending-all', authorize.authenticateToken, shareHistoryController.getPendingshareHistories)
 router.post('/share-history/recompute-tokens', authorize.authenticateToken, shareHistoryController.recomputeAccessTokens)
+router.get('/share-history/:sId', authorize.authenticateToken, shareHistoryController.getShareHistoryById)
 
 module.exports = router
