@@ -405,9 +405,11 @@ async function getPendingshareHistories(req, res) {
 				SELECT 
 					sh.id as shareHistoryId, 
 					u.tron_wallet_public_key_hex as publicKeyHex, 
-					sh.access_token as accessToken 
+					sh.access_token as accessToken, sh.status, sh.medical_record_id as medicalRecordId, 
+					m.template_id as templateId 
 					FROM share_histories sh
 					INNER JOIN users u ON sh.share_with_user_id = u.id
+					INNER JOIN medical_records m ON sh.medical_record_id = m.id
 					WHERE sh.medical_record_id = :mId 
 					AND
 					share_from_user_id = :uId`,
