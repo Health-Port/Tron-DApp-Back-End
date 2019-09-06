@@ -145,7 +145,7 @@ async function shareAllMedialRecrods(req, res) {
 		}
 
 		if (providers.length == 0)
-			return response.sendResponse(res, resCode.BAD_REQUEST, 'All Records already shared with provider(s).')
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALL_RECORD_ALREADY_SHARED)
 
 		//Mapping data for share_historis table
 		const data = providers.map(elem => (
