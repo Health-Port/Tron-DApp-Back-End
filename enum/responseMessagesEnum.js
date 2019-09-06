@@ -7,6 +7,7 @@ const ResponseMessagesEnum = {
     ACCESS_RIGHTS_LENGHT_ERROR: 'Access rights can not be more then 2.',
     ACCESS_RIGHTS_REMOVED: 'Access rights removed successfully.',
     ALREADY_VERIFIED: 'Account already verified.',
+    ALL_RECORD_ALREADY_SHARED: 'All Records already shared with provider(s).',
     ACCESS_DENIED: 'Access denied. No token provided.',
     ACCOUNT_IS_VERIFIED: 'Your account is verified successfully.',
     ACCOUNT_IS_NOT_ACTIVE: 'Receiver account is not an active account.',

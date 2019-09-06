@@ -89,7 +89,8 @@ async function addShareHistory(req, res) {
 async function shareAllMedialRecrods(req, res) {
 	try {
 		const { user_id } = req.auth
-		const { providers, rights } = req.body
+		const { rights } = req.body
+		let { providers } = req.body
 
 		let err = {}, user = {}, result = {}, shareHistory = {}, records = {}, history = {}
 
@@ -121,41 +122,61 @@ async function shareAllMedialRecrods(req, res) {
 			{ where: { share_from_user_id: user_id } }))
 		if (err) return response.errReturned(res, err)
 
-		for (let i = 0; i < records.length; i++) {
-			//Checking if record already shared, then skip
-			const filterdArray = history.filter(x => x.medical_record_id == records[i].id)
-			if (filterdArray.length == 0) {
-				console.log('go work')
-				//Mapping data for share_historis table
-				const data = providers.map(elem => (
-					{
-						medical_record_id: records[i].id,
-						share_from_user_id: user_id,
-						share_with_user_id: elem.providerId,
-						access_token: elem.accessToken
-					}
-				));
+		if (history.length > 0) {
+			//Removing already shared recored.
+			const itemsToBeRemoved = []
+			for (let i = 0; i < providers.length; i++) {
+				//Checking if record already shared, then skip
+				const filterdArray = history.filter(x =>
+					x.medical_record_id == providers[i].medicalRecordId &&
+					x.share_with_user_id == providers[i].providerId)
 
-				//Saving history in db
-				[err, shareHistory] = await utils.to(db.models.share_histories.bulkCreate(data))
-				if (err) return response.errReturned(res, err)
-				if (shareHistory == null || !shareHistory)
-					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
-
-				//Adding share rights
-				for (let i = 0; i < shareHistory.length; i++) {
-					for (let j = 0; j < rights.length; j++) {
-						[err, result] = await utils.to(db.models.share_rights.create(
-							{
-								share_type_id: rights[j].id,
-								share_history_id: shareHistory[i].id
-							}))
-						if (!result || result == null)
-							return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
-					}
+				if (filterdArray.length == 1) {
+					itemsToBeRemoved.push(providers.filter(x =>
+						x.medicalRecordId == filterdArray[0].medical_record_id
+						&& x.providerId == filterdArray[0].share_with_user_id))
 				}
 			}
+			for (let i = 0; i < itemsToBeRemoved.length; i++) {
+				providers = providers.filter(x =>
+					!(x.providerId == itemsToBeRemoved[i][0].providerId &&
+						x.medicalRecordId == itemsToBeRemoved[i][0].medicalRecordId))
+			}
 		}
+
+		if (providers.length == 0)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALL_RECORD_ALREADY_SHARED)
+
+		//Mapping data for share_historis table
+		const data = providers.map(elem => (
+			{
+				medical_record_id: elem.medicalRecordId,
+				share_from_user_id: user_id,
+				share_with_user_id: elem.providerId,
+				access_token: elem.accessToken
+			}
+		));
+
+		//Saving history in db
+		[err, shareHistory] = await utils.to(db.models.share_histories.bulkCreate(data))
+		if (err) return response.errReturned(res, err)
+		if (shareHistory == null || !shareHistory)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+		//Adding share rights
+		for (let k = 0; k < shareHistory.length; k++) {
+			for (let j = 0; j < rights.length; j++) {
+				[err, result] = await utils.to(db.models.share_rights.create(
+					{
+						share_type_id: rights[j].id,
+						share_history_id: shareHistory[k].id
+					}))
+				if (!result || result == null)
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			}
+		}
+
+
 
 		//Returing successful response with data
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
@@ -236,7 +257,7 @@ async function updateRights(req, res) {
 async function getMedicalRecordHisotry(req, res) {
 	try {
 		const { user_id } = req.auth
-		const { medicalRecordId } = req.body
+		const { medicalRecordId, searchValue } = req.body
 		let { pageNumber, pageSize } = req.body
 
 		let err = {}, user = {}, shareHistory = {}
@@ -276,7 +297,7 @@ async function getMedicalRecordHisotry(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 		if (!shareHistory || shareHistory.length == 0)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, shareHistory)
 
 		let data = []
 		const returnableData = {}
@@ -302,6 +323,10 @@ async function getMedicalRecordHisotry(req, res) {
 			}
 		}
 		data = data.filter((el) => { return el != null })
+		if (searchValue) {
+			data = data.filter(x =>
+				x.sharedWith.toLowerCase().includes(searchValue.toLowerCase()))
+		}
 		returnableData['count'] = data.length
 		const slicedData = data.slice(start, end)
 		returnableData['rows'] = slicedData
@@ -398,7 +423,7 @@ async function getPendingshareHistories(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 		if (!records || records.length == 0 || records == null)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, records)
 
 		for (let i = 0; i < records.length; i++) {
 			[err, data] = await utils.to(db.query(`

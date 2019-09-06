@@ -178,7 +178,7 @@ async function getMedicalRecordByTemplateId(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 		if (record == null || record.count == 0 || record == undefined)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+			return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, record)
 
 		//Returing successful response
 		return response.sendResponse(
