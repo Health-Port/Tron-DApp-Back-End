@@ -3,6 +3,7 @@ const response = require('../../../etc/response')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const actionEnum = require('../../../enum/actionEnum')
+const roleEnum = require('../../../enum/roleEnum')
 const rewardDisperser = require('../../../etc/rewardCheck')
 const rewardEnum = require('../../../enum/rewardEnum')
 const cutCommission = require('./../../../etc/commission')
@@ -276,9 +277,14 @@ async function ipfsCallHandeling(req, res) {
 	try {
 		const { action } = req.params
 		const { user_id } = req.auth
-		const { templateId } = req.body
+		const { templateId, shareHistoryId } = req.body
 
-		let err = {}, result = {}, user = {}, commissionObj = {}, record = {};
+		let err = {},
+			result = {},
+			user = {},
+			commissionObj = {},
+			record = {},
+			obj = {};
 
 		//Verifying user authenticity
 		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
@@ -286,8 +292,11 @@ async function ipfsCallHandeling(req, res) {
 		if (!user || user.length == 0 || user == null)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
+		//Add or Update Case
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
-			[err, record] = await utils.to(db.query(`
+			//Paitent Case
+			if (user.role == roleEnum.PATIENT) { 
+				[err, record] = await utils.to(db.query(`
 				SELECT t.id as templateId, t.name as templateName, 
 					mr.id as medicalRecordId 
 					FROM medical_records mr
@@ -296,12 +305,35 @@ async function ipfsCallHandeling(req, res) {
 						t.id = :templateId
 					AND 
 						mr.user_id = :user_id`,
-				{
-					replacements: { user_id, templateId },
-					type: db.QueryTypes.SELECT,
+					{
+						replacements: { user_id, templateId },
+						type: db.QueryTypes.SELECT,
+					}))
+				if (err) return response.errReturned(res, err)
+			} 
+			//Provider Case
+			else if (user.role == roleEnum.PROVIDER) { 
+				if (!shareHistoryId)
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+				[err, record] = await utils.to(db.models.share_histories.findOne({
+					where: { id: shareHistoryId }
 				}))
-			if (err) return response.errReturned(res, err)
-			if (record.length == 0) {
+				if (record && !record.provider_reward) {
+					//Updating reward given field to true
+					[err, obj] = await utils.to(db.models.share_histories.update(
+						{ provider_reward: true },
+						{ where: { id: shareHistoryId } }
+					))
+					if (err) return response.errReturned(res, err)
+					if (obj[0] == 0)
+						return response.sendResponse(res,
+							resCode.INTERNAL_SERVER_ERROR,
+							resMessage.API_ERROR)
+				}
+			}
+			//First time uploading case
+			if (!record.provider_reward || record.length == 0) {
 				//Gettting template name
 				[err, record] = await utils.to(db.query(`
 					SELECT name as templateName 
@@ -322,10 +354,14 @@ async function ipfsCallHandeling(req, res) {
 				)
 				if (err)
 					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
-				console.log(result)
-			} else {
+
+			}
+			//Already uploaded case 
+			else {
 				//Checking user's balance before uploading document.
-				const balance = await tronUtils.getTRC10TokenBalance(utils.decrypt(user.tron_wallet_private_key), utils.decrypt(user.tron_wallet_public_key));
+				const balance = await tronUtils.getTRC10TokenBalance(
+					utils.decrypt(user.tron_wallet_private_key),
+					utils.decrypt(user.tron_wallet_public_key));
 				[err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
 					where: { commission_type: 'Upload' }
 				}))
@@ -343,10 +379,10 @@ async function ipfsCallHandeling(req, res) {
 						return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE)
 					}
 				}
-				console.log(result)
 			}
-
-		} else if (action.toLocaleLowerCase() == actionEnum.VIEW.toLocaleLowerCase()) {
+		}
+		//View Case
+		else if (action.toLocaleLowerCase() == actionEnum.VIEW.toLocaleLowerCase()) {
 			[err, result] = await utils.to(
 				cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
 			)
@@ -358,8 +394,9 @@ async function ipfsCallHandeling(req, res) {
 					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE)
 				}
 			}
-			console.log(result)
-		} else if (action.toLocaleLowerCase() == actionEnum.SHARE.toLocaleLowerCase()) {
+		}
+		// Share Case 
+		else if (action.toLocaleLowerCase() == actionEnum.SHARE.toLocaleLowerCase()) {
 			[err, result] = await utils.to(
 				cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Share')
 			)
