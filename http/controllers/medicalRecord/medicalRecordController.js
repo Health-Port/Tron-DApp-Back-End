@@ -295,7 +295,7 @@ async function ipfsCallHandeling(req, res) {
 		//Add or Update Case
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
 			//Paitent Case
-			if (user.role == roleEnum.PATIENT) { 
+			if (user.role == roleEnum.PATIENT) {
 				[err, record] = await utils.to(db.query(`
 				SELECT t.id as templateId, t.name as templateName, 
 					mr.id as medicalRecordId 
@@ -310,9 +310,9 @@ async function ipfsCallHandeling(req, res) {
 						type: db.QueryTypes.SELECT,
 					}))
 				if (err) return response.errReturned(res, err)
-			} 
+			}
 			//Provider Case
-			else if (user.role == roleEnum.PROVIDER) { 
+			else if (user.role == roleEnum.PROVIDER) {
 				if (!shareHistoryId)
 					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
@@ -333,7 +333,7 @@ async function ipfsCallHandeling(req, res) {
 				}
 			}
 			//First time uploading case
-			if (!record.provider_reward || record.length == 0) {
+			if (record.length == 0 || record.provider_reward == false) {
 				//Gettting template name
 				[err, record] = await utils.to(db.query(`
 					SELECT name as templateName 
@@ -419,11 +419,64 @@ async function ipfsCallHandeling(req, res) {
 	}
 }
 
+async function migrations(req, res) {
+	try {
+		let err = {}, allergies = {}, ids = {};
+
+		//Getting allergies data
+		[err, allergies] = await utils.to(db.query(`
+			Select * from allergies a
+			Inner join users u on a.user_id = u.id
+			Order by u.id asc;`,
+			{
+				type: db.QueryTypes.SELECT,
+			}));
+
+		//Getting unique ids of users who have data
+		[err, ids] = await utils.to(db.query(`
+			Select a.user_id from allergies a
+			Inner join users u on a.user_id = u.id
+			Group by a.user_id
+			Order by u.id asc;`,
+			{
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+
+		const data = []
+		for (let i = 0; i < ids.length; i++) {
+			const filterdArray = allergies.filter(x => x.user_id == ids[i].user_id)
+
+			const obj = []
+			for (let j = 0; j < filterdArray.length; j++) {
+				obj[j] = {
+					category: filterdArray[j].category,
+					reactions: filterdArray[j].reactions,
+					severity: filterdArray[j].severity,
+					substance: filterdArray[j].substance
+				}
+			}
+			data[i] = {
+				userId: ids[i].user_id,
+				userPrivateKey: utils.decrypt(filterdArray[0].tron_wallet_private_key),
+				userPublicKey: utils.decrypt(filterdArray[0].tron_wallet_public_key),
+				userPublicKeyHex: utils.decrypt(filterdArray[0].tron_wallet_public_key_hex),
+				allergyData: obj
+			}
+		}
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 module.exports = {
 	addMedicalRecord,
 	ipfsCallHandeling,
 	getMedicalRecordsByUserId,
 	getAllMedicalRecordsByUserId,
 	getMedicalRecordByTemplateId,
-	getMedicalRecordByTemplateIdWithAttributes
+	getMedicalRecordByTemplateIdWithAttributes,
+	migrations
 }

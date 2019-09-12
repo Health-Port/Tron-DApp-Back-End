@@ -47,6 +47,7 @@ router.post('/getProviderSharedDocument', authorize.authenticateToken, providerC
 router.post('/patient/add', authorize.authenticateToken, providerController.addPatient)
 router.post('/shared-medical-records/list', authorize.authenticateToken, providerController.getSharedMedicalRecords)
 router.post('/provider/update-token', authorize.authenticateToken, providerController.updateProviderAccessToken)
+router.post('/patient/update-token', authorize.authenticateToken, providerController.updatePatientAccessToken)
 router.get('/provider/remove-access/:sId', authorize.authenticateToken, providerController.removeMedicalRecordHisotry)
 
 //TwoFactorAuthentication Routes
@@ -60,6 +61,7 @@ router.get('/template/list-all', authorize.authenticateToken, templateController
 router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
 
 //Medical Record Routes
+router.get('/medical-record/migrations', authorize.authenticateToken, medicalRecordController.migrations)
 router.post('/medical-record/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
 router.post('/medical-record/list', authorize.authenticateToken, medicalRecordController.getMedicalRecordsByUserId)
 router.get('/medical-record/list-all', authorize.authenticateToken, medicalRecordController.getAllMedicalRecordsByUserId)
@@ -79,5 +81,6 @@ router.post('/share-history/add-all', authorize.authenticateToken, shareHistoryC
 router.get('/share-history/pending-all', authorize.authenticateToken, shareHistoryController.getPendingshareHistories)
 router.post('/share-history/recompute-tokens', authorize.authenticateToken, shareHistoryController.recomputeAccessTokens)
 router.get('/share-history/:sId', authorize.authenticateToken, shareHistoryController.getShareHistoryById)
+router.get('/share-history/template/:tId', authorize.authenticateToken, shareHistoryController.getShareHistoriesByTemplateId)
 
 module.exports = router

@@ -340,7 +340,7 @@ async function getSharedMedicalRecords(req, res) {
             SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
                 u.name as patientName, u.email as patientEmail, 
                 u.tron_wallet_public_key_hex as patientPublicKeyHex,  
-                sh.access_token as accessToken,
+                sh.access_token as accessToken, sh.status,
                 sh.createdAt 
                 FROM share_histories sh
                 INNER JOIN users u ON sh.share_from_user_id = u.id
@@ -402,7 +402,7 @@ async function updateProviderAccessToken(req, res) {
         const userId = req.auth.user_id
         const { shareHistoryId, accessToken } = req.body
 
-        let err = {}, provider = {}, record = {}
+        let err = {}, provider = {}, record = {}, obj = {}
 
         //Checking empty field
         if (!(shareHistoryId && accessToken))
@@ -425,13 +425,25 @@ async function updateProviderAccessToken(req, res) {
         if (!record || record == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
-        //Updating access token
-        [err, record] = await utils.to(db.models.share_histories.update(
+        if (record.status == 'PENDING')
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ACTION_DISABLED);
+
+        //Updating status and access token
+        [err, obj] = await utils.to(db.models.share_histories.update(
             { access_token: accessToken, status: 'PENDING' },
             { where: { id: shareHistoryId, share_with_user_id: userId } }
         ))
         if (err) return response.errReturned(res, err)
-        if (record[0] == 0)
+        if (obj[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Updating status
+        [err, obj] = await utils.to(db.models.share_histories.update(
+            { status: 'PENDING' },
+            { where: { medical_record_id: record.medical_record_id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response
@@ -496,6 +508,46 @@ async function removeMedicalRecordHisotry(req, res) {
     }
 }
 
+async function updatePatientAccessToken(req, res) {
+    try {
+        const userId = req.auth.user_id
+        const { data } = req.body
+
+        let err = {}, user = {}, records = {}
+
+        //Checking empty field
+        if (data.length == 0)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!user || user.length == 0 || user == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        const mappedData = data.map(elem => (
+            {
+                id: elem.shareHistoryId,
+                access_token: elem.accessToken,
+            }
+        ));
+
+        //Update access tokens in bulk
+        [err, records] = await utils.to(db.models.share_histories.bulkCreate(
+            mappedData, { updateOnDuplicate: ['id', 'access_token'] }))
+        if (err) return response.errReturned(res, err)
+        if (records == null || !records)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.DOCUMENT_UPDATED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     addPatient,
     getAllProviders,
@@ -504,5 +556,6 @@ module.exports = {
     getProviderSharedDocument,
     getSharedMedicalRecords,
     updateProviderAccessToken,
-    removeMedicalRecordHisotry
+    removeMedicalRecordHisotry,
+    updatePatientAccessToken
 }
