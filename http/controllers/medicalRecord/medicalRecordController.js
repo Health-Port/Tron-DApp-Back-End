@@ -333,7 +333,7 @@ async function ipfsCallHandeling(req, res) {
 				}
 			}
 			//First time uploading case
-			if (!record.provider_reward || record.length == 0) {
+			if (record.length == 0 || record.provider_reward == false) {
 				//Gettting template name
 				[err, record] = await utils.to(db.query(`
 					SELECT name as templateName 
@@ -442,7 +442,7 @@ async function migrations(req, res) {
 				type: db.QueryTypes.SELECT,
 			}))
 		if (err) return response.errReturned(res, err)
-		
+
 		const data = []
 		for (let i = 0; i < ids.length; i++) {
 			const filterdArray = allergies.filter(x => x.user_id == ids[i].user_id)
