@@ -340,7 +340,7 @@ async function getSharedMedicalRecords(req, res) {
             SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
                 u.name as patientName, u.email as patientEmail, 
                 u.tron_wallet_public_key_hex as patientPublicKeyHex,  
-                sh.access_token as accessToken,
+                sh.access_token as accessToken, sh.status,
                 sh.createdAt 
                 FROM share_histories sh
                 INNER JOIN users u ON sh.share_from_user_id = u.id
@@ -402,7 +402,7 @@ async function updateProviderAccessToken(req, res) {
         const userId = req.auth.user_id
         const { shareHistoryId, accessToken } = req.body
 
-        let err = {}, provider = {}, record = {}
+        let err = {}, provider = {}, record = {}, obj = {}
 
         //Checking empty field
         if (!(shareHistoryId && accessToken))
@@ -425,13 +425,25 @@ async function updateProviderAccessToken(req, res) {
         if (!record || record == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
-        //Updating access token
-        [err, record] = await utils.to(db.models.share_histories.update(
+        if (record.status == 'PENDING')
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ACTION_DISABLED);
+
+        //Updating status and access token
+        [err, obj] = await utils.to(db.models.share_histories.update(
             { access_token: accessToken, status: 'PENDING' },
             { where: { id: shareHistoryId, share_with_user_id: userId } }
         ))
         if (err) return response.errReturned(res, err)
-        if (record[0] == 0)
+        if (obj[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Updating status
+        [err, obj] = await utils.to(db.models.share_histories.update(
+            { status: 'PENDING' },
+            { where: { medical_record_id: record.medical_record_id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         //Returing successful response

@@ -539,6 +539,51 @@ async function getShareHistoryById(req, res) {
 	}
 }
 
+async function getShareHistoriesByTemplateId(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { tId } = req.params
+
+		let err = {}, user = {}, mRecord = {}, data = {}
+
+		if (!tId)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting medical record
+		[err, mRecord] = await utils.to(db.models.medical_records.findOne(
+			{ where: { template_id: tId, user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!mRecord || mRecord.length == 0 || mRecord == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting share history with providers public keys
+		[err, data] = await utils.to(db.query(`
+			SELECT sh.id as shareHistoryId, 
+				u.tron_wallet_public_key_hex as publicKeyHex, 
+				sh.access_token as accessToken, sh.status, sh.medical_record_id as medicalRecordId 
+				FROM share_histories sh
+				INNER JOIN users u ON sh.share_with_user_id = u.id
+				WHERE sh.medical_record_id = :mId`,
+			{
+				replacements: { mId: mRecord.id },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (err) return response.errReturned(res, err)
+
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
 
 module.exports = {
 	addShareHistory,
@@ -548,5 +593,6 @@ module.exports = {
 	shareAllMedialRecrods,
 	getPendingshareHistories,
 	recomputeAccessTokens,
-	getShareHistoryById
+	getShareHistoryById,
+	getShareHistoriesByTemplateId
 }
