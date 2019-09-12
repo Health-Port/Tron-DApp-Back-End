@@ -576,6 +576,11 @@ async function getShareHistoriesByTemplateId(req, res) {
 			}))
 		if (err) return response.errReturned(res, err)
 
+		//Decrypting public key hex
+		for (let i = 0; i < data.length; i++) {
+			data[i].publicKeyHex = utils.decrypt(data[i].publicKeyHex)
+		}
+
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
 
