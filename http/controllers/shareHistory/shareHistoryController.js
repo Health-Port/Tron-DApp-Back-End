@@ -3,6 +3,7 @@ const response = require('../../../etc/response')
 const roleEnum = require('../../../enum/roleEnum')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
+const actionEnum = require('../../../enum/actionEnum')
 
 const db = global.healthportDb
 
@@ -481,7 +482,7 @@ async function recomputeAccessTokens(req, res) {
 			{
 				id: elem.shareHistoryId,
 				access_token: elem.accessToken,
-				status: 'SUCCESS'
+				status: actionEnum.SUCCESS
 			}
 		));
 
