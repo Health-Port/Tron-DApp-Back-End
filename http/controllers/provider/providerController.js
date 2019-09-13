@@ -11,6 +11,7 @@ const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const tokenGenerator = require('../../../etc/generateToken')
 const emailTemplates = require('../../../etc/emailTemplates')
 const resMessage = require('../../../enum/responseMessagesEnum')
+const actionEnum = require('../../../enum/actionEnum')
 
 const db = global.healthportDb;
 const Sequelize = require('sequelize')
@@ -425,26 +426,26 @@ async function updateProviderAccessToken(req, res) {
         if (!record || record == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
-        if (record.status == 'PENDING')
+        if (record.status == actionEnum.PENDING)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ACTION_DISABLED);
 
-        //Updating status and access token
+        //Updating status
         [err, obj] = await utils.to(db.models.share_histories.update(
-            { access_token: accessToken, status: 'PENDING' },
-            { where: { id: shareHistoryId, share_with_user_id: userId } }
+            { status: actionEnum.BLOCK },
+            { where: { medical_record_id: record.medical_record_id } }
         ))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
 
-        //Updating status
+        //Updating status and access token
         [err, obj] = await utils.to(db.models.share_histories.update(
-            { status: 'PENDING' },
-            { where: { medical_record_id: record.medical_record_id } }
+            { access_token: accessToken, status: actionEnum.PENDING },
+            { where: { id: shareHistoryId, share_with_user_id: userId } }
         ))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
-            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.DOCUMENT_UPDATED)
