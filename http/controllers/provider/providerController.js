@@ -1,97 +1,73 @@
-var _ = require('lodash');
-
+const _ = require('lodash')
 const regex = require('../../../etc/regex')
 const utils = require('../../../etc/utils')
 const response = require('../../../etc/response')
 const tronUtils = require('../../../etc/tronUtils')
 const roleEnum = require('./../../../enum/roleEnum')
 const passcodeGenerator = require('generate-password')
+const cutCommission = require('./../../../etc/commission')
 const resCode = require('../../../enum/responseCodesEnum')
-const resMessage = require('../../../enum/responseMessagesEnum')
-var cutCommission = require('./../../../etc/commission')
 const mailChimpUtil = require('../../../etc/mailChimpUtil')
 const tokenGenerator = require('../../../etc/generateToken')
 const emailTemplates = require('../../../etc/emailTemplates')
+const resMessage = require('../../../enum/responseMessagesEnum')
+const actionEnum = require('../../../enum/actionEnum')
 
-const Sequelize = require('sequelize')
 const db = global.healthportDb;
+const Sequelize = require('sequelize')
 
 async function getAllProviders(req, res) {
     try {
-        let type = req.body.type;
-        let user_id = req.body.userId;
+        const { user_id } = req.auth;
+        const { mId } = req.params
+        let err = {}, providers = {}, data = {}, ids = [];
 
-        let err, providers, finalData = [], data = {}, obj = {}, objData = {};
+        //Verifying user authenticity  
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+        if (err) return response.errReturned(res, err)
+        if (user == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        if (mId) {
+            //Getting ids with already shared
+            [err, ids] = await utils.to(db.query(`
+                SELECT share_with_user_id
+                    FROM share_histories
+                    WHERE share_from_user_id = :user_id
+                    AND medical_record_id = :mId`,
+                {
+                    replacements: { user_id, mId },
+                    type: db.QueryTypes.SELECT,
+                }));
+        }
 
         //Getting all providers from db
-        [err, providers] = await utils.to(db.models.users.findAll({ where: { role: roleEnum.PROVIDER } }));
-
-        for (let i = 0; i < providers.length; i++) {
-            data[i] = {
-                'share_with_id': providers[i].id,
-                'share_with_name': providers[i].name,
-                'email': providers[i].email,
-                'share_with_name_email': `${providers[i].name} , ${providers[i].email}`
-            }
-        }
-        data = _.orderBy(data, ['share_with_name'], ['asc']);
-
-        if (type != 'all') {
-            // [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
-            //     { where: { type: type, user_id: user_id } 
-            // }));
-            [err, obj] = await utils.to(db.query(`
-            select p.share_with_id as id, p.share_with_name as name, u.email as email 
-                from patient_provider_records p
-                inner join users u ON u.id = p.share_with_id
-                where p.user_Id = :userId and p.type = :type`,
+        [err, providers] = await utils.to(db.models.users.findAll(
+            {
+                where:
                 {
-                    replacements: { type: type, userId: user_id },
-                    type: db.QueryTypes.SELECT,
-                }));
-            for (let i = 0; i < obj.length; i++) {
-                objData[i] = {
-                    'share_with_id': obj[i].id,
-                    'share_with_name': obj[i].name,
-                    'email': obj[i].email,
-                    'share_with_name_email': `${obj[i].name} , ${obj[i].email}`
-                }
-            }
-            objData = _.orderBy(objData, ['share_with_name'], ['asc']);
-        } else {
-            // [err, obj] = await utils.to(db.models.patient_provider_records.findAll(
-            //     {
-            //         where: { user_id: user_id },
-            //         group: ['share_with_id'],
-            //         having: Sequelize.literal('COUNT(share_with_id) = 3')
-            //     }));
-            [err, obj] = await utils.to(db.query(`
-            select p.share_with_id as id, p.share_with_name as name, u.email as email 
-                from patient_provider_records p
-                inner join users u ON u.id = p.share_with_id
-                where p.user_Id = :userId
-                group by p.share_with_id
-                having COUNT(p.share_with_id) = 3`,
-                {
-                    replacements: { type: type, userId: user_id },
-                    type: db.QueryTypes.SELECT,
-                }));
-            for (let i = 0; i < obj.length; i++) {
-                objData[i] = {
-                    'share_with_id': obj[i].id,
-                    'share_with_name': obj[i].name,
-                    'email': obj[i].email,
-                    'share_with_name_email': `${obj[i].name} , ${obj[i].email}`
-                }
-            }
-            objData = _.orderBy(objData, ['share_with_name'], ['asc']);
-        }
+                    role: roleEnum.PROVIDER, status: true,
+                    id: { [Sequelize.Op.notIn]: ids.map(x => x.share_with_user_id) }
+                },
+                order: [['name', 'asc']]
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!providers || providers == null || providers.length == 0)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-        finalData.push(objData);
-        finalData.push(data);
+        //Mapping data
+        data = providers.map(elem => (
+            {
+                id: elem.id,
+                name: elem.name,
+                email: elem.email,
+                wallet_address: utils.decrypt(elem.tron_wallet_public_key),
+                public_key_hex: utils.decrypt(elem.tron_wallet_public_key_hex)
+            }
+        ))
 
         //Returing successful response with data
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, finalData);
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data);
 
     } catch (error) {
         console.log(error);
@@ -285,10 +261,11 @@ async function addPatient(req, res) {
                 refer_destination: roleEnum.PROVIDER,
                 tron_wallet_private_key: utils.encrypt(account.privateKey),
                 tron_wallet_public_key: utils.encrypt(account.address.base58),
+                tron_wallet_public_key_hex: utils.encrypt(account.publicKey),
                 referal_coupon: passcodeGenerator.generate({ length: 14, numbers: true }),
             }))
         if (err) return response.errReturned(res, err)
-        if (!patient) 
+        if (!patient)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
         const spilt_name = name.split(' ')
@@ -335,10 +312,251 @@ async function addPatient(req, res) {
     }
 }
 
+async function getSharedMedicalRecords(req, res) {
+    try {
+        const userId = req.auth.user_id
+        let { pageNumber, pageSize } = req.body
+        const { templateId, searchValue } = req.body
+
+        let err = {}, provider = {}, records = {}
+
+        //Paging
+        pageSize = parseInt(pageSize)
+        pageNumber = parseInt(pageNumber)
+        if (!pageNumber) pageNumber = 0
+        if (!pageSize) pageSize = 10
+        const start = parseInt(pageNumber * pageSize)
+        const end = parseInt(start + pageSize);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Getting medical records from db with paging
+        [err, records] = await utils.to(db.query(`
+            SELECT sh.id as shareHistoryId, t.id as templateId, t.name as templateName, 
+                u.name as patientName, u.email as patientEmail, 
+                u.tron_wallet_public_key_hex as patientPublicKeyHex,  
+                sh.access_token as accessToken, sh.status,
+                sh.createdAt 
+                FROM share_histories sh
+                INNER JOIN users u ON sh.share_from_user_id = u.id
+                INNER JOIN medical_records m ON sh.medical_record_id = m.id
+                INNER JOIN templates t ON m.template_id = t.id
+                WHERE sh.share_with_user_id = :userId
+                ORDER BY sh.createdAt DESC`,
+            {
+                replacements: { userId },
+                type: db.QueryTypes.SELECT,
+            }))
+        if (err) return response.errReturned(res, err)
+        if (records == null || records.count == 0 || records == undefined)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+        let returnableData = {}
+        if (records) {
+            if (templateId) {
+                records = records.filter(x => x.templateId == templateId)
+            }
+            if (searchValue) {
+                records = records.filter(x =>
+                    x.patientName.toLowerCase().includes(searchValue.toLowerCase()) ||
+                    x.patientEmail.toLowerCase().includes(searchValue.toLowerCase()))
+            }
+
+            returnableData['count'] = records.length
+            let slicedData = records.slice(start, end)
+            returnableData['rows'] = slicedData
+
+            //Getting access rigths
+            for (let i = 0; i < returnableData.rows.length; i++) {
+                [err, shareRights] = await utils.to(db.query(`
+                SELECT st.name from share_rights sr
+                    INNER JOIN share_types st ON sr.share_type_id = st.id
+                    WHERE share_history_id = :id;`,
+                    {
+                        replacements: { id: returnableData.rows[i].shareHistoryId },
+                        type: db.QueryTypes.SELECT,
+                    }))
+                if (err) return response.errReturned(res, err)
+                if (shareRights == null || shareRights.count == 0 || shareRights == undefined)
+                    return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+                returnableData.rows[i].rigths = shareRights.map(x => x.name)
+                returnableData.rows[i].patientPublicKeyHex = utils.decrypt(returnableData.rows[i].patientPublicKeyHex)
+            }
+
+            //Returing successful response
+            return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, returnableData)
+        }
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updateProviderAccessToken(req, res) {
+    try {
+        const userId = req.auth.user_id
+        const { shareHistoryId, accessToken } = req.body
+
+        let err = {}, provider = {}, record = {}, obj = {}
+
+        //Checking empty field
+        if (!(shareHistoryId && accessToken))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Checking weather if exists
+        [err, record] = await utils.to(db.models.share_histories.findOne(
+            {
+                where: { id: shareHistoryId, share_with_user_id: userId }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!record || record == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+        if (record.status == actionEnum.PENDING)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ACTION_DISABLED);
+
+        //Updating status
+        [err, obj] = await utils.to(db.models.share_histories.update(
+            { status: actionEnum.BLOCK },
+            { where: { medical_record_id: record.medical_record_id } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Updating status and access token
+        [err, obj] = await utils.to(db.models.share_histories.update(
+            { access_token: accessToken, status: actionEnum.PENDING },
+            { where: { id: shareHistoryId, share_with_user_id: userId } }
+        ))
+        if (err) return response.errReturned(res, err)
+        if (obj[0] == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.DOCUMENT_UPDATED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function removeMedicalRecordHisotry(req, res) {
+    try {
+        const { user_id } = req.auth
+        const { sId } = req.params
+
+        let err = {}, provider = {}, record = {}, shareRights = {}
+        if (!sId)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, provider] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+        if (err) return response.errReturned(res, err)
+        if (!provider || provider.length == 0 || provider == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+        if (provider.role != roleEnum.PROVIDER)
+            return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.NOT_ALLOWED);
+
+        //Checking weather if exists
+        [err, record] = await utils.to(db.models.share_histories.findOne(
+            {
+                where: { id: sId, share_with_user_id: user_id }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (!record || record == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+
+        //Deleting share histroy
+        [err, shareRights] = await utils.to(db.models.share_histories.destroy(
+            {
+                where: { id: sId }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (shareRights == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Deleting access rights
+        [err, shareRights] = await utils.to(db.models.share_rights.destroy(
+            {
+                where: { share_history_id: sId }
+            }))
+        if (err) return response.errReturned(res, err)
+        if (shareRights == 0)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.ACCESS_RIGHTS_REMOVED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+async function updatePatientAccessToken(req, res) {
+    try {
+        const userId = req.auth.user_id
+        const { data } = req.body
+
+        let err = {}, user = {}, records = {}
+
+        //Checking empty field
+        if (data.length == 0)
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+        //Verifying user authenticity
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: userId } }))
+        if (err) return response.errReturned(res, err)
+        if (!user || user.length == 0 || user == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+        const mappedData = data.map(elem => (
+            {
+                id: elem.shareHistoryId,
+                access_token: elem.accessToken,
+            }
+        ));
+
+        //Update access tokens in bulk
+        [err, records] = await utils.to(db.models.share_histories.bulkCreate(
+            mappedData, { updateOnDuplicate: ['id', 'access_token'] }))
+        if (err) return response.errReturned(res, err)
+        if (records == null || !records)
+            return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+
+        //Returing successful response
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.DOCUMENT_UPDATED)
+
+    } catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
 module.exports = {
     addPatient,
     getAllProviders,
     getProviderSharedData,
     shareListWithProviders,
     getProviderSharedDocument,
+    getSharedMedicalRecords,
+    updateProviderAccessToken,
+    removeMedicalRecordHisotry,
+    updatePatientAccessToken
 }

@@ -57,7 +57,8 @@ async function addAttributeList(req, res) {
 		//Saving list name in db
 		[err, list] = await utils.to(db.models.attribute_lists.create({ name: listName }))
 		if (err) return response.errReturned(res, err)
-		if (!list) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (!list)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		listAttributes = listAttributes.map(elem => (
 			{
@@ -285,7 +286,7 @@ async function updateAttributeListById(req, res) {
 				list_id: parseInt(listId),
 			}
 		));
-			
+
 		//attribute id of another list was updated - only the attribute id of spacific list is now updated
 		//HP-554 - Zaigham javed
 		//Getting list from db by list id
@@ -293,18 +294,18 @@ async function updateAttributeListById(req, res) {
 		if (err) return response.errReturned(res, err)
 		for (let i = 0; i < listAttributes.length; i++) {
 			if (listAttributes[i].id != '') {
-				flag=false
+				flag = false
 				for (let j = 0; j < objs.length; j++) {
 					if (listAttributes[i].id == objs[j].id) {
-						flag=true
+						flag = true
 						break
 					}
 				}
-				if(!flag){
+				if (!flag) {
 					break
 				}
 			}
-			
+
 		}
 
 		if (!flag) {

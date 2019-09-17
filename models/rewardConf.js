@@ -16,7 +16,9 @@ module.exports = (sequelize, Sequelize) => {
                 RewardEnum.MEDICATIONDOCUMENTREWARD,
                 RewardEnum.PROCEDUREDOCUMENTREWARD,
                 RewardEnum.AIRDROPREWARD,
-                RewardEnum.SUPERREPRESENTATIVEREWARD
+                RewardEnum.SUPERREPRESENTATIVEREWARD,
+                RewardEnum.MEDICALRECORDDOCUMENTREWARD,
+                RewardEnum.SIGNUPREWARDFORPROVIDER,
             ],
             allowNull: false,
             defaultValue: RewardEnum.SIGNUPREWARD

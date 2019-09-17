@@ -135,7 +135,7 @@ async function signUp(req, res) {
             {
                 name: obj.name,
                 email: obj.email,
-                password: obj.password
+                password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS))
             }))
         if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST, err)
 
@@ -166,7 +166,7 @@ async function forgetPassword(req, res) {
         if (err) return response.errReturned(res, err)
         if (admin == null || admin.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
-        const authentication = { pass_code: passcode, user_id: admin.id, email: admin.email };
+        const authentication = { pass_code: passcode, id: admin.id, email: admin.email };
 
         //Checking passcode in db
         [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
@@ -253,7 +253,7 @@ async function confirmForgotPassword(req, res) {
 
         //Updating password in db
         [err, data] = await utils.to(db.models.admins.update(
-            { password: obj.password },
+            { password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) },
             { where: { id: data.user_id } }
         ));
 
@@ -1149,7 +1149,7 @@ async function listRewardSettings(req, res) {
         let err = {}, result = {};
 
         //Finding record from db    
-        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7)',
+        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11)',
             {
                 type: db.QueryTypes.SELECT,
             }))

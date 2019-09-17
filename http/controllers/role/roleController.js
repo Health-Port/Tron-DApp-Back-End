@@ -186,7 +186,8 @@ async function addNewRole(req, res) {
 		//Saving role in db
 		[err, role] = await utils.to(db.models.roles.create({ name, description, status }))
 		if (err) return response.errReturned(res, err)
-		if (!role) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (!role)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Mapping properties name required for permission table
 		mappedFeatures = globalArray.map(elem => (
@@ -330,7 +331,8 @@ async function updateRoleById(req, res) {
 		//Saving permssion against newly created role
 		[err, permissions] = await utils.to(db.models.permissions.bulkCreate(mappedFeatures))
 		if (err) return response.errReturned(res, err)
-		if (!permissions) response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		if (!permissions)
+			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.ROLE_UPDATED)
