@@ -38,6 +38,9 @@ router.post('/getMedicationListByUser', authorize.authenticateToken, medicationC
 router.post('/saveProcedureByUser', authorize.authenticateToken, procedureController.saveProcedureByUser)
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
+router.post('/saveFilesByUser', authorize.authenticateToken, fileController.saveFilesByUser)
+
+
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
 router.get('/getAllProviders', authorize.authenticateToken, providerController.getAllProviders)
