@@ -11,6 +11,7 @@ const templateController = require('../controllers/template/templateController')
 const medicalRecordController = require('../controllers/medicalRecord/medicalRecordController')
 const shareTypeController = require('../controllers/shareType/shareTypeController')
 const shareHistoryController = require('../controllers/shareHistory/shareHistoryController')
+const filesController = require('../controllers/files/filesController')
 
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
@@ -38,8 +39,8 @@ router.post('/getMedicationListByUser', authorize.authenticateToken, medicationC
 router.post('/saveProcedureByUser', authorize.authenticateToken, procedureController.saveProcedureByUser)
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
-router.post('/saveFilesByUser', authorize.authenticateToken, fileController.saveFilesByUser)
-router.post('/getFilesByUser', authorize.authenticateToken, fileController.getFilesByUser)
+router.post('/saveFilesByUser', authorize.authenticateToken, filesController.saveFilesByUser)
+router.post('/getFilesByUser', authorize.authenticateToken, filesController.getFilesByUser)
 
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
