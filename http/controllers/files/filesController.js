@@ -7,7 +7,7 @@ const db = global.healthportDb
 
 async function saveFilesByUser(req, res) {
     const id = req.body.userId
-    let result = {}, error
+    let  result = {} ,error
     console.log(req.body)
     try {
         [error, result] = await utils.to(db.models.users.findOne({
@@ -16,7 +16,7 @@ async function saveFilesByUser(req, res) {
             }
         }))
         if (result == null)
-            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);      
         [error, result] = await utils.to(db.models.user_files.create(
             {
                 user_id: result.id,
@@ -32,7 +32,7 @@ async function saveFilesByUser(req, res) {
             res,
             resCode.SUCCESS,
             resMessage.DOCUMENT_SAVED
-
+            
         )
 
 
@@ -44,6 +44,40 @@ async function saveFilesByUser(req, res) {
 
 }
 
+async function getFilesByUser(req, res){
+    const user_id = req.body.userId
+    let  result = {} ,error
+    console.log(req.body)
+    try {
+        [error, result] = await utils.to(db.models.user_files.findAll({
+            where: {
+                user_id
+            }
+        }))
+        console.log('A',result)
+        if (result == null)
+            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)    
+       
+        if (!error) {
+            console.log('success')
+        } 
+               return response.sendResponse(
+            res,
+            resCode.SUCCESS,
+            resMessage.DOCUMENT_RETRIEVED,
+            result
+        )
+
+
+    }
+    catch (error) {
+        console.log(error)
+        return response.errReturned(res, error)
+    }
+}
+
+
 module.exports = {
-    saveFilesByUser
+    saveFilesByUser,
+    getFilesByUser
 }

@@ -39,7 +39,7 @@ router.post('/saveProcedureByUser', authorize.authenticateToken, procedureContro
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
 router.post('/saveFilesByUser', authorize.authenticateToken, fileController.saveFilesByUser)
-
+router.post('/getFilesByUser', authorize.authenticateToken, fileController.getFilesByUser)
 
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
