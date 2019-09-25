@@ -41,6 +41,7 @@ router.post('/getProcedureListByUser', authorize.authenticateToken, procedureCon
 
 router.post('/saveFilesByUser', authorize.authenticateToken, filesController.saveFilesByUser)
 router.post('/getFilesByUser', authorize.authenticateToken, filesController.getFilesByUser)
+router.post('/:action', authorize.authenticateToken, filesController.filesCallHandaling)
 
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
