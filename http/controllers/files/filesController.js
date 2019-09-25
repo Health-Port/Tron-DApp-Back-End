@@ -3,18 +3,15 @@ const resMessage = require('../../../enum/responseMessagesEnum')
 const resCode = require('../../../enum/responseCodesEnum')
 const response = require('../../../etc/response')
 const actionEnum = require('../../../enum/fileActionEnum')
-// const roleEnum = require('../../../enum/roleEnum')
 const rewardDisperser = require('../../../etc/rewardCheck')
 const rewardEnum = require('../../../enum/rewardEnum')
 const cutCommission = require('./../../../etc/commission')
 const tronUtils = require('../../../etc/tronUtils')
 const db = global.healthportDb
 
-
-async function saveFilesByUser(req, res) {
+async function saveFileByUserId(req, res) {
 	const id = req.body.userId
 	let result = {}, error
-	console.log(req.body)
 	try {
 		[error, result] = await utils.to(db.models.users.findOne({
 			where: {
@@ -38,29 +35,22 @@ async function saveFilesByUser(req, res) {
 			res,
 			resCode.SUCCESS,
 			resMessage.DOCUMENT_SAVED
-
 		)
-
-
 	}
 	catch (error) {
-		console.log(error)
 		return response.errReturned(res, error)
 	}
-
 }
 
-async function getFilesByUser(req, res) {
+async function getFileByUserId(req, res) {
 	const user_id = req.body.userId
 	let result = {}, error
-	console.log(req.body)
 	try {
 		[error, result] = await utils.to(db.models.user_files.findAll({
 			where: {
 				user_id
 			}
 		}))
-		console.log('A', result)
 		if (result == null)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
@@ -73,33 +63,25 @@ async function getFilesByUser(req, res) {
 			resMessage.DOCUMENT_RETRIEVED,
 			result
 		)
-
-
 	}
 	catch (error) {
-		console.log(error)
 		return response.errReturned(res, error)
 	}
 }
 
 async function filesCallHandaling(req, res) {
-	// const user = {}
 	try {
 		const { action } = req.params
 		const { user_id } = req.auth
 		const { id } = req.body
 
-		console.log(req.body)
-
-		
 		let err = {},
 			result = {},
 			user = {},
 			commissionObj = {},
 			record = {};
-			// obj = {};
 
-			//Verifying user authenticity
+		//Verifying user authenticity
 		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
 		if (err) return response.errReturned(res, err)
 		if (!user || user.length == 0 || user == null)
@@ -109,30 +91,26 @@ async function filesCallHandaling(req, res) {
 			[err, record] = await utils.to(db.models.user_files.findOne({
 				where: { user_id: id }
 			}))
-			console.log(record)
+
 			//First time uploading case
 			if (record === null) {
-				console.log('inside record');
-				//Gettting template name
-				[err, record] = await utils.to(db.query(`
-						SELECT name as user_name 
-							FROM users
-							WHERE 
-								id `,
-					{
-						replacements: { id },
-						type: db.QueryTypes.SELECT,
-					}))
+				console.log('infIde record');
+
+				//Gettting user id
+				[err, record] = await utils.to(db.models.users.findOne({
+					where: { id }
+				}))
+
 				if (err) return response.errReturned(res, err)
-				console.log(record);
+				console.log('after query', record);
 
 				//Giving reward for 1st time upload a document
 				[err, result] = await utils.to(rewardDisperser(
-					`${rewardEnum.MEDICALRECORDDOCUMENTREWARD};${record[0].user_name}`,
+					`${rewardEnum.MEDICALRECORDDOCUMENTREWARD};${record}`,
 					user_id,
 					user.tron_wallet_public_key)
 				)
-				console.log(record[0].user_name)
+
 				if (err)
 					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.BANDWIDTH_IS_LOW)
 
@@ -202,9 +180,48 @@ async function filesCallHandaling(req, res) {
 	}
 }
 
+async function getFileHistoryById(req, res) {
+	try {
+		const { user_id } = req.auth
+		const { fId } = req.params
+
+		let err = {}, user = {}, record = {};
+
+		//Verifying user authenticity
+		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (err) return response.errReturned(res, err)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+
+		if (!fId)
+			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
+
+		[err, record] = await utils.to(db.models.user_files.findOne(
+			{
+				where: { id: fId }
+			}))
+		if (err) return response.errReturned(res, err)
+		if (record == null || record.count == 0 || record == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		//Returing successful response
+		return response.sendResponse(
+			res,
+			resCode.SUCCESS,
+			resMessage.SUCCESS,
+			{ accessToken: record.access_token }
+		)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+
 
 module.exports = {
-	saveFilesByUser,
-	getFilesByUser,
-	filesCallHandaling
+	saveFileByUserId,
+	getFileByUserId,
+	filesCallHandaling,
+	getFileHistoryById
 }
