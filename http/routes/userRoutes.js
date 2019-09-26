@@ -39,10 +39,11 @@ router.post('/getMedicationListByUser', authorize.authenticateToken, medicationC
 router.post('/saveProcedureByUser', authorize.authenticateToken, procedureController.saveProcedureByUser)
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
+//User_files
 router.post('/saveFileByUserId', authorize.authenticateToken, filesController.saveFilesByUser)
 router.post('/getFileByUserId', authorize.authenticateToken, filesController.getFilesByUser)
-router.post('/:action', authorize.authenticateToken, filesController.filesCallHandaling)
-router.get('/file-history/:fId', authorize.authenticateToken, filesController.getFileHistoryById)
+router.post('/ipfs/:action', authorize.authenticateToken, filesController.filesCallHandaling)
+router.get('/getFileAccessToken/:fId', authorize.authenticateToken, filesController.getFileHistoryById)
 
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
