@@ -27,9 +27,7 @@ async function saveFileByUserId(req, res) {
 				access_token: req.body.accessToken
 			}
 		))
-		if (!error) {
-			console.log('success')
-		}
+		if (error) return response.errReturned(res, error)
 
 		return response.sendResponse(
 			res,
@@ -54,9 +52,8 @@ async function getFileByUserId(req, res) {
 		if (result == null)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
-		if (!error) {
-			console.log('success')
-		}
+		if (error) return response.errReturned(res, error)
+
 		return response.sendResponse(
 			res,
 			resCode.SUCCESS,
