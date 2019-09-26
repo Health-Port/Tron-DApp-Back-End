@@ -51,9 +51,8 @@ async function getFileByUserId(req, res) {
 		}))
 		if (result == null)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-
+		//cjamge
 		if (error) return response.errReturned(res, error)
-
 		return response.sendResponse(
 			res,
 			resCode.SUCCESS,
