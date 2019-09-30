@@ -40,10 +40,10 @@ router.post('/saveProcedureByUser', authorize.authenticateToken, procedureContro
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
 //User_files
-router.post('/saveFileByUserId', authorize.authenticateToken, filesController.saveFilesByUser)
-router.post('/getFileByUserId', authorize.authenticateToken, filesController.getFilesByUser)
-router.post('/ipfs/:action', authorize.authenticateToken, filesController.filesCallHandaling)
-router.get('/getFileAccessToken/:fId', authorize.authenticateToken, filesController.getFileHistoryById)
+router.post('/saveFileByUserId', authorize.authenticateToken, filesController.saveFileByUserId)
+router.post('/getFileByUserId', authorize.authenticateToken, filesController.getFileByUserId)
+router.post('filesCallHandaling/:action', authorize.authenticateToken, filesController.filesCallHandaling)
+router.get('/getFileHistoryById/:fId', authorize.authenticateToken, filesController.getFileHistoryById)
 
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
