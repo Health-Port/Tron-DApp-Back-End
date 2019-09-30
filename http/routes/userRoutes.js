@@ -42,7 +42,7 @@ router.post('/getProcedureListByUser', authorize.authenticateToken, procedureCon
 //User_files
 router.post('/saveFileByUserId', authorize.authenticateToken, filesController.saveFileByUserId)
 router.post('/getFileByUserId', authorize.authenticateToken, filesController.getFileByUserId)
-router.post('filesCallHandaling/:action', authorize.authenticateToken, filesController.filesCallHandaling)
+router.post('/filesCallHandaling/:action', authorize.authenticateToken, filesController.filesCallHandaling)
 router.get('/getFileHistoryById/:fId', authorize.authenticateToken, filesController.getFileHistoryById)
 
 //Providers
