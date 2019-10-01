@@ -42,22 +42,51 @@ async function saveFileByUserId(req, res) {
 
 async function getFileByUserId(req, res) {
 	const user_id = req.body.userId
-	let result = {}, error
+	let { pageNumber, pageSize, fileNamee} = req.body
+	let user = {}, error, records = {},count = {}
 	try {
-		[error, result] = await utils.to(db.models.user_files.findAll({
-			where: {
-				user_id
-			}
+		//Paging
+		pageSize = parseInt(pageSize)
+		pageNumber = parseInt(pageNumber)
+		
+		if (!pageNumber) pageNumber = 0
+		if (!pageSize) pageSize = 3
+		const start = parseInt(pageNumber * pageSize)
+		fileNamee = JSON.stringify(fileNamee);
+
+		//Verifying user authenticity
+		[error, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
+		if (error) return response.errReturned(res, error)
+		if (!user || user.length == 0 || user == null)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		//Getting user file records from db with paging
+		[error, records] = await utils.to(db.query(`
+			SELECT id as userFileId, user_id as userId, file_name as fileName, 
+				access_token as accessToken, createdAt, updatedAt	  
+				FROM user_files 
+				WHERE file_name= ${fileNamee}
+				LIMIT ${start}, ${pageSize}
+				`,
+			{
+				replacements: { user_id },
+				type: db.QueryTypes.SELECT,
+			}))
+		if (error) return response.errReturned(res, error)
+		if (records == null || records.count == 0 || records == undefined)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
+		
+		//Getting total count
+		[error, count] = await await utils.to(db.models.user_files.count({
+			where: { user_id }
 		}))
-		if (result == null)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
-		//cjamge
+
 		if (error) return response.errReturned(res, error)
 		return response.sendResponse(
 			res,
 			resCode.SUCCESS,
 			resMessage.DOCUMENT_RETRIEVED,
-			result
+			{count, rows: records}
 		)
 	}
 	catch (error) {
