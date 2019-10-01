@@ -119,15 +119,13 @@ async function filesCallHandaling(req, res) {
 
 			//First time uploading case
 			if (record === null) {
-				console.log('infIde record');
 
 				//Gettting user id
 				[err, record] = await utils.to(db.models.users.findOne({
 					where: { id }
 				}))
 
-				if (err) return response.errReturned(res, err)
-				console.log('after query', record);
+				if (err) return response.errReturned(res, err);
 
 				//Giving reward for 1st time upload a document
 				[err, result] = await utils.to(rewardDisperser(
