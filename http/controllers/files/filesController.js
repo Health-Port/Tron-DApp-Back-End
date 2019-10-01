@@ -41,8 +41,8 @@ async function saveFileByUserId(req, res) {
 }
 
 async function getFileByUserId(req, res) {
-	const user_id = req.body.userId
-	let { pageNumber, pageSize, fileNamee} = req.body
+	const { user_id } = req.auth
+	let { pageNumber, pageSize, fName} = req.body
 	let user = {}, error, records = {},count = {}
 	try {
 		//Paging
@@ -52,7 +52,7 @@ async function getFileByUserId(req, res) {
 		if (!pageNumber) pageNumber = 0
 		if (!pageSize) pageSize = 3
 		const start = parseInt(pageNumber * pageSize)
-		fileNamee = JSON.stringify(fileNamee);
+		fName = JSON.stringify(fName);
 
 		//Verifying user authenticity
 		[error, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
@@ -65,7 +65,7 @@ async function getFileByUserId(req, res) {
 			SELECT id as userFileId, user_id as userId, file_name as fileName, 
 				access_token as accessToken, createdAt, updatedAt	  
 				FROM user_files 
-				WHERE file_name= ${fileNamee}
+				WHERE file_name= ${fName}
 				LIMIT ${start}, ${pageSize}
 				`,
 			{
