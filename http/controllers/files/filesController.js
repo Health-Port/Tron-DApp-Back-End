@@ -106,7 +106,6 @@ async function filesCallHandaling(req, res) {
 	try {
 		const { action } = req.params
 		const { user_id } = req.auth
-		const { id } = req.body
 
 		let err = {},
 			result = {},
@@ -122,7 +121,7 @@ async function filesCallHandaling(req, res) {
 
 		if (action.toLocaleLowerCase() == actionEnum.ADDFILE.toLocaleLowerCase()) {
 			[err, record] = await utils.to(db.models.user_files.findOne({
-				where: { user_id: id }
+				where: { user_id }
 			}))
 
 			//First time uploading case
@@ -130,7 +129,7 @@ async function filesCallHandaling(req, res) {
 
 				//Gettting user id
 				[err, record] = await utils.to(db.models.users.findOne({
-					where: { id }
+					where: { id : user_id}
 				}))
 
 				if (err) return response.errReturned(res, err);
