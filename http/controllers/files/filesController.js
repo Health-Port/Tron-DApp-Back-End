@@ -42,14 +42,14 @@ async function saveFileByUserId(req, res) {
 
 async function getFileByUserId(req, res) {
 	const { user_id } = req.auth
-	let { pageNumber, pageSize} = req.body
-	const {searchValue} = req.body.searchValue
-	let user = {}, error, records = {},count
+	let { pageNumber, pageSize } = req.body
+	const { searchValue } = req.body.searchValue
+	let user = {}, error, records = {}, count
 	try {
 		//Paging
 		pageSize = parseInt(pageSize)
 		pageNumber = parseInt(pageNumber)
-		
+
 		if (!pageNumber) pageNumber = 0
 		if (!pageSize) pageSize = 3
 		const start = pageNumber * pageSize;
@@ -76,14 +76,14 @@ async function getFileByUserId(req, res) {
 		if (error) return response.errReturned(res, error)
 		if (records == null || records.count == 0 || records == undefined)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
-		
-			if (records) {				
-				if (searchValue) {
-					records = records.filter(x =>
-						x.fileName.toLowerCase().includes(searchValue.toLowerCase()))
-				}
+
+		if (records) {
+			if (searchValue) {
+				records = records.filter(x =>
+					x.fileName.toLowerCase().includes(searchValue.toLowerCase()))
 			}
-		
+		}
+
 		//Getting total count
 		[error, count] = await await utils.to(db.models.user_files.count({
 			where: { user_id }
@@ -94,7 +94,7 @@ async function getFileByUserId(req, res) {
 			res,
 			resCode.SUCCESS,
 			resMessage.DOCUMENT_RETRIEVED,
-			{count, rows: records}
+			{ count, rows: records }
 		)
 	}
 	catch (error) {
