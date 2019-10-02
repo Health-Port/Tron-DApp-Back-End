@@ -42,17 +42,18 @@ async function saveFileByUserId(req, res) {
 
 async function getFileByUserId(req, res) {
 	const { user_id } = req.auth
-	let { pageNumber, pageSize, fName} = req.body
-	let user = {}, error, records = {},count = {}
+	let { pageNumber, pageSize } = req.body
+	const { searchValue } = req.body.searchValue
+	let user = {}, error, records = {}, count
 	try {
 		//Paging
 		pageSize = parseInt(pageSize)
 		pageNumber = parseInt(pageNumber)
-		
+
 		if (!pageNumber) pageNumber = 0
 		if (!pageSize) pageSize = 3
-		const start = parseInt(pageNumber * pageSize)
-		fName = JSON.stringify(fName);
+		const start = pageNumber * pageSize;
+		// fName = JSON.stringify(fName);
 
 		//Verifying user authenticity
 		[error, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
@@ -64,8 +65,8 @@ async function getFileByUserId(req, res) {
 		[error, records] = await utils.to(db.query(`
 			SELECT id as userFileId, user_id as userId, file_name as fileName, 
 				access_token as accessToken, createdAt, updatedAt	  
-				FROM user_files 
-				WHERE file_name= ${fName}
+				FROM user_files
+				WHERE user_id = ${user_id}
 				LIMIT ${start}, ${pageSize}
 				`,
 			{
@@ -74,8 +75,15 @@ async function getFileByUserId(req, res) {
 			}))
 		if (error) return response.errReturned(res, error)
 		if (records == null || records.count == 0 || records == undefined)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
-		
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
+
+		if (records) {
+			if (searchValue) {
+				records = records.filter(x =>
+					x.fileName.toLowerCase().includes(searchValue.toLowerCase()))
+			}
+		}
+
 		//Getting total count
 		[error, count] = await await utils.to(db.models.user_files.count({
 			where: { user_id }
@@ -86,7 +94,7 @@ async function getFileByUserId(req, res) {
 			res,
 			resCode.SUCCESS,
 			resMessage.DOCUMENT_RETRIEVED,
-			{count, rows: records}
+			{ count, rows: records }
 		)
 	}
 	catch (error) {
@@ -98,7 +106,6 @@ async function filesCallHandaling(req, res) {
 	try {
 		const { action } = req.params
 		const { user_id } = req.auth
-		const { id } = req.body
 
 		let err = {},
 			result = {},
@@ -114,7 +121,7 @@ async function filesCallHandaling(req, res) {
 
 		if (action.toLocaleLowerCase() == actionEnum.ADDFILE.toLocaleLowerCase()) {
 			[err, record] = await utils.to(db.models.user_files.findOne({
-				where: { user_id: id }
+				where: { user_id }
 			}))
 
 			//First time uploading case
@@ -122,7 +129,7 @@ async function filesCallHandaling(req, res) {
 
 				//Gettting user id
 				[err, record] = await utils.to(db.models.users.findOne({
-					where: { id }
+					where: { id : user_id}
 				}))
 
 				if (err) return response.errReturned(res, err);
