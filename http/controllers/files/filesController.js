@@ -10,12 +10,12 @@ const tronUtils = require('../../../etc/tronUtils')
 const db = global.healthportDb
 
 async function saveFileByUserId(req, res) {
-	const id = req.body.userId
+	const { user_id } = req.auth
 	let result = {}, error
 	try {
 		[error, result] = await utils.to(db.models.users.findOne({
 			where: {
-				id
+				id: user_id
 			}
 		}))
 		if (result == null)
