@@ -43,7 +43,7 @@ async function saveFileByUserId(req, res) {
 async function getFileByUserId(req, res) {
 	const { user_id } = req.auth
 	let { pageNumber, pageSize } = req.body
-	const { searchValue } = req.body.searchValue
+	const { searchValue } = req.body
 	let user = {}, error, records = {}, count
 	try {
 		//Paging
