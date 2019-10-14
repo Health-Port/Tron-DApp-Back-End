@@ -44,7 +44,8 @@ async function getFileByUserId(req, res) {
 	const { user_id } = req.auth
 	let { pageNumber, pageSize } = req.body
 	const { searchValue } = req.body
-	let user = {}, error, records = {}, count
+	const newRecords = {}
+	let user = {}, error, records = {}
 	try {
 		//Paging
 		pageSize = parseInt(pageSize)
@@ -52,8 +53,8 @@ async function getFileByUserId(req, res) {
 
 		if (!pageNumber) pageNumber = 0
 		if (!pageSize) pageSize = 3
-		const start = pageNumber * pageSize;
-		// fName = JSON.stringify(fName);
+		const start = pageNumber * pageSize
+		const end = parseInt(start + pageSize);
 
 		//Verifying user authenticity
 		[error, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
@@ -61,41 +62,33 @@ async function getFileByUserId(req, res) {
 		if (!user || user.length == 0 || user == null)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
-		//Getting user file records from db with paging
-		[error, records] = await utils.to(db.query(`
-			SELECT id as userFileId, user_id as userId, file_name as fileName, 
-				access_token as accessToken, createdAt, updatedAt	  
-				FROM user_files
-				WHERE user_id = ${user_id}
-				LIMIT ${start}, ${pageSize}
-				`,
-			{
-				replacements: { user_id },
-				type: db.QueryTypes.SELECT,
-			}))
+		[error, records] = await utils.to(db.models.user_files.findAll({ where: { user_id } }))
+
 		if (error) return response.errReturned(res, error)
+
 		if (records == null || records.count == 0 || records == undefined)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		//getting records from db with pagination and search value
 		if (records) {
 			if (searchValue) {
 				records = records.filter(x =>
-					x.fileName.toLowerCase().includes(searchValue.toLowerCase()))
+					x.file_name.toLowerCase().includes(searchValue.toLowerCase())
+				)
 			}
+			newRecords['count'] = records.length
+			const slicedData = records.slice(start, end)
+			newRecords['rows'] = slicedData
+
+
+			if (error) return response.errReturned(res, error)
+			return response.sendResponse(
+				res,
+				resCode.SUCCESS,
+				resMessage.DOCUMENT_RETRIEVED,
+				newRecords
+			)
 		}
-
-		//Getting total count
-		[error, count] = await await utils.to(db.models.user_files.count({
-			where: { user_id }
-		}))
-
-		if (error) return response.errReturned(res, error)
-		return response.sendResponse(
-			res,
-			resCode.SUCCESS,
-			resMessage.DOCUMENT_RETRIEVED,
-			{ count, rows: records }
-		)
 	}
 	catch (error) {
 		return response.errReturned(res, error)
@@ -120,6 +113,7 @@ async function filesCallHandaling(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
 		if (action.toLocaleLowerCase() == actionEnum.ADDFILE.toLocaleLowerCase()) {
+
 			[err, record] = await utils.to(db.models.user_files.findOne({
 				where: { user_id }
 			}))
@@ -129,7 +123,7 @@ async function filesCallHandaling(req, res) {
 
 				//Gettting user id
 				[err, record] = await utils.to(db.models.users.findOne({
-					where: { id : user_id}
+					where: { id: user_id }
 				}))
 
 				if (err) return response.errReturned(res, err);
