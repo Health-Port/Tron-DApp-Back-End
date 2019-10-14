@@ -44,8 +44,8 @@ async function getFileByUserId(req, res) {
 	const { user_id } = req.auth
 	let { pageNumber, pageSize } = req.body
 	const { searchValue } = req.body
-	const New_records = []
-	let user = {}, error, records = {}, count
+	const newRecords = {}
+	let user = {}, error, records = {}
 	try {
 		//Paging
 		pageSize = parseInt(pageSize)
@@ -53,60 +53,42 @@ async function getFileByUserId(req, res) {
 
 		if (!pageNumber) pageNumber = 0
 		if (!pageSize) pageSize = 3
-		const start = pageNumber * pageSize;
+		const start = pageNumber * pageSize
+		const end = parseInt(start + pageSize);
 
 		//Verifying user authenticity
 		[error, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
 		if (error) return response.errReturned(res, error)
 		if (!user || user.length == 0 || user == null)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);	
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
 		[error, records] = await utils.to(db.models.user_files.findAll({ where: { user_id } }))
+
 		if (error) return response.errReturned(res, error)
+
 		if (records == null || records.count == 0 || records == undefined)
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
+		//getting records from db with pagination and search value
 		if (records) {
 			if (searchValue) {
 				records = records.filter(x =>
 					x.file_name.toLowerCase().includes(searchValue.toLowerCase())
 				)
-
 			}
-			console.log('records', records)
+			newRecords['count'] = records.length
+			const slicedData = records.slice(start, end)
+			newRecords['rows'] = slicedData
+
+
+			if (error) return response.errReturned(res, error)
+			return response.sendResponse(
+				res,
+				resCode.SUCCESS,
+				resMessage.DOCUMENT_RETRIEVED,
+				newRecords
+			)
 		}
-		for (let i = start; i <= pageSize; i++) {
-			console.log('record', records[i])
-			if (records[i] != undefined)
-				New_records[i] = records[i]
-		}
-		records = New_records
-		count = records.length
-
-
-		//Getting user file records from db with paging
-		// [error, records] = await utils.to(db.query(`
-		// 	SELECT id as userFileId, user_id as userId, file_name as fileName, 
-		// 		access_token as accessToken, createdAt, updatedAt	  
-		// 		FROM user_files
-		// 		WHERE user_id = ${user_id}
-		// 		LIMIT ${start}, ${pageSize}
-		// 		`,
-		// 	{
-		// 		replacements: { user_id },
-		// 		type: db.QueryTypes.SELECT,
-		// 	}))
-
-			//Getting total count
-		
-
-		if (error) return response.errReturned(res, error)
-		return response.sendResponse(
-			res,
-			resCode.SUCCESS,
-			resMessage.DOCUMENT_RETRIEVED,
-			{ count, rows: records }
-		)
 	}
 	catch (error) {
 		return response.errReturned(res, error)
@@ -131,6 +113,7 @@ async function filesCallHandaling(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
 
 		if (action.toLocaleLowerCase() == actionEnum.ADDFILE.toLocaleLowerCase()) {
+
 			[err, record] = await utils.to(db.models.user_files.findOne({
 				where: { user_id }
 			}))
