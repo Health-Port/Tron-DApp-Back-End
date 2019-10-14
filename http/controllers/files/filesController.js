@@ -99,7 +99,7 @@ async function filesCallHandaling(req, res) {
 	try {
 		const { action } = req.params
 		const { user_id } = req.auth
-		let msg = "file"
+		const msg = 'file'
 
 		let err = {},
 			result = {},
