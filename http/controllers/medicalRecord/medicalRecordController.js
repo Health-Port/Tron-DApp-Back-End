@@ -91,10 +91,10 @@ async function getMedicalRecordsByUserId(req, res) {
 		//Getting medical records from db with paging
 		[err, records] = await utils.to(db.query(`
 			SELECT m.id as medicalRecordId, t.id as templateId, t.name as templateName, 
-				m.access_token as accessToken, m.createdAt	  
+				m.access_token as accessToken, m.createdAt, m.updatedAt	  
 				FROM medical_records m
 				INNER JOIN templates t ON m.template_id = t.id
-				WHERE m.user_id = :user_id
+				WHERE m.user_id = :user_id and t.status = true
 				ORDER by m.createdAt DESC
 				LIMIT ${start}, ${pageSize}`,
 			{
@@ -419,64 +419,11 @@ async function ipfsCallHandeling(req, res) {
 	}
 }
 
-async function migrations(req, res) {
-	try {
-		let err = {}, allergies = {}, ids = {};
-
-		//Getting allergies data
-		[err, allergies] = await utils.to(db.query(`
-			Select * from allergies a
-			Inner join users u on a.user_id = u.id
-			Order by u.id asc;`,
-			{
-				type: db.QueryTypes.SELECT,
-			}));
-
-		//Getting unique ids of users who have data
-		[err, ids] = await utils.to(db.query(`
-			Select a.user_id from allergies a
-			Inner join users u on a.user_id = u.id
-			Group by a.user_id
-			Order by u.id asc;`,
-			{
-				type: db.QueryTypes.SELECT,
-			}))
-		if (err) return response.errReturned(res, err)
-
-		const data = []
-		for (let i = 0; i < ids.length; i++) {
-			const filterdArray = allergies.filter(x => x.user_id == ids[i].user_id)
-
-			const obj = []
-			for (let j = 0; j < filterdArray.length; j++) {
-				obj[j] = {
-					category: filterdArray[j].category,
-					reactions: filterdArray[j].reactions,
-					severity: filterdArray[j].severity,
-					substance: filterdArray[j].substance
-				}
-			}
-			data[i] = {
-				userId: ids[i].user_id,
-				userPrivateKey: utils.decrypt(filterdArray[0].tron_wallet_private_key),
-				userPublicKey: utils.decrypt(filterdArray[0].tron_wallet_public_key),
-				userPublicKeyHex: utils.decrypt(filterdArray[0].tron_wallet_public_key_hex),
-				allergyData: obj
-			}
-		}
-		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, data)
-	} catch (error) {
-		console.log(error)
-		return response.errReturned(res, error)
-	}
-}
-
 module.exports = {
 	addMedicalRecord,
 	ipfsCallHandeling,
 	getMedicalRecordsByUserId,
 	getAllMedicalRecordsByUserId,
 	getMedicalRecordByTemplateId,
-	getMedicalRecordByTemplateIdWithAttributes,
-	migrations
+	getMedicalRecordByTemplateIdWithAttributes
 }

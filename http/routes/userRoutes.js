@@ -11,6 +11,7 @@ const templateController = require('../controllers/template/templateController')
 const medicalRecordController = require('../controllers/medicalRecord/medicalRecordController')
 const shareTypeController = require('../controllers/shareType/shareTypeController')
 const shareHistoryController = require('../controllers/shareHistory/shareHistoryController')
+const filesController = require('../controllers/files/filesController')
 
 router.post('/signUp', userController.signUp)
 router.post('/signIn', userController.signIn)
@@ -38,6 +39,12 @@ router.post('/getMedicationListByUser', authorize.authenticateToken, medicationC
 router.post('/saveProcedureByUser', authorize.authenticateToken, procedureController.saveProcedureByUser)
 router.post('/getProcedureListByUser', authorize.authenticateToken, procedureController.getProcedureListByUser)
 
+//User_files
+router.post('/saveFileByUserId', authorize.authenticateToken, filesController.saveFileByUserId)
+router.post('/getFileByUserId', authorize.authenticateToken, filesController.getFileByUserId)
+router.post('/filesCallHandaling/:action', authorize.authenticateToken, filesController.filesCallHandaling)
+router.get('/getFileHistoryById/:fId', authorize.authenticateToken, filesController.getFileHistoryById)
+
 //Providers
 router.get('/getAllProviders/:mId', authorize.authenticateToken, providerController.getAllProviders)
 router.get('/getAllProviders', authorize.authenticateToken, providerController.getAllProviders)
@@ -61,7 +68,6 @@ router.get('/template/list-all', authorize.authenticateToken, templateController
 router.get('/template/:tempId', authorize.authenticateToken, templateController.getTemplateById)
 
 //Medical Record Routes
-router.get('/medical-record/migrations', authorize.authenticateToken, medicalRecordController.migrations)
 router.post('/medical-record/add', authorize.authenticateToken, medicalRecordController.addMedicalRecord)
 router.post('/medical-record/list', authorize.authenticateToken, medicalRecordController.getMedicalRecordsByUserId)
 router.get('/medical-record/list-all', authorize.authenticateToken, medicalRecordController.getAllMedicalRecordsByUserId)
