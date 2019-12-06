@@ -1,6 +1,23 @@
 const mailer = require('../etc/emailHandler');
 const utilites = require('./utils');
 
+async function adminSignInTemplate(token, email) {
+    var subject = `${process.env.PROJECT_NAME} | Admin Login`;
+    var body = `
+                            Dear User,<br/><br/>
+                            You have successfully logged in to Health Port Admin Portal via ${email}.<br/>
+                            In case you have not performed this action please contact support.
+                            <br/><br/><br/>
+                            Regards,<br/>
+                            Team ${process.env.PROJECT_NAME}
+                            `;
+
+    let error, result;
+    [error, result] = await utilites.to(mailer.sendEmail(email, subject, body));
+    if (result) return Promise.resolve(true);
+    else return Promise.reject(error);
+}
+
 async function forgetPasswordTemplate(token, email, url) {
     var urlLink = url;
     var subject = `${process.env.PROJECT_NAME} Reset Password Request`;
@@ -162,10 +179,10 @@ async function sendPrivateKey(user) {
                             Thanks,<br/>
                             Team ${process.env.PROJECT_NAME}
                             `;
-  
+
     let error, result;
     [error, result] = await utilites.to(mailer.sendEmail(user.email, subject, body));
-    if(result) return Promise.resolve(true);
+    if (result) return Promise.resolve(true);
     else return Promise.reject(error);
 }
 
@@ -176,5 +193,6 @@ module.exports = {
     passwordSuccessfullyChanged,
     sendPrivateKey,
     addNewAdminTemplate,
-    addNewPatient
+    addNewPatient,
+    adminSignInTemplate
 };

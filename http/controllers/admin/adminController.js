@@ -22,7 +22,11 @@ async function signIn(req, res) {
             'password': req.body.password,
             'ip_address': req.headers['x-real-ip']
         }
-        let err, admin = {}, token = {}, permissions = {}, passwordCheck = {}
+        let err, admin = {},
+            token = {},
+            permissions = {},
+            passwordCheck = {},
+            mailSent = {}
 
         //Checking empty email and password 
         if (!(obj.email && obj.password))
@@ -45,6 +49,7 @@ async function signIn(req, res) {
         if (!passwordCheck)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT)
 
+
         //**** //Saving login history */
         if (process.env.NODE_ENV != 'dev') {
             let loginHistory = {}
@@ -64,11 +69,10 @@ async function signIn(req, res) {
             from permissions p 
             inner join features f ON p.feature_id = f.id
             inner join roles r ON r.id = p.role_id
-            where p.role_id = :roleId`,
-            {
-                replacements: { roleId: parseInt(admin.role_id) },
-                type: db.QueryTypes.SELECT,
-            }))
+            where p.role_id = :roleId`, {
+            replacements: { roleId: parseInt(admin.role_id) },
+            type: db.QueryTypes.SELECT,
+        }))
         if (err) return response.errReturned(res, err)
         if (!permissions || permissions.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
@@ -102,6 +106,10 @@ async function signIn(req, res) {
             roleId: permissions[0].roleId,
             permissions: permissions.map(a => a.route)
         };
+        //Email sending for admin login
+        [err, mailSent] = await utils.to(emailTemplates.adminSignInTemplate(token, obj.email))
+        console.log(mailSent);
+
         [err, token] = await utils.to(tokenGenerator.createToken(data))
         data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
         data.permissions = permissions.filter(x => x.parentId)
@@ -120,7 +128,8 @@ async function signUp(req, res) {
             'name': req.body.name,
             'password': req.body.password
         }
-        let err = {}, data = {}
+        let err = {},
+            data = {}
 
         //Checking empty email, password and name 
         if (!(obj.email && obj.password && obj.name))
@@ -131,12 +140,11 @@ async function signUp(req, res) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
 
         //Saving admin record in db 
-        [err, data] = await utils.to(db.models.admins.create(
-            {
-                name: obj.name,
-                email: obj.email,
-                password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS))
-            }))
+        [err, data] = await utils.to(db.models.admins.create({
+            name: obj.name,
+            email: obj.email,
+            password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS))
+        }))
         if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST, err)
 
         return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ADDED_SUCCESSFULLY, data)
@@ -153,7 +161,12 @@ async function forgetPassword(req, res) {
             'email': req.body.email
         }
 
-        let err, admin = {}, token = {}, foundPasscode = {}, passcodeCreateTime = {}, timeDifferInMin = {}, mailSent = {}
+        let err, admin = {},
+            token = {},
+            foundPasscode = {},
+            passcodeCreateTime = {},
+            timeDifferInMin = {},
+            mailSent = {}
 
         const passcode = passcodeGenerator.generate({ length: 14, numbers: true })
 
@@ -169,11 +182,12 @@ async function forgetPassword(req, res) {
         const authentication = { pass_code: passcode, id: admin.id, email: admin.email };
 
         //Checking passcode in db
-        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
-            {
-                where: { user_id: admin.id, type: 'admin forget' },
-                order: [['createdAt', 'DESC']]
-            }))
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne({
+            where: { user_id: admin.id, type: 'admin forget' },
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        }))
         if (foundPasscode) {
             passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
             const now = moment().format('YYYY-MM-DD HH:mm:ss')
@@ -187,12 +201,11 @@ async function forgetPassword(req, res) {
 
         //Saving passcode in db
         let objPasscode = {};
-        [err, objPasscode] = await utils.to(db.models.pass_codes.create(
-            {
-                user_id: admin.id,
-                pass_code: passcode,
-                type: 'admin forget'
-            }))
+        [err, objPasscode] = await utils.to(db.models.pass_codes.create({
+            user_id: admin.id,
+            pass_code: passcode,
+            type: 'admin forget'
+        }))
         if (err) console.log(objPasscode);
 
         //Jwt token generating
@@ -224,7 +237,8 @@ async function confirmForgotPassword(req, res) {
             'email': req.auth.email
         }
 
-        let err, data = {}, mailSent = {}
+        let err, data = {},
+            mailSent = {}
 
         //Checking passcode email and password
         if (!(obj.password && obj.passcode))
@@ -235,11 +249,12 @@ async function confirmForgotPassword(req, res) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_COMPLEXITY);
 
         //Finding record from db
-        [err, data] = await utils.to(db.models.pass_codes.findOne(
-            {
-                where: { pass_code: obj.passcode, type: 'admin forget' },
-                order: [['createdAt', 'DESC']]
-            }))
+        [err, data] = await utils.to(db.models.pass_codes.findOne({
+            where: { pass_code: obj.passcode, type: 'admin forget' },
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        }))
         if (data.is_used == true) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
         if (data) {
             const passcodeCreateTime = moment(data.createdAt).format('YYYY-MM-DD HH:mm:ss')
@@ -252,16 +267,10 @@ async function confirmForgotPassword(req, res) {
         }
 
         //Updating password in db
-        [err, data] = await utils.to(db.models.admins.update(
-            { password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) },
-            { where: { id: data.user_id } }
-        ));
+        [err, data] = await utils.to(db.models.admins.update({ password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS)) }, { where: { id: data.user_id } }));
 
         //Updading passcode
-        [err, data] = await utils.to(db.models.pass_codes.update(
-            { is_used: true },
-            { where: { pass_code: obj.passcode, type: 'admin forget' } }
-        ));
+        [err, data] = await utils.to(db.models.pass_codes.update({ is_used: true }, { where: { pass_code: obj.passcode, type: 'admin forget' } }));
 
         //Email sending
         [err, mailSent] = await utils.to(emailTemplates.passwordSuccessfullyChanged(obj.email))
@@ -287,7 +296,9 @@ async function changePassword(req, res) {
             'newPassword': req.body.newPassword
         }
 
-        let err, admin = {}, update = {}, mailSent = {}
+        let err, admin = {},
+            update = {},
+            mailSent = {}
 
         //Checking empty fields
         if (!(obj.adminId && obj.oldPassword && obj.newPassword))
@@ -304,10 +315,7 @@ async function changePassword(req, res) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_INCORRECT);
 
         //Updading passcode
-        [err, update] = await utils.to(db.models.admins.update(
-            { password: obj.newPassword },
-            { where: { id: obj.adminId } }
-        ))
+        [err, update] = await utils.to(db.models.admins.update({ password: obj.newPassword }, { where: { id: obj.adminId } }))
         if (!update) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.API_ERROR);
 
         //Email sending
@@ -332,7 +340,12 @@ async function resendLinkEmail(req, res) {
             'userId': req.body.userId,
         }
 
-        let err = {}, data = {}, foundPasscode = {}, passCode = {}, token = {}, mailSent = {};
+        let err = {},
+            data = {},
+            foundPasscode = {},
+            passCode = {},
+            token = {},
+            mailSent = {};
 
         //Checking if user already exists
         [err, data] = await utils.to(db.models.users.findOne({ where: { id: obj.userId } }))
@@ -340,11 +353,12 @@ async function resendLinkEmail(req, res) {
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ALREADY_VERIFIED);
 
         //Checking passcode in db
-        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
-            {
-                where: { user_id: obj.userId, type: 'signup' },
-                order: [['createdAt', 'DESC']]
-            }))
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne({
+            where: { user_id: obj.userId, type: 'signup' },
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        }))
         if (foundPasscode) {
             const passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
             const now = moment().format('YYYY-MM-DD HH:mm:ss')
@@ -357,16 +371,17 @@ async function resendLinkEmail(req, res) {
         }
 
         //Saving passcode in db
-        [err, passCode] = await utils.to(db.models.pass_codes.create(
-            {
-                user_id: obj.userId,
-                pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
-                type: 'signup'
-            }));
+        [err, passCode] = await utils.to(db.models.pass_codes.create({
+            user_id: obj.userId,
+            pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
+            type: 'signup'
+        }));
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken({
-            email: data.email, user_id: obj.userId, pass_code: passCode.pass_code
+            email: data.email,
+            user_id: obj.userId,
+            pass_code: passCode.pass_code
         }))
 
         const url = `${process.env.BASE_URL}${process.env.VERIFICATION_ROUTE}?token=${token}`;
@@ -393,7 +408,12 @@ async function sendUserResetPasswordRequest(req, res) {
             'email': req.body.email
         }
 
-        let err, user = {}, token = {}, timeDifferInMin = {}, passcodeCreateTime = {}, foundPasscode = {}, mailSent = {}
+        let err, user = {},
+            token = {},
+            timeDifferInMin = {},
+            passcodeCreateTime = {},
+            foundPasscode = {},
+            mailSent = {}
 
         const passcode = passcodeGenerator.generate({ length: 14, numbers: true });
 
@@ -404,11 +424,12 @@ async function sendUserResetPasswordRequest(req, res) {
         const authentication = { pass_code: passcode, user_id: user.id };
 
         //Checking passcode in db
-        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne(
-            {
-                where: { user_id: user.id, type: 'forget' },
-                order: [['createdAt', 'DESC']]
-            }))
+        [err, foundPasscode] = await utils.to(db.models.pass_codes.findOne({
+            where: { user_id: user.id, type: 'forget' },
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        }))
         if (foundPasscode) {
             passcodeCreateTime = moment(foundPasscode.createdAt).format('YYYY-MM-DD HH:mm:ss')
             const now = moment().format('YYYY-MM-DD HH:mm:ss')
@@ -422,12 +443,11 @@ async function sendUserResetPasswordRequest(req, res) {
 
         //Saving passcode in db
         let objPasscode = {};
-        [err, objPasscode] = await utils.to(db.models.pass_codes.create(
-            {
-                user_id: user.id,
-                pass_code: passcode,
-                type: 'forget'
-            }))
+        [err, objPasscode] = await utils.to(db.models.pass_codes.create({
+            user_id: user.id,
+            pass_code: passcode,
+            type: 'forget'
+        }))
         if (err) console.log(objPasscode);
 
         //Jwt token generating
@@ -464,7 +484,8 @@ async function getUsers(req, res) {
             'isCsvExport': req.body.isCsvExport
         }
 
-        let err = {}, dbData, fromDate, toDate
+        let err = {},
+            dbData, fromDate, toDate
         const returnableData = {}
 
         if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
@@ -492,12 +513,12 @@ async function getUsers(req, res) {
         const start = parseInt(pageNumber * pageSize)
         const end = parseInt(start + pageSize);
 
-        [err, dbData] = await utils.to(db.models.users.findAll(
-            {
-                attributes: ['id', 'name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
-                order: [['createdAt', 'DESC']]
-            }
-        ))
+        [err, dbData] = await utils.to(db.models.users.findAll({
+            attributes: ['id', 'name', 'email', 'role', 'tron_wallet_public_key', 'status', 'createdAt'],
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        }))
         if (err) return response.errReturned(res, err)
 
         const filter = typeof obj.status === 'boolean' ? 'filter' : ''
@@ -571,7 +592,8 @@ async function getUserById(req, res) {
             'userId': req.body.userId
         }
 
-        let err = {}, user = {};
+        let err = {},
+            user = {};
 
         [err, user] = await utils.to(db.query(`
                         select u.id, u.email, u.role, u.tron_wallet_public_key, u.tron_wallet_private_key, 
@@ -579,11 +601,10 @@ async function getUserById(req, res) {
                         left join login_histories l ON u.id = l.user_id 
                         where u.id = :userId 
                         order by l.createdAt desc
-                        limit 1`,
-            {
-                replacements: { userId: parseInt(obj.userId) },
-                type: db.QueryTypes.SELECT,
-            }))
+                        limit 1`, {
+            replacements: { userId: parseInt(obj.userId) },
+            type: db.QueryTypes.SELECT,
+        }))
         if (err) return response.errReturned(res, err)
         if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
@@ -616,7 +637,8 @@ async function listTransactions(req, res) {
             'to': req.body.to,
             'isCsvExport': req.body.isCsvExport
         }
-        let err = {}, fromDate, toDate, dbData = {}
+        let err = {},
+            fromDate, toDate, dbData = {}
         const returnableData = {}
 
         if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
@@ -648,10 +670,9 @@ async function listTransactions(req, res) {
             select user_id, address, type, note, number_of_token, trx_hash, createdAt 
             from transections
             where user_id > 0 
-            order by createdAt desc`,
-            {
-                type: db.QueryTypes.SELECT,
-            }))
+            order by createdAt desc`, {
+            type: db.QueryTypes.SELECT,
+        }))
         if (err) return response.errReturned(res, err)
         if (dbData == null || dbData.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
@@ -659,13 +680,13 @@ async function listTransactions(req, res) {
         if (dbData) {
             if ((obj.from && obj.to) && obj.searchValue) {
                 dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
-                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue))
-                    || x.trx_hash.includes(obj.searchValue))
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue)) ||
+                    x.trx_hash.includes(obj.searchValue))
             } else if (obj.from && obj.to) {
                 dbData = dbData.filter(x => x.createdAt >= fromDate && x.createdAt <= toDate)
             } else if (obj.searchValue) {
-                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue))
-                    || x.trx_hash.includes(obj.searchValue))
+                dbData = dbData.filter(x => x.address.includes(utils.encrypt(obj.searchValue)) ||
+                    x.trx_hash.includes(obj.searchValue))
             }
 
             returnableData['count'] = dbData.length
@@ -711,20 +732,22 @@ async function getTransactionsByUserId(req, res) {
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
         }
-        let err = {}, transections = {}
+        let err = {},
+            transections = {}
 
         //Paging
         if (!obj.pageNumber) obj.pageNumber = 0
         if (!obj.pageSize) obj.pageSize = 10
         const start = parseInt(obj.pageNumber * obj.pageSize);
 
-        [err, transections] = await utils.to(db.models.transections.findAndCountAll(
-            {
-                where: [{ address: utils.encrypt(obj.userId) }],
-                order: [['createdAt', 'DESC']],
-                limit: obj.pageSize,
-                offset: start
-            }))
+        [err, transections] = await utils.to(db.models.transections.findAndCountAll({
+            where: [{ address: utils.encrypt(obj.userId) }],
+            order: [
+                ['createdAt', 'DESC']
+            ],
+            limit: obj.pageSize,
+            offset: start
+        }))
         if (err) return response.errReturned(res, err)
         if (transections == null || transections.count == 0 || transections == undefined)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
@@ -753,7 +776,8 @@ async function getLoginHistories(req, res) {
             'to': req.body.to,
             'isCsvExport': req.body.isCsvExport
         }
-        let err = {}, fromDate, toDate, dbData
+        let err = {},
+            fromDate, toDate, dbData
         const returnableData = {}
 
         if ((obj.from && !obj.to) || (obj.to && !obj.from)) {
@@ -784,10 +808,9 @@ async function getLoginHistories(req, res) {
         [err, dbData] = await utils.to(db.query(`
                         select l.id, l.user_id, u.name, u.email, u.role, l.createdAt, l.ip_address from users u 
                         inner join login_histories l ON u.id = l.user_id 
-                        order by l.createdAt Desc`,
-            {
-                type: db.QueryTypes.SELECT,
-            }))
+                        order by l.createdAt Desc`, {
+            type: db.QueryTypes.SELECT,
+        }))
         if (err) return response.errReturned(res, err)
 
         if (dbData) {
@@ -837,20 +860,22 @@ async function getLoginHistoriesByUserId(req, res) {
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
         }
-        let err = {}, loginHistories = {}
+        let err = {},
+            loginHistories = {}
 
         //Paging
         if (!obj.pageNumber) obj.pageNumber = 0
         if (!obj.pageSize) obj.pageSize = 10
         const start = parseInt(obj.pageNumber * obj.pageSize);
 
-        [err, loginHistories] = await utils.to(db.models.login_histories.findAndCountAll(
-            {
-                where: [{ user_id: obj.userId }],
-                order: [['createdAt', 'DESC']],
-                limit: obj.pageSize,
-                offset: start
-            }))
+        [err, loginHistories] = await utils.to(db.models.login_histories.findAndCountAll({
+            where: [{ user_id: obj.userId }],
+            order: [
+                ['createdAt', 'DESC']
+            ],
+            limit: obj.pageSize,
+            offset: start
+        }))
         if (err) return response.errReturned(res, err)
         if (loginHistories == null || loginHistories.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
 
@@ -870,7 +895,10 @@ async function getReferrals(req, res) {
             'pageNumber': req.body.pageNumber,
             'pageSize': req.body.pageSize,
         }
-        let err = {}, user = {}, referrals = {}, rewardConfs = {}
+        let err = {},
+            user = {},
+            referrals = {},
+            rewardConfs = {}
 
         //Paging
         if (!obj.pageNumber) obj.pageNumber = 0
@@ -881,13 +909,14 @@ async function getReferrals(req, res) {
         if (err) return response.errReturned(res, err)
         if (user == null || user.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
-        [err, referrals] = await utils.to(db.models.users.findAndCountAll(
-            {
-                where: [{ refer_by_coupon: user.referal_coupon }],
-                order: [['createdAt', 'DESC']],
-                limit: obj.pageSize,
-                offset: start
-            }))
+        [err, referrals] = await utils.to(db.models.users.findAndCountAll({
+            where: [{ refer_by_coupon: user.referal_coupon }],
+            order: [
+                ['createdAt', 'DESC']
+            ],
+            limit: obj.pageSize,
+            offset: start
+        }))
         if (err) return response.errReturned(res, err)
         if (referrals == null || referrals.count == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
@@ -895,11 +924,12 @@ async function getReferrals(req, res) {
         //[err, rewardConfs] = await utils.to(db.models.reward_conf.findOne({ where: { reward_type: 'Referral Reward' } }))
         //if (err) return response.errReturned(res, err);
 
-        [err, rewardConfs] = await utils.to(db.models.transections.findAll(
-            {
-                where: { type: 'Referral Reward', user_id: user.id },
-                order: [['createdAt', 'DESC']],
-            }))
+        [err, rewardConfs] = await utils.to(db.models.transections.findAll({
+            where: { type: 'Referral Reward', user_id: user.id },
+            order: [
+                ['createdAt', 'DESC']
+            ],
+        }))
         if (err) return response.errReturned(res, err)
 
         const data = []
@@ -930,14 +960,13 @@ async function getReferrals(req, res) {
 async function listSPRewardSettings(req, res) {
     try {
 
-        let err = {}, spData = {};
+        let err = {},
+            spData = {};
         //Finding record from db    
-        [err, spData] = await utils.to(db.models.reward_conf.findOne(
-            {
-                attributes: ['id', 'reward_type', 'max_amount', 'reward_per_vote', 'cron_job_status'],
-                where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD }
-            }
-        ))
+        [err, spData] = await utils.to(db.models.reward_conf.findOne({
+            attributes: ['id', 'reward_type', 'max_amount', 'reward_per_vote', 'cron_job_status'],
+            where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD }
+        }))
         if (spData == null || spData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
         if (err) return response.errReturned(res, err)
 
@@ -957,20 +986,18 @@ async function updateSPRewardSettings(req, res) {
             'maxAmount': req.body.maxAmount,
             'rewardPerVote': req.body.rewardPerVote
         }
-        let err = {}, spSettings = {}
+        let err = {},
+            spSettings = {}
 
         if (!(obj.maxAmount > 0) && !(obj.rewardPerVote > 0))
             return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
 
         //Updading passcode
-        [err, spSettings] = await utils.to(db.models.reward_conf.update(
-            {
-                cron_job_status: obj.cronJobStatus,
-                max_amount: obj.maxAmount,
-                reward_per_vote: obj.rewardPerVote
-            },
-            { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }
-        ))
+        [err, spSettings] = await utils.to(db.models.reward_conf.update({
+            cron_job_status: obj.cronJobStatus,
+            max_amount: obj.maxAmount,
+            reward_per_vote: obj.rewardPerVote
+        }, { where: { reward_type: rewardEnum.SUPERREPRESENTATIVEREWARD } }))
         if (err) return response.errReturned(res, err)
         if (spSettings.length == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
@@ -987,14 +1014,13 @@ async function updateSPRewardSettings(req, res) {
 async function listAirdropSettings(req, res) {
     try {
 
-        let err = {}, airdropData = {};
+        let err = {},
+            airdropData = {};
         //Finding record from db    
-        [err, airdropData] = await utils.to(db.models.reward_conf.findOne(
-            {
-                attributes: ['id', 'reward_type', 'reward_amount', 'reward_end_date', 'max_users', 'cron_job_status'],
-                where: { reward_type: rewardEnum.AIRDROPREWARD }
-            }
-        ))
+        [err, airdropData] = await utils.to(db.models.reward_conf.findOne({
+            attributes: ['id', 'reward_type', 'reward_amount', 'reward_end_date', 'max_users', 'cron_job_status'],
+            where: { reward_type: rewardEnum.AIRDROPREWARD }
+        }))
         if (airdropData == null || airdropData.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
         if (err) return response.errReturned(res, err)
 
@@ -1014,20 +1040,18 @@ async function updateAirdropSettings(req, res) {
             'rewardAmount': req.body.rewardAmount,
             'maxUsers': req.body.maxUsers,
         }
-        let err = {}, airdropSettings = {}
+        let err = {},
+            airdropSettings = {}
 
         if (!(obj.rewardAmount > 0) && !(obj.maxUsers > 0))
             return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
 
         //Updading passcode
-        [err, airdropSettings] = await utils.to(db.models.reward_conf.update(
-            {
-                cron_job_status: obj.cronJobStatus,
-                reward_amount: obj.rewardAmount,
-                max_users: obj.maxUsers
-            },
-            { where: { reward_type: rewardEnum.AIRDROPREWARD } }
-        ))
+        [err, airdropSettings] = await utils.to(db.models.reward_conf.update({
+            cron_job_status: obj.cronJobStatus,
+            reward_amount: obj.rewardAmount,
+            max_users: obj.maxUsers
+        }, { where: { reward_type: rewardEnum.AIRDROPREWARD } }))
         if (err) return response.errReturned(res, err)
         if (airdropSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
 
@@ -1045,24 +1069,20 @@ async function updateSignupLimitPerDay(req, res) {
         const obj = {
             'perDayLimit': req.body.perDayLimit
         }
-        let err = {}, result = {}
+        let err = {},
+            result = {}
 
         if (!(obj.perDayLimit > 0 || obj.perDayLimit == null))
             return response.sendResponse(res, resCode.NOT_FOUND, 'Values should be positive integers');
 
-        [err, result] = await utils.to(db.models.reward_conf.findOne(
-            {
-                where: { reward_type: rewardEnum.SIGNUPREWARD }
-            }
-        ))
+        [err, result] = await utils.to(db.models.reward_conf.findOne({
+            where: { reward_type: rewardEnum.SIGNUPREWARD }
+        }))
         if (err) return response.errReturned(res, err)
         if (!result || result == null)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR);
 
-        [err, result] = await utils.to(db.models.reward_conf.update(
-            { max_users: obj.perDayLimit },
-            { where: { reward_type: rewardEnum.SIGNUPREWARD } }
-        ))
+        [err, result] = await utils.to(db.models.reward_conf.update({ max_users: obj.perDayLimit }, { where: { reward_type: rewardEnum.SIGNUPREWARD } }))
         if (!err && result.length > 0)
             return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS)
         return response.errReturned(res, err)
@@ -1076,13 +1096,12 @@ async function updateSignupLimitPerDay(req, res) {
 async function listSignupLimitPerDay(req, res) {
     try {
 
-        let err = {}, result = {};
+        let err = {},
+            result = {};
         //Finding record from db    
-        [err, result] = await utils.to(db.models.reward_conf.findOne(
-            {
-                where: { reward_type: rewardEnum.SIGNUPREWARD }
-            }
-        ))
+        [err, result] = await utils.to(db.models.reward_conf.findOne({
+            where: { reward_type: rewardEnum.SIGNUPREWARD }
+        }))
         if (result == null || result.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
         if (err) return response.errReturned(res, err)
 
@@ -1098,7 +1117,8 @@ async function listSignupLimitPerDay(req, res) {
 async function listCommissionSettings(req, res) {
     try {
 
-        let err = {}, result = {};
+        let err = {},
+            result = {};
         //Finding record from db    
         [err, result] = await utils.to(db.models.commission_conf.findAll())
         if (result == null || result.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
@@ -1119,18 +1139,16 @@ async function updateCommissionSettings(req, res) {
             'commissionAmount': req.body.commissionAmount,
             'commissionType': req.body.commissionType,
         }
-        let err = {}, commissionSettings = {}
+        let err = {},
+            commissionSettings = {}
 
         if (!(obj.commissionAmount > 0))
             return response.sendResponse(res, resCode.BAD_REQUEST, 'Values should be positive integers.');
 
         //Updading
-        [err, commissionSettings] = await utils.to(db.models.commission_conf.update(
-            {
-                commission_amount: obj.commissionAmount,
-            },
-            { where: { commission_type: obj.commissionType } }
-        ))
+        [err, commissionSettings] = await utils.to(db.models.commission_conf.update({
+            commission_amount: obj.commissionAmount,
+        }, { where: { commission_type: obj.commissionType } }))
         if (err) return response.errReturned(res, err)
         if (commissionSettings.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.API_ERROR)
 
@@ -1146,13 +1164,13 @@ async function updateCommissionSettings(req, res) {
 async function listRewardSettings(req, res) {
     try {
 
-        let err = {}, result = {};
+        let err = {},
+            result = {};
 
         //Finding record from db    
-        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11)',
-            {
-                type: db.QueryTypes.SELECT,
-            }))
+        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11)', {
+            type: db.QueryTypes.SELECT,
+        }))
         if (result == null || result.length == 0) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
         if (err) return response.errReturned(res, err)
 
@@ -1171,16 +1189,14 @@ async function updateRewardSettings(req, res) {
             'rewardData': req.body.rewardData,
         }
 
-        let err = {}, resutl = {}
+        let err = {},
+            resutl = {}
 
         for (let i = 0; i < obj.rewardData.length; i++) {
             //Updading
-            [err, resutl] = await utils.to(db.models.reward_conf.update(
-                {
-                    reward_amount: obj.rewardData[i].value,
-                },
-                { where: { id: obj.rewardData[i].id } }
-            ))
+            [err, resutl] = await utils.to(db.models.reward_conf.update({
+                reward_amount: obj.rewardData[i].value,
+            }, { where: { id: obj.rewardData[i].id } }))
         }
 
         if (err) return response.errReturned(res, err)
@@ -1201,7 +1217,9 @@ async function getAllAdmins(req, res) {
         let { pageNumber, pageSize } = req.body
         const { id } = req.auth
 
-        let err = {}, dbData = {}, admin = {}
+        let err = {},
+            dbData = {},
+            admin = {}
         const returnableData = {};
 
         //Verifying user authenticity
@@ -1223,10 +1241,9 @@ async function getAllAdmins(req, res) {
             From admins a
             Inner join roles r ON a.role_id = r.id
             Where r.name != 'Super Admin'
-            Order by a.createdAt desc`,
-            {
-                type: db.QueryTypes.SELECT
-            }))
+            Order by a.createdAt desc`, {
+            type: db.QueryTypes.SELECT
+        }))
         if (err) return response.errReturned(res, err)
 
         const filter = typeof status === 'boolean' ? 'filter' : ''
@@ -1273,7 +1290,9 @@ async function updateAdminById(req, res) {
         const { id } = req.auth
         const { status } = req.body
 
-        let err = {}, admin = {}, obj = {};
+        let err = {},
+            admin = {},
+            obj = {};
 
         //Verifying user authenticity
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -1288,10 +1307,7 @@ async function updateAdminById(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
         //Updating admin status
-        [err, obj] = await utils.to(db.models.admins.update(
-            { status },
-            { where: { id: admin.id } }
-        ))
+        [err, obj] = await utils.to(db.models.admins.update({ status }, { where: { id: admin.id } }))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
@@ -1313,7 +1329,8 @@ async function getAdminById(req, res) {
         const { adminId } = req.params
         const { id } = req.auth
 
-        let err = {}, admin = {};
+        let err = {},
+            admin = {};
 
         //Verifying user authenticity
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -1328,11 +1345,10 @@ async function getAdminById(req, res) {
                 Inner join roles r ON a.role_id = r.id 
                 Where a.id = :adminId 
                 Order by s.createdAt desc
-                Limit 1`,
-            {
-                replacements: { adminId: parseInt(adminId) },
-                type: db.QueryTypes.SELECT,
-            }))
+                Limit 1`, {
+            replacements: { adminId: parseInt(adminId) },
+            type: db.QueryTypes.SELECT,
+        }))
         if (err) return response.errReturned(res, err)
         if (admin == null || admin.length == 0)
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND)
@@ -1352,9 +1368,12 @@ async function updateAdminDetailsById(req, res) {
         const { id } = req.auth
         const { name, roleId, status } = req.body
 
-        let err = {}, admin = {}, obj = {}, role = {}
+        let err = {},
+            admin = {},
+            obj = {},
+            role = {}
         const filter = typeof status === 'boolean' ? 'filter' : ''
-        //Checking empty field
+            //Checking empty field
         if (!(name && roleId && filter))
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY);
 
@@ -1377,10 +1396,7 @@ async function updateAdminDetailsById(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.ROLE_NOT_FOUND);
 
         //Updating admin status
-        [err, obj] = await utils.to(db.models.admins.update(
-            { name, role_id: roleId, status },
-            { where: { id: admin.id } }
-        ))
+        [err, obj] = await utils.to(db.models.admins.update({ name, role_id: roleId, status }, { where: { id: admin.id } }))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
@@ -1399,7 +1415,12 @@ async function addNewAdmin(req, res) {
         const { id } = req.auth
         const { name, email, roleId } = req.body
 
-        let err = {}, admin = {}, role = {}, passCode = {}, token = {}, mail = {}
+        let err = {},
+            admin = {},
+            role = {},
+            passCode = {},
+            token = {},
+            mail = {}
 
         //Checking empty field
         if (!(name && roleId && email))
@@ -1432,12 +1453,11 @@ async function addNewAdmin(req, res) {
         if (err) return response.errReturned(res, err);
 
         //Saving passcode in db
-        [err, passCode] = await utils.to(db.models.pass_codes.create(
-            {
-                user_id: admin.id,
-                pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
-                type: 'admin'
-            }));
+        [err, passCode] = await utils.to(db.models.pass_codes.create({
+            user_id: admin.id,
+            pass_code: passcodeGenerator.generate({ length: 14, numbers: true }),
+            type: 'admin'
+        }));
 
         //Jwt token generating
         [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, passCode: passCode.pass_code }))
@@ -1464,7 +1484,9 @@ async function setAdminPassword(req, res) {
         const { passCode, id } = req.auth
         const { password } = req.body
 
-        let err = {}, admin = {}, obj = {}
+        let err = {},
+            admin = {},
+            obj = {}
 
         if (!password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
@@ -1480,10 +1502,9 @@ async function setAdminPassword(req, res) {
         if (admin.password)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.PASSWORD_ALREADY_UPDATED);
 
-        [err, obj] = await utils.to(db.models.pass_codes.findOne(
-            {
-                where: { pass_code: passCode, type: 'admin' }
-            }))
+        [err, obj] = await utils.to(db.models.pass_codes.findOne({
+            where: { pass_code: passCode, type: 'admin' }
+        }))
         if (err) return response.errReturned(res, err)
         if (obj.is_used)
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
@@ -1492,19 +1513,13 @@ async function setAdminPassword(req, res) {
         const passwordHash = bcrypt.hashSync(password, parseInt(process.env.SALT_ROUNDS));
 
         //Updating admin password
-        [err, obj] = await utils.to(db.models.admins.update(
-            { password: passwordHash },
-            { where: { id: admin.id } }
-        ))
+        [err, obj] = await utils.to(db.models.admins.update({ password: passwordHash }, { where: { id: admin.id } }))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
 
         //Updading passcode
-        [err, obj] = await utils.to(db.models.pass_codes.update(
-            { is_used: true },
-            { where: { pass_code: passCode, type: 'admin' } }
-        ))
+        [err, obj] = await utils.to(db.models.pass_codes.update({ is_used: true }, { where: { pass_code: passCode, type: 'admin' } }))
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.PASSWORD_UPDATED)
@@ -1521,7 +1536,10 @@ async function updateUserById(req, res) {
         const { id } = req.auth
         const { status } = req.body
 
-        let err = {}, admin = {}, obj = {}, user = {};
+        let err = {},
+            admin = {},
+            obj = {},
+            user = {};
 
         //Verifying user authenticity
         [err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
@@ -1536,10 +1554,7 @@ async function updateUserById(req, res) {
             return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
 
         //Updating user status
-        [err, obj] = await utils.to(db.models.users.update(
-            { status },
-            { where: { id: user.id } }
-        ))
+        [err, obj] = await utils.to(db.models.users.update({ status }, { where: { id: user.id } }))
         if (err) return response.errReturned(res, err)
         if (obj[0] == 0)
             return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
