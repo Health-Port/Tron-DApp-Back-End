@@ -2,8 +2,8 @@ const mailer = require('../etc/emailHandler');
 const utilites = require('./utils');
 
 async function adminSignInTemplate(token, email) {
-    var subject = `${process.env.PROJECT_NAME} | Admin Login`;
-    var body = `
+    let subject = `${process.env.PROJECT_NAME} | Admin Login`;
+    let body = `
                             Dear User,<br/><br/>
                             You have successfully logged in to Health Port Admin Portal via ${email}.<br/>
                             In case you have not performed this action please contact support.
@@ -19,9 +19,9 @@ async function adminSignInTemplate(token, email) {
 }
 
 async function forgetPasswordTemplate(token, email, url) {
-    var urlLink = url;
-    var subject = `${process.env.PROJECT_NAME} Reset Password Request`;
-    var body = `
+    let urlLink = url;
+    let subject = `${process.env.PROJECT_NAME} Reset Password Request`;
+    let body = `
                             Dear User,<br/><br/>
                             We have received a forgot password request.<br/>
                             Please Click <a href=${urlLink} target=_blank>here</a> to Change Your Password.<br/>
@@ -116,8 +116,8 @@ async function contactUsTemplate(message, email, name) {
 }
 
 async function passwordSuccessfullyChanged(email) {
-    var subject = `${process.env.PROJECT_NAME} Password Reset Successfully`;
-    var body = `
+    let subject = `${process.env.PROJECT_NAME} Password Reset Successfully`;
+    let body = `
                             Dear User,<br/><br/>
                             Your account password has been reset successfully.<br/>
                             If you have not performed this action, please contact support.
@@ -133,8 +133,8 @@ async function passwordSuccessfullyChanged(email) {
 }
 
 async function sendPrivateKey(user) {
-    var subject = `${process.env.PROJECT_NAME} Account Info`;
-    var body = `
+    let subject = `${process.env.PROJECT_NAME} Account Info`;
+    let body = `
                             Dear ${user.name},<br/><br/>
                             Here is your account information for healthport portal:<br/>
                             Email: ${user.email}
@@ -160,8 +160,8 @@ async function sendPrivateKey(user) {
 }
 
 async function sendPrivateKey(user) {
-    var subject = `${process.env.PROJECT_NAME} Account Info`;
-    var body = `
+    let subject = `${process.env.PROJECT_NAME} Account Info`;
+    let body = `
                             Dear ${user.name},<br/><br/>
                             Here is your account information for healthport portal:<br/>
                             Email: ${user.email}
