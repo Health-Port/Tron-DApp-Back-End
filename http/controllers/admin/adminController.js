@@ -101,7 +101,9 @@ async function signIn(req, res) {
             is_twofa_verified: admin.is_twofa_verified,
             roleId: permissions[0].roleId,
             permissions: permissions.map(a => a.route)
-        };
+        }
+        //Email sending
+        await utils.to(emailTemplates.adminSignInTemplate(token, obj.email));
         [err, token] = await utils.to(tokenGenerator.createToken(data))
         data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
         data.permissions = permissions.filter(x => x.parentId)
