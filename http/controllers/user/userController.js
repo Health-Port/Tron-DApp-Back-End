@@ -36,8 +36,8 @@ async function signUp(req, res) {
             'refer_by_coupon': req.body.referby,
             'refer_destination': req.body.destination
         }
-
-        let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}, result = {}, perDayLimit = {};
+        const domain_name = obj.email.split("@");
+        let err, token = {}, passCode = {}, captcha = {}, user = {}, mailSent = {}, result = {}, perDayLimit = {}, dumpableEmail = {};
 
         let currentDate = new Date()
         currentDate = new Date(
@@ -45,6 +45,15 @@ async function signUp(req, res) {
             currentDate.getMonth(),
             currentDate.getDate()
         );
+        //check dumpable email
+        [err, dumpableEmail] = await utils.to(db.models.dumpable_emails.findOne(
+            {
+                where: { domain_name: domain_name[1] }
+            }
+        ))
+        if (dumpableEmail) {
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS)
+        }
 
         //Checking daily signup limit
         [err, result] = await await utils.to(db.models.users.count({
@@ -137,6 +146,7 @@ async function signUp(req, res) {
 
         //Returing successful response
         return response.sendResponse(res, resCode.SUCCESS, resMessage.EMAIL_CONFIRMATION_REQUIRED, null, token)
+
 
     } catch (error) {
         console.log(error)
