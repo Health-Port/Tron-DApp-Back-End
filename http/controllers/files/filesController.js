@@ -131,7 +131,7 @@ async function filesCallHandaling(req, res) {
 
 				//Giving reward for 1st time upload a document
 				[err, result] = await utils.to(rewardDisperser(
-					`${rewardEnum.MEDICALRECORDDOCUMENTREWARD};${msg}`,
+					`${rewardEnum.FILEUPLOAD};${msg}`,
 					user_id,
 					user.tron_wallet_public_key)
 				)

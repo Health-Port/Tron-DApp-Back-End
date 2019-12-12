@@ -1151,7 +1151,7 @@ async function listRewardSettings(req, res) {
         let err = {}, result = {};
 
         //Finding record from db    
-        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11)',
+        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11,12)',
             {
                 type: db.QueryTypes.SELECT,
             }))
