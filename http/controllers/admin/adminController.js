@@ -114,41 +114,6 @@ async function signIn(req, res) {
         return response.errReturned(res, error)
     }
 }
-
-async function signUp(req, res) {
-    try {
-        const obj = {
-            'email': req.body.email,
-            'name': req.body.name,
-            'password': req.body.password
-        }
-        let err = {}, data = {}
-
-        //Checking empty email, password and name 
-        if (!(obj.email && obj.password && obj.name))
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
-
-        //Reguler expression testing for email
-        if (!regex.emailRegex.test(obj.email))
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
-
-        //Saving admin record in db 
-        [err, data] = await utils.to(db.models.admins.create(
-            {
-                name: obj.name,
-                email: obj.email,
-                password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS))
-            }))
-        if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST, err)
-
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ADDED_SUCCESSFULLY, data)
-
-    } catch (error) {
-        console.log(error)
-        return response.errReturned(res, error)
-    }
-}
-
 async function forgetPassword(req, res) {
     try {
         const obj = {
@@ -1560,7 +1525,6 @@ async function updateUserById(req, res) {
 
 module.exports = {
     signIn,
-    signUp,
     changePassword,
     forgetPassword,
     confirmForgotPassword,
