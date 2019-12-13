@@ -47,7 +47,10 @@ async function sendToken(req, res) {
             if (utils.checkaddresses(obj.to, utils.decrypt(obj.from)))
                 return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.TO_FROM_ADDRESS_ARE_SAME)
 
-            trxId = await tronUtils.sendTRC10Token(obj.to, obj.amount, privateKey)
+        trxId = await tronUtils.sendTRC10Token(obj.to, obj.amount, privateKey)
+        //Send Nofication After Transactions 
+        let slackMessage = `Sent - A Transaction of ${obj.amount} EHR was made via Health Port user ${user.email}. Transaction Hash: ${trxId}`
+        const slackResult = utils.sendTransactinNotification(slackMessage);
         } catch (error) {
             console.log(error)
             return response.errReturned(res, error)
