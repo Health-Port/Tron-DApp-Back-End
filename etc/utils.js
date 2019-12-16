@@ -1,4 +1,5 @@
-var crypto = require('crypto');
+const crypto = require('crypto');
+const axios = require('axios');
 
 function to(promise) {
     return promise.then(data => {
@@ -25,10 +26,18 @@ function isBoolean(val){
     return val ===false || val === true
 }
 
+async function sendTransactinNotification(slackMessage) {
+    const result  = await axios.post('https://hooks.slack.com/services/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',{
+        text : slackMessage
+       });
+       return result;
+}
+
 module.exports = {
     to,
     encrypt,
     decrypt, 
     checkaddresses,
-    isBoolean
+    isBoolean,
+    sendTransactinNotification
 };

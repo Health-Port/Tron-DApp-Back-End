@@ -457,6 +457,9 @@ async function verifyEmail(req, res) {
                                 resMessage.ACCOUNT_IS_NOT_VERIFIED
                             )
                         }
+                        //Send Nofication After Transactions 
+                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash: ${refRewardTrxId}`
+                        const slackResult = utils.sendTransactinNotification(slackMessage);
 
                         //Saving transection history into db
                         if (refRewardTrxId)
@@ -488,6 +491,9 @@ async function verifyEmail(req, res) {
                                 resMessage.ACCOUNT_IS_NOT_VERIFIED
                             )
                         }
+                        //Send Nofication After Transactions 
+                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash: ${refRewardTrxId}`
+                        const slackResult = utils.sendTransactinNotification(slackMessage);
                     }
 
                     //Saving transection history into db
