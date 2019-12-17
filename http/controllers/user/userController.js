@@ -801,6 +801,7 @@ async function getPrivateKey(req, res) {
                 res,
                 resCode.SUCCESS,
                 resMessage.SUCCESS,
+                { privateKey: user.tron_wallet_private_key }
             );
         }
 
