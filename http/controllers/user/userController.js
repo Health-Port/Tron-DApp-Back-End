@@ -323,6 +323,7 @@ async function forgetPassword(req, res) {
 async function confirmForgotPassword(req, res) {
     try {
         const obj = {
+            'user_id' : req.auth.user_id,
             'passcode': req.auth.pass_code,
             'password': req.body.password,
             'captcha_key': req.body.captchaKey,
@@ -348,7 +349,7 @@ async function confirmForgotPassword(req, res) {
         //Finding record from db
         [err, data] = await utils.to(db.models.pass_codes.findOne(
             {
-                where: { pass_code: obj.passcode, type: 'forget' },
+                where: { pass_code: obj.passcode,user_id: obj.user_id, type: 'forget' },
                 order: [['createdAt', 'DESC']]
             }))
         if (data.is_used == true) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
@@ -768,7 +769,7 @@ async function changeEmail(req, res) {
         }
 
         //Returing successful response
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT, null, token)
+        return response.sendResponse(res, resCode.SUCCESS, resMessage.MAIL_SENT, null, nul)
 
     } catch (error) {
         console.log(error)
@@ -800,7 +801,6 @@ async function getPrivateKey(req, res) {
                 res,
                 resCode.SUCCESS,
                 resMessage.SUCCESS,
-                { privateKey: user.tron_wallet_private_key }
             );
         }
 
