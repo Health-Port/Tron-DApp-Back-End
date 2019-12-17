@@ -11,7 +11,7 @@ async function authenticateToken(req, res, next) {
     if (!token) return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.ACCESS_DENIED)
 
     try {
-        const verifiedTotken = jwt.verify(token, process.env.SECRET)
+        const verifiedTotken = jwt.verify(token, process.env.JWt_SECRET)
         req.auth = verifiedTotken
         next()
     } catch (error) {
@@ -26,7 +26,7 @@ async function authenticateRole(req, res, next) {
     if (!token) return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.ACCESS_DENIED)
 
     try {
-        const verifiedTotken = jwt.verify(token, process.env.SECRET);
+        const verifiedTotken = jwt.verify(token, process.env.JWt_SECRET);
 
         [err, permisions] = await utils.to(db.query(`
             Select f.route from permissions p
@@ -61,7 +61,7 @@ async function blockage(req, res, next) {
     if (!token) return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.ACCESS_DENIED)
 
     try {
-        const verifiedTotken = jwt.verify(token, process.env.SECRET);
+        const verifiedTotken = jwt.verify(token, process.env.JWt_SECRET);
 
         [err, admin] = await utils.to(db.query(`
         Select a.status as adminStatus, r.status as roleStatus from admins a 
