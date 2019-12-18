@@ -165,7 +165,7 @@ async function sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key
                 ));
 
                 //Send Nofication After Transactions 
-                let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash: ${refRewardTrxId}`
+                let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${refRewardTrxId}|${refRewardTrxId}>`
                 const slackResult = utils.sendTransactinNotification(slackMessage);
                 if (err) {
                     if (err == 'Bandwidth is low') {

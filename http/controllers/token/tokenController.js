@@ -49,7 +49,7 @@ async function sendToken(req, res) {
 
         trxId = await tronUtils.sendTRC10Token(obj.to, obj.amount, privateKey)
         //Send Nofication After Transactions 
-        let slackMessage = `Sent - A Transaction of ${obj.amount} EHR was made via Health Port user ${user.email}. Transaction Hash: ${trxId}`
+        let slackMessage = `Sent - A Transaction of ${obj.amount} EHR was made via Health Port user ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${trxId}|${trxId}>`
         const slackResult = utils.sendTransactinNotification(slackMessage);
         } catch (error) {
             console.log(error)

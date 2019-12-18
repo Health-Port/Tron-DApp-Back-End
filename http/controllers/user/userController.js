@@ -458,7 +458,7 @@ async function verifyEmail(req, res) {
                             )
                         }
                         //Send Nofication After Transactions 
-                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash: ${refRewardTrxId}`
+                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${refRewardTrxId}|${refRewardTrxId}>`
                         const slackResult = utils.sendTransactinNotification(slackMessage);
 
                         //Saving transection history into db
@@ -492,7 +492,7 @@ async function verifyEmail(req, res) {
                             )
                         }
                         //Send Nofication After Transactions 
-                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash: ${refRewardTrxId}`
+                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${refRewardTrxId}|${refRewardTrxId}>`
                         const slackResult = utils.sendTransactinNotification(slackMessage);
                     }
 
