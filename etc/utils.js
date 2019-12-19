@@ -27,7 +27,7 @@ function isBoolean(val) {
 }
 
 async function sendTransactinNotification(slackMessage) {
-    const [err, result] = await to(axios.post('https://hooks.slack.com/services/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', {
+    const [err, result] = await to(axios.post(process.env.SLACK_WEBHOOK, {
         text: slackMessage
     }));
     return result;
