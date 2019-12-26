@@ -181,7 +181,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 					roleId: permissions[0].roleId,
 					permissions: permissions.map(a => a.route)
 				};
-				[err, token] = await utils.to(tokenGenerator.createToken(data))
+				[err, token] = await utils.to(tokenGenerator.createToken(data, req.baseUrl))
 				data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
 				data.permissions = permissions.filter(x => x.parentId)
 			} else {
@@ -231,7 +231,7 @@ async function enableDisableTwoFactorAuthentication(req, res) {
 					roleId: permissions[0].roleId,
 					permissions: permissions.map(a => a.route)
 				};
-				[err, token] = await utils.to(tokenGenerator.createToken(data))
+				[err, token] = await utils.to(tokenGenerator.createToken(data, req.baseUrl))
 				data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
 				data.permissions = permissions.filter(x => x.parentId)
 			} else {
@@ -345,7 +345,7 @@ async function verifyTwoFactorAuthentication(req, res) {
 				roleId: permissions[0].roleId,
 				permissions: permissions.map(a => a.route)
 			};
-			[err, token] = await utils.to(tokenGenerator.createToken(data))
+			[err, token] = await utils.to(tokenGenerator.createToken(data, req.baseUrl))
 			data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
 			data.permissions = permissions.filter(x => x.parentId)
 		} else {
