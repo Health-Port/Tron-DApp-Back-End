@@ -22,21 +22,21 @@ function checkaddresses(to, from) {
     return false;
 }
 
-function isBoolean(val){
-    return val ===false || val === true
+function isBoolean(val) {
+    return val === false || val === true
 }
 
 async function sendTransactinNotification(slackMessage) {
-    const result  = await axios.post('https://hooks.slack.com/services/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',{
-        text : slackMessage
-       });
-       return result;
+    const [err, result] = await to(axios.post(process.env.SLACK_WEBHOOK, {
+        text: slackMessage
+    }));
+    return result;
 }
 
 module.exports = {
     to,
     encrypt,
-    decrypt, 
+    decrypt,
     checkaddresses,
     isBoolean,
     sendTransactinNotification

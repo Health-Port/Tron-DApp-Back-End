@@ -23,7 +23,7 @@ async function cutCommission(tron_wallet_public_key, type, commission_type) {
                 { user_id: user.id, address: tron_wallet_public_key, number_of_token: commissionObj.commission_amount, trx_hash: trxId, type: type }
             ]));
             //Send Nofication After Transactions 
-            let slackMessage = `Commission - EHR ${commissionObj.commission_amount} fees was deducted from Health Port account ${user.email}. Transaction Hash: ${trxId}`
+            let slackMessage = `Commission - EHR ${commissionObj.commission_amount} fees was deducted from Health Port account ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${trxId}|${trxId}>`
             const slackResult = utils.sendTransactinNotification(slackMessage);
             return obj;
         }
