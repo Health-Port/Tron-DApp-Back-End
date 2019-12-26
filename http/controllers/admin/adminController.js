@@ -25,9 +25,7 @@ async function signIn(req, res) {
         let err, admin = {},
             token = {},
             permissions = {},
-            passwordCheck = {},
-            mailSent = {}
-
+            passwordCheck = {}
         //Checking empty email and password 
         if (!(obj.email && obj.password))
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
@@ -105,12 +103,9 @@ async function signIn(req, res) {
             is_twofa_verified: admin.is_twofa_verified,
             roleId: permissions[0].roleId,
             permissions: permissions.map(a => a.route)
-        };
-        //Email sending for admin login
-        [err, mailSent] = await utils.to(emailTemplates.adminSignInTemplate(token, obj.email))
-        console.log(mailSent);
-
-        [err, token] = await utils.to(tokenGenerator.createToken(data))
+        }
+        await utils.to(emailTemplates.adminSignInTemplate(token, obj.email));
+        [err, token] = await utils.to(tokenGenerator.createToken(data, req.baseUrl))
         data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
         data.permissions = permissions.filter(x => x.parentId)
         return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESSFULLY_LOGGEDIN, data, token)
@@ -209,7 +204,7 @@ async function forgetPassword(req, res) {
         if (err) console.log(objPasscode);
 
         //Jwt token generating
-        [err, token] = await utils.to(tokenGenerator.createToken(authentication))
+        [err, token] = await utils.to(tokenGenerator.createToken(authentication, req.baseUrl))
 
         const url = `${process.env.BASE_URL_ADMIN}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
 
@@ -451,7 +446,7 @@ async function sendUserResetPasswordRequest(req, res) {
         if (err) console.log(objPasscode);
 
         //Jwt token generating
-        [err, token] = await utils.to(tokenGenerator.createToken(authentication))
+        [err, token] = await utils.to(tokenGenerator.createToken(authentication, req.baseUrl))
 
         const url = `${process.env.BASE_URL}${process.env.RESET_PASSWOR_ROUTE}?token=${token}`;
 
@@ -1460,7 +1455,9 @@ async function addNewAdmin(req, res) {
         }));
 
         //Jwt token generating
-        [err, token] = await utils.to(tokenGenerator.createToken({ id: admin.id, passCode: passCode.pass_code }))
+        [err, token] = await utils.to(tokenGenerator.createToken({ 
+            id: admin.id, passCode: passCode.pass_code 
+        }, req.baseUrl))
 
         //Email sending
         const url = `${process.env.BASE_URL_ADMIN}${process.env.VERIFICATION_ROUTE}?token=${token}`;

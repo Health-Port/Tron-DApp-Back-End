@@ -10,7 +10,6 @@ const attributeListController = require('../controllers/attributeList/attributeL
 const templateController = require('../controllers/template/templateController')
 
 router.post('/signIn', adminController.signIn)
-router.post('/signUp', adminController.signUp)
 router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/forgetPassword', adminController.forgetPassword)
 router.post('/changePassword', authorize.blockage, authorize.authenticateToken, adminController.changePassword)

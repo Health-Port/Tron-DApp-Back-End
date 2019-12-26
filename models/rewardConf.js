@@ -19,6 +19,7 @@ module.exports = (sequelize, Sequelize) => {
                 RewardEnum.SUPERREPRESENTATIVEREWARD,
                 RewardEnum.MEDICALRECORDDOCUMENTREWARD,
                 RewardEnum.SIGNUPREWARDFORPROVIDER,
+                RewardEnum.FILEUPLOAD,
             ],
             allowNull: false,
             defaultValue: RewardEnum.SIGNUPREWARD
