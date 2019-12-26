@@ -97,6 +97,25 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                     }
                 }
             }
+        } else if (source.split(';')[0] == rewardEnum.MEDICALRECORDDOCUMENTREWARD && source.split(';')[1] == "file") {
+            [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
+                where: {
+                    reward_type: rewardEnum.MEDICALRECORDDOCUMENTREWARD
+                }
+            }));
+            rewardsObject = rewardsObj;
+            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key,
+                `File Upload Reward`);
+        }
+        else if (source.split(';')[0] == rewardEnum.FILEUPLOAD && source.split(';')[1] == "file") {
+            [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
+                where: {
+                    reward_type: rewardEnum.FILEUPLOAD
+                }
+            }));
+            rewardsObject = rewardsObj;
+            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key,
+                `File Upload Reward`);
         } else if (source.split(';')[0] == rewardEnum.MEDICALRECORDDOCUMENTREWARD) {
             [err, rewardsObj] = await utils.to(db.models.reward_conf.findAll({
                 where: {
@@ -104,7 +123,7 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
                 }
             }));
             rewardsObject = rewardsObj;
-            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, 
+            await sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key,
                 `Create ${source.split(';')[1]} Record`);
         }
         else {
@@ -118,6 +137,7 @@ async function disperseDocumentsReward(source, user_id, tron_wallet_public_key) 
 
 async function sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key, source) {
     try {
+        [err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }));
         if (rewardsObject) {
             let amount = parseFloat(rewardsObject[0].reward_amount);
             let refRewardTrxId = await tronUtils.sendTRC10Token(utils.decrypt(tron_wallet_public_key), amount, process.env.MAIN_ACCOUNT_PRIVATE_KEY);
@@ -143,6 +163,10 @@ async function sendDocumentReward(rewardsObject, user_id, tron_wallet_public_key
                     rewardEnum.COMMISSIONDOCUMENTSUBMISSION,
                     'Upload'
                 ));
+
+                //Send Nofication After Transactions 
+                let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash: ${refRewardTrxId}`
+                const slackResult = utils.sendTransactinNotification(slackMessage);
                 if (err) {
                     if (err == 'Bandwidth is low') {
                         return Promise.reject(resMessage.BANDWIDTH_IS_LOW);

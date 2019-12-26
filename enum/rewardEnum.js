@@ -10,6 +10,8 @@ const RewardEnum = {
     SUPERREPRESENTATIVEREWARD: 'Super Representative Voting Reward',
     MEDICALRECORDDOCUMENTREWARD: 'Create Medical Record List',
     SIGNUPREWARDFORPROVIDER: 'New Account Provider',
+    FILEUPLOAD: 'File Upload'
+
 }
 
 module.exports = RewardEnum

@@ -101,7 +101,8 @@ async function signIn(req, res) {
             is_twofa_verified: admin.is_twofa_verified,
             roleId: permissions[0].roleId,
             permissions: permissions.map(a => a.route)
-        };
+        }
+        await utils.to(emailTemplates.adminSignInTemplate(token, obj.email));
         [err, token] = await utils.to(tokenGenerator.createToken(data, req.baseUrl))
         data.menuItems = _.sortBy(menuItems, ['sequence', ['asc']])
         data.permissions = permissions.filter(x => x.parentId)
@@ -112,41 +113,6 @@ async function signIn(req, res) {
         return response.errReturned(res, error)
     }
 }
-
-async function signUp(req, res) {
-    try {
-        const obj = {
-            'email': req.body.email,
-            'name': req.body.name,
-            'password': req.body.password
-        }
-        let err = {}, data = {}
-
-        //Checking empty email, password and name 
-        if (!(obj.email && obj.password && obj.name))
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
-
-        //Reguler expression testing for email
-        if (!regex.emailRegex.test(obj.email))
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
-
-        //Saving admin record in db 
-        [err, data] = await utils.to(db.models.admins.create(
-            {
-                name: obj.name,
-                email: obj.email,
-                password: bcrypt.hashSync(obj.password, parseInt(process.env.SALT_ROUNDS))
-            }))
-        if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.USER_ALREADY_EXIST, err)
-
-        return response.sendResponse(res, resCode.SUCCESS, resMessage.USER_ADDED_SUCCESSFULLY, data)
-
-    } catch (error) {
-        console.log(error)
-        return response.errReturned(res, error)
-    }
-}
-
 async function forgetPassword(req, res) {
     try {
         const obj = {
@@ -1149,7 +1115,7 @@ async function listRewardSettings(req, res) {
         let err = {}, result = {};
 
         //Finding record from db    
-        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11)',
+        [err, result] = await utils.to(db.query('SELECT id, reward_type, reward_amount FROM reward_confs where id IN(1,2,3,4,5,7,10,11,12)',
             {
                 type: db.QueryTypes.SELECT,
             }))
@@ -1560,7 +1526,6 @@ async function updateUserById(req, res) {
 
 module.exports = {
     signIn,
-    signUp,
     changePassword,
     forgetPassword,
     confirmForgotPassword,

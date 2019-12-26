@@ -25,7 +25,7 @@ module.exports = (sequelize, Sequelize) => {
         role: {
             type: Sequelize.ENUM,
             values: [
-                RoleEnum.PROVIDER, 
+                RoleEnum.PROVIDER,
                 RoleEnum.PATIENT
             ],
             allowNull: false
@@ -60,18 +60,18 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.BOOLEAN,
             allowNull: true
         },
-        is_twofa_enable:{
+        is_twofa_enable: {
             type: Sequelize.BOOLEAN,
             defaultValue: false
         },
-        is_twofa_verified:{
+        is_twofa_verified: {
             type: Sequelize.BOOLEAN,
             defaultValue: false
         },
-        twofa_formatted_key:{
+        twofa_formatted_key: {
             type: Sequelize.STRING
         },
-        status:{
+        status: {
             type: Sequelize.BOOLEAN,
             defaultValue: true
         },
