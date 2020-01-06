@@ -285,7 +285,7 @@ async function updateRoleById(req, res) {
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_REQUIRED)
 
 		if (name.toLowerCase() == roleEnum.SUPERADMIN.toLowerCase())
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ROLE_NAEME_NOT_ALLOWED);
+			return response.sendResponse(res, resCode.UNAUTHORIZED, resMessage.ROLE_NAEME_NOT_ALLOWED);
 
 		//Verifying user authenticity
 		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))

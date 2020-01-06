@@ -4,6 +4,7 @@ const tronUtils = require('../../../etc/tronUtils')
 const resCode = require('../../../enum/responseCodesEnum')
 const resMessage = require('../../../enum/responseMessagesEnum')
 const rewardEnum = require('./../../../enum/rewardEnum')
+const regex = require('../../../etc/regex')
 
 const db = global.healthportDb
 
@@ -18,10 +19,15 @@ async function sendToken(req, res) {
 
         let err, user = {}, trxId, data = {}
 
-        //Check ammount is positive integer or not
-        if (!Number.isInteger(obj.amount) || obj.amount < 0)
-            return response.sendResponse(res, resCode.NOT_FOUND, resMessage.AMOUNT_IS_NOT_INTEGER);
+        //Checking amount with upto 6 decimals
+        if (!regex.decimalRegex.test(obj.amount))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.AMOUNT_IS_NOT_CORRECT);
 
+        // //Check ammount is positive integer or not
+        // if (!Number.isInteger(obj.amount) || obj.amount < 0)
+        //     return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.AMOUNT_IS_NOT_CORRECT);
+            
+        
         //Finding record from db    
         [err, user] = await utils.to(db.models.users.findOne({ where: { tron_wallet_public_key: obj.from } }))
         if (user == null) return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
