@@ -44,7 +44,7 @@ async function getTRC10TokenBalance(privateKey, address) {
         } else {
             balance = 0;
         }
-        return balance;
+        return balance / Math.pow(10, parseInt(process.env.DECIMALS));
 
     } catch (error) {
         console.log(error);
@@ -68,6 +68,7 @@ async function getTrxBalance(privateKey, address) {
 async function sendTRC10Token(to, amount, privateKey) {
     try {
         let tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
+        amount = amount * Math.pow(10, parseInt(process.env.DECIMALS));
         let transaction = await tronWeb.trx.sendToken(to, amount, process.env.TRON_TOKEN_ID);
         return transaction.transaction.txID;
 
@@ -171,6 +172,15 @@ async function getAllergyForm(address) {
 //         console.log(error)
 //     }
 // }
+
+// const tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
+// let tronExecutor = await tronWeb.contract().at(`${process.env.SMART_CONTRACT_ADDRESS}`);
+// let decimals = await tronExecutor.decimals().call();
+// let decimalNumber = parseInt(decimals._hex, 16);
+// let balance = await tronExecutor.balanceOf(address).call();
+// let balanceNumber = parseInt(balance.balance._hex, 16)
+// console.log(balanceNumber / Math.pow(10, decimalNumber));
+// return balanceNumber / Math.pow(10, decimalNumber);
 
 // async function getBalanceToken(privateKey, address) {
 //     try {
