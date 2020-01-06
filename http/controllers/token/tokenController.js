@@ -21,12 +21,7 @@ async function sendToken(req, res) {
 
         //Checking amount with upto 6 decimals
         if (!regex.decimalRegex.test(obj.amount))
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.AMOUNT_IS_NOT_CORRECT);
-
-        // //Check ammount is positive integer or not
-        // if (!Number.isInteger(obj.amount) || obj.amount < 0)
-        //     return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.AMOUNT_IS_NOT_CORRECT);
-            
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.AMOUNT_IS_NOT_CORRECT); 
         
         //Finding record from db    
         [err, user] = await utils.to(db.models.users.findOne({ where: { tron_wallet_public_key: obj.from } }))
