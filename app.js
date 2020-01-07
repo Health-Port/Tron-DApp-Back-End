@@ -2,7 +2,7 @@ const path = require('path')
 const logger = require('morgan')
 const express = require('express')
 const cors = require('cors')
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser')  
 
 const app = express()
 app.set('trust proxy', true)
@@ -35,7 +35,12 @@ app.use('/user', userRoute)
 app.use('/admin', adminRoute)
 
 global.healthportDb.authenticate()
-  .then(() => console.log('Db Connected'))
+  .then(() => {
+    console.log('Db Connected')
+    //Running seeds
+    const dumpableEmail = require('./http/controllers/dumpableEmail/dumpablaEmailController')
+    dumpableEmail.addDumpableEmails()
+  })
   .catch(err => console.log(err))
 
 module.exports = app

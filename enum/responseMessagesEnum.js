@@ -12,7 +12,7 @@ const ResponseMessagesEnum = {
     ACCOUNT_IS_VERIFIED: 'Your account is verified successfully.',
     ACCOUNT_IS_NOT_ACTIVE: 'Receiver account is not an active account.',
     ACCOUNT_IS_NOT_VERIFIED: 'There is some issue in account verification, please try again.',
-    AMOUNT_IS_NOT_INTEGER: 'Only whole numbers are allowed.',
+    AMOUNT_IS_NOT_CORRECT: 'Only upto 6 decimals are allowed.',
     ACTION_DISABLED: 'Action disabled due to pending approvals.',
     BALANCE_IS_ZERO: 'You have zero balance.',
     BOTH_ID_PARENTID_REQUIRED: 'Both id and parent id are required.',
