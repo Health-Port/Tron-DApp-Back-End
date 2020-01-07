@@ -246,6 +246,7 @@ async function getHealthportOldTokenBalance(address) {
         }
         else if (account.assetV2) {
             for (let i = 0; i < account.assetV2.length; i++) {
+                //Old token id
                 if (account.assetV2[i].key == '1001581') {
                     balance = account.assetV2[i].value
                 }
