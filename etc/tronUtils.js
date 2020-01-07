@@ -235,6 +235,32 @@ async function getAllergyForm(address) {
 // }
 //#endregion
 
+async function getHealthportOldTokenBalance(address) {
+    try {
+        let tronWeb = new TronWeb(fullNode, solidityNode, eventServer);
+        let account = await tronWeb.trx.getAccount(address);
+        let balance = 0;
+        if (account == "") {
+            console.log('account info blank');
+            return getTRC10TokenBalance(privateKey, address);
+        }
+        else if (account.assetV2) {
+            for (let i = 0; i < account.assetV2.length; i++) {
+                if (account.assetV2[i].key == '1001581') {
+                    balance = account.assetV2[i].value
+                }
+            }
+        } else {
+            balance = 0;
+        }
+        return balance;
+
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}
+
 module.exports = {
     createAccount,
     isAddress,
@@ -245,5 +271,6 @@ module.exports = {
     createSmartContract,
     saveAllergyForm,
     getAllergyForm,
-    getTrxBalance
+    getTrxBalance,
+    getHealthportOldTokenBalance
 };
