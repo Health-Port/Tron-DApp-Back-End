@@ -14,7 +14,7 @@ function encrypt(data) {
 }
 
 function decrypt(data) {
-    var cipher = crypto.createDecipher('aes-256-ecb', process.env.SECRET_D);
+    var cipher = crypto.createDecipher('aes-256-ecb', process.env.SECRET_DB);
     return cipher.update(data, 'hex', 'utf8') + cipher.final('utf8');
 }
 function checkaddresses(to, from) {
