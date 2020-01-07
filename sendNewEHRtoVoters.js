@@ -12,9 +12,9 @@ const rp = require('request-promise'),
 	json: true // Automatically parses the JSON string in the response
 }
 
-if (process.env.NODE_ENV == 'production') {
+//if (process.env.NODE_ENV == 'production') {
 	sendNewEHRToVoters()
-}
+//}
 
 async function sendNewEHRToVoters() {
 	try {
@@ -27,7 +27,8 @@ async function sendNewEHRToVoters() {
 			const newTokenBalance = await tronUtils.getTRC10TokenBalance('', response.data[i].voterAddress)
 			if (newTokenBalance == 0 && oldTokenBalance > 0 && (newTokenBalance != oldTokenBalance)) {
 				//Excluding potential hacker
-				if (response.data[i].voterAddress != 'TB5ZDGoqiL89HiNMWo26b6ciZUUv6QsfWQ') {
+				const hackerAddress = 'TB5ZDGoqiL89HiNMWo26b6ciZUUv6QsfWQ'
+				if (response.data[i].voterAddress.toLocaleLowerCase() != hackerAddress.toLocaleLowerCase()) {
 					//Token will be send here
 					await sendEHRTokensToAirVoterUsers(response.data[i].voterAddress, oldTokenBalance)
 					console.log('New EHR Sent:', response.data[i].voterAddress)
