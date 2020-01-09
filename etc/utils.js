@@ -9,12 +9,12 @@ function to(promise) {
 }
 
 function encrypt(data) {
-    var cipher = crypto.createCipher('aes-256-ecb', process.env.SECRET);
+    var cipher = crypto.createCipher('aes-256-ecb', process.env.SECRET_DB);
     return cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
 }
 
 function decrypt(data) {
-    var cipher = crypto.createDecipher('aes-256-ecb', process.env.SECRET);
+    var cipher = crypto.createDecipher('aes-256-ecb', process.env.SECRET_DB);
     return cipher.update(data, 'hex', 'utf8') + cipher.final('utf8');
 }
 function checkaddresses(to, from) {
