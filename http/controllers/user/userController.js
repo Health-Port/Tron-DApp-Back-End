@@ -163,19 +163,30 @@ async function signIn(req, res) {
             'captcha_key': req.body.captchaKey,
         }
 
+        let dumpableEmail = {};
+
         //Validating captcha only when environment is not dev
         if (process.env.NODE_ENV != 'dev') {
             [err, captcha] = await utils.to(invisibleCaptcha.validate(obj.captcha_key))
             if (err) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_CAPTCHA)
         }
 
+        //Reguler expression testing for email
+        if (!regex.emailRegex.test(obj.email))
+            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
+
         //Checking empty email and password 
         if (!(obj.email && obj.password))
             return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.REQUIRED_FIELDS_EMPTY)
 
-        //Reguler expression testing for email
-        if (!regex.emailRegex.test(obj.email))
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS);
+        //check dumpable email
+        if (process.env.NODE_ENV == 'production') {
+            const domain_name = obj.email.split("@");
+            [err, dumpableEmail] = await utils.to(db.models.dumpable_emails.findOne({ where: { domain_name: domain_name[1] } }))
+            if (dumpableEmail) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS)
+            }
+        }
 
         //Finding record from db    
         [err, user] = await utils.to(db.models.users.findOne({ where: { email: obj.email } }))
@@ -323,7 +334,7 @@ async function forgetPassword(req, res) {
 async function confirmForgotPassword(req, res) {
     try {
         const obj = {
-            'user_id' : req.auth.user_id,
+            'user_id': req.auth.user_id,
             'passcode': req.auth.pass_code,
             'password': req.body.password,
             'captcha_key': req.body.captchaKey,
@@ -349,7 +360,7 @@ async function confirmForgotPassword(req, res) {
         //Finding record from db
         [err, data] = await utils.to(db.models.pass_codes.findOne(
             {
-                where: { pass_code: obj.passcode,user_id: obj.user_id, type: 'forget' },
+                where: { pass_code: obj.passcode, user_id: obj.user_id, type: 'forget' },
                 order: [['createdAt', 'DESC']]
             }))
         if (data.is_used == true) return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.LINK_ALREADY_USED)
