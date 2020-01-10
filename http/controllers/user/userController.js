@@ -46,15 +46,16 @@ async function signUp(req, res) {
             currentDate.getDate()
         );
         //check dumpable email
-        [err, dumpableEmail] = await utils.to(db.models.dumpable_emails.findOne(
-            {
-                where: { domain_name: domain_name[1] }
+        if (process.env.NODE_ENV == 'production') {
+            [err, dumpableEmail] = await utils.to(db.models.dumpable_emails.findOne(
+                {
+                    where: { domain_name: domain_name[1] }
+                }
+            ))
+            if (dumpableEmail) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS)
             }
-        ))
-        if (dumpableEmail) {
-            return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INVALID_EMAIL_ADDRESS)
         }
-
         //Checking daily signup limit
         [err, result] = await await utils.to(db.models.users.count({
             where: {
