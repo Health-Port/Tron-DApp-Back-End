@@ -504,7 +504,7 @@ async function verifyEmail(req, res) {
                             )
                         }
                         //Send Nofication After Transactions 
-                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${refRewardTrxId}|${refRewardTrxId}>`
+                        let slackMessage = `Reward - EHR ${amount} reward was sent to account ${user.email}. Transaction Hash : <https://tronscan.org/#/transaction/${signupRewardTrxId}|${signupRewardTrxId}>`
                         const slackResult = utils.sendTransactinNotification(slackMessage);
                     }
 
