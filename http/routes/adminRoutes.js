@@ -85,6 +85,7 @@ router.post('/attributeList', authorize.blockage, authorize.authenticateRole, au
 router.put('/attributeList/update/:listId', authorize.authenticateRole, authorize.blockage, authorize.authenticateToken, attributeListController.updateAttributeListById)
 router.get('/attributeList/all', authorize.blockage, authorize.authenticateToken, attributeListController.getAllAttributeLists)
 router.get('/attributeList/:attrId', authorize.blockage, authorize.authenticateToken, attributeListController.getAttributeListById)
+router.get('/attributeListForCheckboxAndRadio/:templateId', authorize.blockage, authorize.authenticateToken, attributeListController.getAttributeListsForCheckboxAndRadio)
 
 //Template Routes
 router.post('/template/add', authorize.blockage, authorize.authenticateRole, authorize.authenticateToken, templateController.addTemplate)

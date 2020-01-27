@@ -8,6 +8,10 @@ module.exports = (sequelize, Sequelize) => {
         name: {
             type: Sequelize.STRING,
             allowNull: false
+        },
+        checkbox: {
+            type: Sequelize.BOOLEAN,
+            allowNull: false
         }
     })
     return attributeLists
