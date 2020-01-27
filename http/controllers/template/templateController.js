@@ -21,9 +21,9 @@ async function addTemplate(req, res) {
 
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
-
-		if (templateFields.length > process.env.TEMPLATE_FIELDS_LENGTH)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
+		// remove field size in form
+		// if (templateFields.length > process.env.TEMPLATE_FIELDS_LENGTH)
+		// 	return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
 
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		let flag = false
@@ -54,6 +54,31 @@ async function addTemplate(req, res) {
 		if (err) return response.errReturned(res, err)
 		if (!template)
 			return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+		
+		// add attribute for checkbox and radia group
+		for await (const tempFieldAttr of templateFields ) {
+			if (tempFieldAttr.type == 'checkbox-group' || tempFieldAttr.type == 'radio-group') {
+				let list = {}, listValue = {}
+				let attributeLists = tempFieldAttr.values
+				const attr_name = `${name}-${tempFieldAttr.type}-${tempFieldAttr.label}`;
+				[err, list] = await utils.to(db.models.attribute_lists.create({ name:  attr_name , checkbox : true}))
+				if (!list)
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				attributeLists = attributeLists.map(elem => (
+					{
+						list_id: list.id,
+						label: elem.label,
+						value: elem.value
+					}
+				))
+				tempFieldAttr ['dropdown']= list.id;
+				//Saving attributes
+				[err, listValue] = await utils.to(db.models.attribute_list_values.bulkCreate(attributeLists))
+				if (err) return response.errReturned(res, err)
+				if (!listValue) 
+					return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+			}
+		}
 
 		//Maping template field columns
 		templateFields = templateFields.map(elem => (
@@ -306,9 +331,6 @@ async function updateTemplateById(req, res) {
 		if (!templateFields || templateFields.length == 0)
 			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.ATTRIBUTE_IS_REQUIRED)
 
-		if (templateFields.length > process.env.TEMPLATE_FIELDS_LENGTH)
-			return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.FOUR_TEMPLATE_FIELDS_ALLOWED)
-
 		//required must be boolean, not allowed any other value - HP-548 - Zaigham javed
 		let flag = false
 		templateFields.forEach(element => {
@@ -358,7 +380,62 @@ async function updateTemplateById(req, res) {
 			if (obj[0] == 0)
 				return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
 		}
-
+	// update attribute for checkbox and radia group
+		for await (const tempFieldAttr of templateFields ) {
+			if (tempFieldAttr.type == 'checkbox-group' || tempFieldAttr.type == 'radio-group') {
+				if (tempFieldAttr.id) {
+					let deleted_values , template_field = {} , list = {} , listValue ={};
+					[err, template_field] = await utils.to(db.models.template_fields.findOne({ where: { id : tempFieldAttr.id } }))
+					if (!template_field)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
+						
+					[err , deleted_values] = await utils.to(db.models.attribute_list_values.destroy ({ where: { list_id : template_field.attribute_list_id } }))
+					if (!deleted_values)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+					
+					let attributeLists = tempFieldAttr.values;
+					[err, list] = await utils.to(db.models.attribute_lists.update(
+						{ name:`${name}-${tempFieldAttr.type}-${tempFieldAttr.label}` , checkbox : true},
+						{ where: { id: template_field.attribute_list_id} }
+					))
+					if (!list)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+					attributeLists = attributeLists.map(elem => (
+						{
+							list_id: template_field.attribute_list_id,
+							label: elem.label,
+							value: elem.value
+						}
+					))
+					tempFieldAttr ['dropdown']= template_field.attribute_list_id;
+					//Saving attributes
+					[err, listValue] = await utils.to(db.models.attribute_list_values.bulkCreate(attributeLists))
+					if (err) return response.errReturned(res, err)
+					if (!listValue)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				} 
+				else {
+					let list = {} , listValue = {}
+					let attributeLists = tempFieldAttr.values;
+					[err, list] = await utils.to(db.models.attribute_lists.create({ name: `${name}-${tempFieldAttr.type}-${tempFieldAttr.label}` , checkbox : true }))
+					if (!list)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+					attributeLists = attributeLists.map(elem => (
+						{
+							list_id: list.id,
+							label: elem.label,
+							value: elem.value
+						}
+					))
+					tempFieldAttr ['dropdown']= list.id;
+					//Saving attributes
+					[err, listValue] = await utils.to(db.models.attribute_list_values.bulkCreate(attributeLists))
+					if (err) return response.errReturned(res, err)
+					if (!listValue)
+						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
+				}
+			}
+		}
 		templateFields = templateFields.map(elem => (
 			{
 				id: elem.id ? parseInt(elem.id) : '',
