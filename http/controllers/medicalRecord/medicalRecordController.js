@@ -106,9 +106,17 @@ async function getMedicalRecordsByUserId(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
 		//Getting total count
-		[err, count] = await await utils.to(db.models.medical_records.count({
-			where: { user_id }
-		}))
+		[err, count] = await utils.to(db.query(`
+			SELECT m.id as medicalRecordId, t.id as templateId, t.name as templateName, 
+				m.access_token as accessToken, m.createdAt, m.updatedAt	  
+				FROM medical_records m
+				INNER JOIN templates t ON m.template_id = t.id
+				WHERE m.user_id = :user_id and t.status = true
+				ORDER by m.createdAt DESC`,
+			{
+				replacements: { user_id },
+				type: db.QueryTypes.SELECT,
+			}))
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { count, rows: records })
