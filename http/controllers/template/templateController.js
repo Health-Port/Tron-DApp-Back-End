@@ -390,9 +390,9 @@ async function updateTemplateById(req, res) {
 						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR);
 						
 					[err , deleted_values] = await utils.to(db.models.attribute_list_values.destroy ({ where: { list_id : template_field.attribute_list_id } }))
-					if (!deleted_values)
+					if (!deleted_values && deleted_values != 0)
 						return response.sendResponse(res, resCode.INTERNAL_SERVER_ERROR, resMessage.API_ERROR)
-					
+				
 					let attributeLists = tempFieldAttr.values;
 					[err, list] = await utils.to(db.models.attribute_lists.update(
 						{ name:`${name}-${tempFieldAttr.type}-${tempFieldAttr.label}` , checkbox : true},
