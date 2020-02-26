@@ -302,6 +302,8 @@ async function ipfsCallHandeling(req, res) {
 
 		//Add or Update Case
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
+			//Checking user's balance before uploading document.
+			
 			//Paitent Case
 			if (user.role == roleEnum.PATIENT) {
 				[err, record] = await utils.to(db.query(`
@@ -342,6 +344,17 @@ async function ipfsCallHandeling(req, res) {
 			}
 			//First time uploading case
 			if (record.length == 0 || record.provider_reward == false) {
+				
+				const balance = await tronUtils.getTRC10TokenBalance(
+					utils.decrypt(user.tron_wallet_private_key),
+					utils.decrypt(user.tron_wallet_public_key));
+				[err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
+					where: { commission_type: 'Upload' }
+				}))
+				if (err) return response.errReturned(res, err)
+				if (balance < commissionObj.commission_amount)
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+					
 				//Gettting template name
 				[err, record] = await utils.to(db.query(`
 					SELECT name as templateName 
