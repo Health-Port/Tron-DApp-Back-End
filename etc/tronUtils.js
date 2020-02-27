@@ -77,6 +77,17 @@ async function sendTRC10Token(to, amount, privateKey) {
         throw error;
     }
 }
+async function getTransactionByHash(transactionHash) {
+    try {
+        const tronWeb = new TronWeb(fullNode, solidityNode, eventServer);
+        let transaction = await tronWeb.trx.getTransactionInfo(transactionHash);
+        return transaction;
+
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}
 
 async function getTransectionsByAddress(privateKey, address, limit, offset) {
     try {
@@ -273,5 +284,6 @@ module.exports = {
     saveAllergyForm,
     getAllergyForm,
     getTrxBalance,
-    getHealthportOldTokenBalance
+    getHealthportOldTokenBalance,
+    getTransactionByHash
 };

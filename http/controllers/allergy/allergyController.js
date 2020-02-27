@@ -71,7 +71,8 @@ async function getAllergyListByUser(req, res) {
         let user_id = req.body.userId;
         let err,
             allergies,
-            result;
+            result,
+            latestTransaction = {}; // check for transaction pending 
 
         //Finding allergies from db by userId
         [err, allergies] = await utils.to(db.models.allergies.findAll({
@@ -97,6 +98,23 @@ async function getAllergyListByUser(req, res) {
 
         // Getting allergies data from blockchain let allergyList = await
         // tronUtils.getAllergyForm(utils.decrypt(user.tron_wallet_public_key));
+
+        // check for transaction pending 
+        [err, latestTransaction] = await utils.to(db.models.transections.findOne({
+            where: [{ user_id }],
+            order: [['createdAt', 'DESC']],
+        }))
+
+        if (Object.keys(latestTransaction).length != 0) {
+            //get transaction using hash
+            const transactionInfo = await tronUtils.getTransactionByHash(latestTransaction.trx_hash)
+            //check transaction is confirmed or not
+            if (!transactionInfo.id) {
+                return response.sendResponse(res, resCode.NOT_FOUND, resMessage.WAIT_FOR_PENDING_TRANSACTION)
+            }
+        }
+
+        //End check for transaction pending
 
         [err, result] = await utils.to(
             cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
