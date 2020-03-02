@@ -77,9 +77,9 @@ async function sendTRC10Token(to, amount, privateKey) {
         throw error;
     }
 }
-async function getTransactionByHash(transactionHash) {
+async function getTransactionByHash(transactionHash , privateKey) {
     try {
-        const tronWeb = new TronWeb(fullNode, solidityNode, eventServer);
+        const tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
         let transaction = await tronWeb.trx.getTransactionInfo(transactionHash);
         return transaction;
 
