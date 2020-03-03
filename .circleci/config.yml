@@ -6,7 +6,7 @@ jobs:
     steps:
       - add_ssh_keys:
             fingerprints:
-              - $SSH_HOST_FINGERPRINT_STAGING
+              - $SSH_FINGERPRINT_STAGING
       - run:
           name: SSH Deploy Staging
           command: | 
@@ -22,7 +22,7 @@ jobs:
     steps:
       - add_ssh_keys:
             fingerprints:
-              - $SSH_HOST_FINGERPRINT_STAGING
+              - $SSH_FINGERPRINT_STAGING
       - run:
           name: SSH Deploy Master
           command: |
