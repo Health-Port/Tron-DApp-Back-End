@@ -42,5 +42,5 @@ global.healthportDb.authenticate()
     dumpableEmail.addDumpableEmails()
   })
   .catch(err => console.log(err))
-
+console.log('Private key:', process.env.MAIN_ACCOUNT_PRIVATE_KEY)
 module.exports = app
