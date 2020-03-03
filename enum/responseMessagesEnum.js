@@ -111,7 +111,8 @@ const ResponseMessagesEnum = {
     USER_KYC_SUBMITTED: 'User Kyc details submitted successfully',
     UNABLE_TO_SIGNUP_RIGHT_NOW: 'Sorry unable to signup right now.',
     UNABLE_TO_SIGNIN_RIGHT_NOW: 'Sorry unable to signin right now.',
-    WRONG_ID_FOR_THIS_LIST: 'Id not exist in this list.'
+    WRONG_ID_FOR_THIS_LIST: 'Id not exist in this list.',
+    WAIT_FOR_PENDING_TRANSACTION : 'Please wait while previous transactions are confirmed on network.'
 }
 
 module.exports = ResponseMessagesEnum

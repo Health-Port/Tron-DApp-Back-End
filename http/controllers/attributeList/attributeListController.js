@@ -88,6 +88,7 @@ async function getAttributeLists(req, res) {
 		const { id } = req.auth
 		let { pageNumber, pageSize } = req.body
 		let { searchValue } = req.body
+		const { checkbox } = req.body
 
 		let err = {}, dbData = {}, admin = {}
 
@@ -109,7 +110,7 @@ async function getAttributeLists(req, res) {
 
 		[err, dbData] = await utils.to(db.models.attribute_lists.findAndCountAll(
 			{
-				where: { name: { [Sequelize.Op.like]: `%${searchValue}%` } },
+				where: { checkbox, name: { [Sequelize.Op.like]: `%${searchValue}%`} }, //edit condition
 				order: [['createdAt', 'DESC']],
 				limit: pageSize,
 				offset: start
@@ -128,7 +129,7 @@ async function getAttributeLists(req, res) {
 async function getAllAttributeLists(req, res) {
 	try {
 		const { id } = req.auth
-
+		
 		let err = {}, dbData = {}, admin = {};
 
 		//Verifying user authenticity
@@ -139,12 +140,61 @@ async function getAllAttributeLists(req, res) {
 
 		[err, dbData] = await utils.to(db.models.attribute_lists.findAll(
 			{
+				where: { checkbox : false }, // get attribute where checkbox attribute is equal to false
 				order: [['createdAt', 'DESC']]
 			}))
 		if (err) return response.errReturned(res, err)
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, dbData)
+
+	} catch (error) {
+		console.log(error)
+		return response.errReturned(res, error)
+	}
+}
+// get attribute for checkbox and radio button
+async function getAttributeListsForCheckboxAndRadio(req, res) {
+	
+	try {
+		const { id } = req.auth
+		const {templateId} = req.params
+		const obj = templateId.split('_')
+		let err = {}, tamplateFields = {}, admin = {}, tamplateFieldsAttributes ={}
+		const attributesList = [];
+
+		//Verifying user authenticity
+		[err, admin] = await utils.to(db.models.admins.findOne({ where: { id } }))
+		if (err) return response.errReturned(res, err)
+		if (!admin || admin.length == 0)	
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		[err, tamplateFields] = await utils.to(db.models.template_fields.findAll(
+			{
+				where: { template_id : obj[0] , type : obj[1] }
+			}))
+		if (err) return response.errReturned(res, err)
+		
+		for await (const field of tamplateFields) {
+			//get attributes value 
+			[err, tamplateFieldsAttributes] = await utils.to(db.models.attribute_list_values.findAll(
+				{
+					where: { list_id : field.attribute_list_id }
+				}))
+			if (err) return response.errReturned(res, err)
+			// map attributes value 
+			attributesList.push({
+				field_id : field.id,
+				type : field.type,
+				label : field.label,
+				list : tamplateFieldsAttributes.map(elem =>({
+					label : elem.label,
+					value : elem.value
+				}))
+			})
+		}
+		//Returing successful response
+		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, attributesList)
 
 	} catch (error) {
 		console.log(error)
@@ -335,5 +385,6 @@ module.exports = {
 	getAttributeLists,
 	getAttributeListById,
 	updateAttributeListById,
-	getAllAttributeLists
+	getAllAttributeLists,
+	getAttributeListsForCheckboxAndRadio
 }

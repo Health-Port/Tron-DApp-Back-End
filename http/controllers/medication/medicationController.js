@@ -77,7 +77,8 @@ async function getMedicationListByUser(req, res) {
         let user_id = req.body.userId;
         let err,
             medications,
-            result;
+            result,
+            latestTransaction = {}; // check for transaction pending 
 
         //Finding medications from db by userId
         [err, medications] = await utils.to(db.models.medications.findAll({
@@ -96,6 +97,24 @@ async function getMedicationListByUser(req, res) {
                 id: user_id
             }
         }));
+
+        // check for transaction pending 
+        [err, latestTransaction] = await utils.to(db.models.transections.findOne({
+            where: [{ user_id }],
+            order: [['createdAt', 'DESC']],
+        }))
+
+        if (Object.keys(latestTransaction).length != 0) {
+            //get transaction using hash
+            const transactionInfo = await tronUtils.getTransactionByHash(latestTransaction.trx_hash )
+            //check transaction is confirmed or not
+            if (!transactionInfo.id) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.WAIT_FOR_PENDING_TRANSACTION)
+            }
+        }
+
+        //End check for transaction pending
+
         [err, result] = await utils.to(
             cutCommission(user.tron_wallet_public_key, 'Health Port Network Fee', 'Download')
         );

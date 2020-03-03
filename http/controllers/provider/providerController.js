@@ -130,6 +130,7 @@ async function getProviderSharedDocument(req, res) {
         let user_id = req.body.userId
         let type = req.body.type;
         let provider_id = req.body.providerId;
+        let latestTransaction = {}; // check for transaction pending 
 
         let err, data, providerData;
         [err, data] = await utils.to(db.query('select * from ' + type + ' where user_id = :user_id order by id desc',
@@ -137,6 +138,23 @@ async function getProviderSharedDocument(req, res) {
                 replacements: { user_id: user_id },
                 type: db.QueryTypes.SELECT,
             }));
+
+        // check for transaction pending 
+        [err, latestTransaction] = await utils.to(db.models.transections.findOne({
+            where: [{ user_id }],
+            order: [['createdAt', 'DESC']],
+        }))
+
+        if (Object.keys(latestTransaction).length != 0) {
+            //get transaction using hash
+            const transactionInfo = await tronUtils.getTransactionByHash(latestTransaction.trx_hash)
+            //check transaction is confirmed or not
+            if (!transactionInfo.id) {
+                return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.WAIT_FOR_PENDING_TRANSACTION)
+            }
+        }
+
+        //End check for transaction pending
 
         //Getting provider's data from db
         [err, providerData] = await utils.to(db.models.users.findOne({ where: { id: provider_id } }));

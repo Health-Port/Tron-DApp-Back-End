@@ -6,11 +6,11 @@ jobs:
     steps:
       - add_ssh_keys:
             fingerprints:
-              - $SSH_HOST_FINGERPRINT_STAGING
+              - $SSH_FINGERPRINT_STAGING
       - run:
           name: SSH Deploy Staging
           command: | 
-              MAIN_ACCOUNT_PRIVATE_KEY_STAGING=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING ssh $SSH_USER@$SSH_HOST_STAGING bash -c "'
+              MAIN_ACCOUNT_PRIVATE_KEY_STAGING=$MAIN_ACCOUNT_PRIVATE_KEY_STAGING ssh $SSH_USER_STAGING@$SSH_HOST_STAGING bash -c "'
                 cd /var/www/html/healthport
                 sudo git fetch
                 sudo git checkout staging
@@ -22,7 +22,7 @@ jobs:
     steps:
       - add_ssh_keys:
             fingerprints:
-              - $SSH_HOST_FINGERPRINT_STAGING
+              - $SSH_FINGERPRINT_STAGING
       - run:
           name: SSH Deploy Master
           command: |

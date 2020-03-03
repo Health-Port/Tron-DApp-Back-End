@@ -106,9 +106,17 @@ async function getMedicalRecordsByUserId(req, res) {
 			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.NO_RECORD_FOUND);
 
 		//Getting total count
-		[err, count] = await await utils.to(db.models.medical_records.count({
-			where: { user_id }
-		}))
+		[err, count] = await utils.to(db.query(`
+			SELECT m.id as medicalRecordId, t.id as templateId, t.name as templateName, 
+				m.access_token as accessToken, m.createdAt, m.updatedAt	  
+				FROM medical_records m
+				INNER JOIN templates t ON m.template_id = t.id
+				WHERE m.user_id = :user_id and t.status = true
+				ORDER by m.createdAt DESC`,
+			{
+				replacements: { user_id },
+				type: db.QueryTypes.SELECT,
+			}))
 
 		//Returing successful response
 		return response.sendResponse(res, resCode.SUCCESS, resMessage.SUCCESS, { count, rows: records })
@@ -284,16 +292,33 @@ async function ipfsCallHandeling(req, res) {
 			user = {},
 			commissionObj = {},
 			record = {},
-			obj = {};
-
+			obj = {},
+			latestTransaction = {}; // check for transaction pending 
 		//Verifying user authenticity
 		[err, user] = await utils.to(db.models.users.findOne({ where: { id: user_id } }))
 		if (err) return response.errReturned(res, err)
 		if (!user || user.length == 0 || user == null)
-			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND)
+			return response.sendResponse(res, resCode.NOT_FOUND, resMessage.USER_NOT_FOUND);
+
+		// check for transaction pending 
+		[err, latestTransaction] = await utils.to(db.models.transections.findOne({ where: [{ user_id }],
+			order: [['createdAt', 'DESC']], }))
+			
+		if (Object.keys(latestTransaction).length != 0) {
+			//get transaction using hash
+			const transactionInfo = await tronUtils.getTransactionByHash(latestTransaction.trx_hash )
+			//check transaction is confirmed or not
+			if (!transactionInfo.id) {
+				return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.WAIT_FOR_PENDING_TRANSACTION)
+			}
+		}
+
+		//End check for transaction pending
 
 		//Add or Update Case
 		if (action.toLocaleLowerCase() == actionEnum.ADD.toLocaleLowerCase()) {
+			//Checking user's balance before uploading document.
+			
 			//Paitent Case
 			if (user.role == roleEnum.PATIENT) {
 				[err, record] = await utils.to(db.query(`
@@ -334,6 +359,17 @@ async function ipfsCallHandeling(req, res) {
 			}
 			//First time uploading case
 			if (record.length == 0 || record.provider_reward == false) {
+				
+				const balance = await tronUtils.getTRC10TokenBalance(
+					utils.decrypt(user.tron_wallet_private_key),
+					utils.decrypt(user.tron_wallet_public_key));
+				[err, commissionObj] = await utils.to(db.models.commission_conf.findOne({
+					where: { commission_type: 'Upload' }
+				}))
+				if (err) return response.errReturned(res, err)
+				if (balance < commissionObj.commission_amount)
+					return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.INSUFFICIENT_BALANCE);
+					
 				//Gettting template name
 				[err, record] = await utils.to(db.query(`
 					SELECT name as templateName 
