@@ -107,7 +107,7 @@ async function getAllergyListByUser(req, res) {
 
         if (Object.keys(latestTransaction).length != 0) {
             //get transaction using hash
-            const transactionInfo = await tronUtils.getTransactionByHash(latestTransaction.trx_hash , utils.decrypt(user.tron_wallet_private_key))
+            const transactionInfo = await tronUtils.getTransactionByHash(latestTransaction.trx_hash)
             //check transaction is confirmed or not
             if (!transactionInfo.id) {
                 return response.sendResponse(res, resCode.BAD_REQUEST, resMessage.WAIT_FOR_PENDING_TRANSACTION)
